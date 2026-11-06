@@ -312,7 +312,7 @@ nav.tabs button.on{color:var(--ball)}
   <div class="card">
     <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
     <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone.</p>
-    <label class="field"><span class="eyebrow">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="4 digits"></label>
+    <label class="field"><span class="eyebrow">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits"></label>
     <p class="err" id="pinErr"></p>
     <button class="cta" id="pinGo">Unlock scoring</button>
   </div>
@@ -733,14 +733,14 @@ document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_
 function openPin(){
   const creating = pinOnServer===null;
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
-  $('#pinHint').textContent = creating?'No PIN yet. Pick 4 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone.';
+  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone.';
   $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
   $('#pinInput').value=''; $('#pinErr').textContent=''; $('#pinSheet').hidden=false; setTimeout(()=>$('#pinInput').focus(),50);
 }
 $('#pinClose').onclick=()=>{ $('#pinSheet').hidden=true; };
 function tryPin(){
   const v=$('#pinInput').value.trim();
-  if(!/^\d{4,6}$/.test(v)){ $('#pinErr').textContent='4 to 6 digits.'; return; }
+  if(!/^\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
   const done=()=>{ unlocked=true; try{ localStorage.setItem('pickle-unlocked','1'); }catch(e){} $('#pinSheet').hidden=true; toast('Scoring unlocked on this phone'); };
   if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
   else if(v===String(pinOnServer)) done();
