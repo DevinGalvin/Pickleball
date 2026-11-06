@@ -274,6 +274,7 @@ nav.tabs button.on{color:var(--ball)}
       <div class="cards" id="recap"></div>
       <button class="cta" id="copyRecap">Copy recap for the group text</button>
       <div><p class="eyebrow" style="margin-bottom:8px">Every game</p><div class="log" id="nightLog"></div></div>
+      <button class="ghost" id="deleteNight" style="align-self:center;border-color:var(--bad);color:var(--bad)">Delete this night</button>
     </section>
   </main>
 
@@ -675,6 +676,13 @@ function renderNight(){
     <div class="stat"><p class="eyebrow">Tightest game</p><div class="v num">${close.sa}–${close.sb}</div><div class="d">${wn(close)} edged ${ln(close)}</div></div>
     <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Tonight's +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>`;
   $('#nightLog').innerHTML=logHtml(N.games,false);
+  const del=$('#deleteNight'); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
+  del.onclick=()=>{
+    if(!del.dataset.armed){ del.dataset.armed='1'; del.textContent=N.live?'Tap again to discard every game from tonight':'Tap again to delete this night and its games'; return; }
+    if(N.live){ state.tonight.games=[]; state.tonight.current=null; state.tonight.started=false; }
+    else { state.nights.splice(state.nights.indexOf(N),1); }
+    persist(); show('history',null); toast(N.live?'Tonight cleared':'Night deleted');
+  };
   $('#copyRecap').onclick=()=>{ const lines=[`Pickle League · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`,'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
     navigator.clipboard?.writeText(lines).then(()=>toast('Copied')).catch(()=>toast('Copy blocked here')); };
 }
