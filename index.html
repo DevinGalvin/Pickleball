@@ -398,7 +398,7 @@ function show(tab, sub){
   for(const id in pages) document.getElementById(id).hidden=!pages[id];
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
-  $('#hdrDate').textContent = tab==='tonight'? dateShort(state.tonight.date) : season().name;
+  $('#hdrDate').textContent = tab==='tonight'? (state.tonight.games.length||state.tonight.started? dateShort(state.tonight.date) : 'Next night') : season().name;
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
@@ -425,7 +425,8 @@ function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
   if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return; }
   PLAYERS.push(n); state.tonight.present.add(n); state.tonight.current=null; $('#newName').value=''; $('#addrow').hidden=true; renderCheckin(); persist(); toast(`${n} added and checked in`); }
 $('#addConfirm').onclick=addPlayer; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
-$('#startBtn').onclick=()=>{ state.tonight.started=true; show('tonight'); persist(); };
+const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+$('#startBtn').onclick=()=>{ if(!state.tonight.games.length) state.tonight.date=todayISO(); state.tonight.started=true; show('tonight'); persist(); };
 
 // ---------- court ----------
 function nameHtml(p){ const t=tally(state.tonight.games)[p]; return `${p}<small class="num">${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
