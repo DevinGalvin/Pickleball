@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1a22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pickle">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+</head>
+<body>
+<title>Pickle League</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone-width app, three tabs (Tonight / Season / History), drill-in detail pages with a back button. Single committed dark "night court" look. */
+:root{
+  --bg:#0f1a22; --panel:#16242e; --panel-2:#1d2f3b; --line:#2a4150;
+  --fg:#eef4f6; --mute:#8ea4b1;
+  --surround:#2f7d4f; --court:#2563a8; --kitchen:#3b7bc4; --paint:#f2f6f8;
+  --ball:#d6f23a; --ball-ink:#1a2200; --good:#5ad38a; --bad:#ff6b6b;
+  --display:"Barlow Condensed",system-ui,sans-serif; --body:"Barlow",system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.35;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
+*{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ball);outline-offset:2px}
+.app{max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+header.top{display:flex;align-items:baseline;justify-content:space-between;padding:14px 4px 10px;gap:8px}
+.sync{width:8px;height:8px;border-radius:50%;background:var(--mute);flex:none;align-self:center}.sync.on{background:var(--good)}.sync.off{background:var(--bad)}
+#connecting.sheet{align-items:center}
+header.top h1{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.5px;margin:0;text-transform:uppercase}
+header.top h1 span{color:var(--ball)}
+header.top .date{color:var(--mute);font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+main{flex:1;display:flex;flex-direction:column;padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+.view{display:flex;flex-direction:column;gap:14px}
+.view[hidden]{display:none}
+.eyebrow{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);font-weight:600;margin:0}
+h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-transform:uppercase;letter-spacing:.3px;text-wrap:balance}
+.panel{background:var(--panel);border-radius:14px;padding:14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.num{font-variant-numeric:tabular-nums}
+.hint{color:var(--mute);font-size:13px;margin:0}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-weight:600;font-size:14px;min-height:40px;align-self:flex-start}
+.back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;background:var(--ball);color:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px}
+.cta:disabled{opacity:.4;cursor:not-allowed}
+.ghost{min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);color:var(--fg);font-weight:600;font-size:14px;background:none}
+.ghost:disabled{opacity:.4;cursor:not-allowed}
+.pos{color:var(--good)}.neg{color:var(--bad)}
+
+/* check-in */
+.roster{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);text-align:left;min-height:56px}
+.chip .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--mute);flex:none}
+.chip.on{border-color:var(--ball);background:#22323c}
+.chip.on .dot{background:var(--ball);border-color:var(--ball)}
+.chip .nm{font-weight:600;font-size:15px}
+.chip .sub{font-size:12px;color:var(--mute)}
+.chip.add{border-style:dashed;color:var(--mute);justify-content:center}
+.addrow{display:flex;gap:8px}
+.addrow input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px}
+.addrow[hidden]{display:none}
+
+/* court board */
+.gamebar{display:flex;justify-content:space-between;align-items:center}
+.gamebar .g{font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase}
+.courtwrap{position:relative;max-width:100%;aspect-ratio:21/11;border-radius:14px;overflow:hidden;background:var(--surround)}
+.courtwrap svg{position:absolute;inset:0;width:100%;height:100%}
+.courtwrap .teams{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr}
+.courtwrap .team{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 6px}
+.pname{font-family:var(--display);font-weight:800;font-size:clamp(18px,6vw,26px);line-height:1;text-transform:uppercase;letter-spacing:.4px;text-shadow:0 2px 6px rgba(0,0,0,.45);text-align:center}
+.pname small{display:block;font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.8px;opacity:.85;text-transform:none;margin-top:2px}
+.sidelbl{position:absolute;top:6px;font-family:var(--display);font-weight:800;font-size:16px;color:var(--paint);opacity:.9;letter-spacing:1px}
+.sidelbl.a{left:10px}.sidelbl.b{right:10px}
+.winrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
+.winbtn:hover{background:var(--ball);color:var(--ball-ink);border-color:var(--ball)}
+.queue{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.queue .panel{padding:12px}
+.queue .names{font-weight:600;font-size:15px;margin-top:4px}
+.queue .vs{color:var(--mute);font-weight:500;font-size:13px;margin:0 4px}
+.log{display:flex;flex-direction:column;gap:6px}
+.log .item{display:grid;grid-template-columns:22px 1fr auto 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--panel-2);font-size:14px}
+.log .item .n{color:var(--mute);font-size:12px}
+.log .item .sc{font-family:var(--display);font-weight:800;font-size:20px;white-space:nowrap}
+.log .item .t{min-width:0;overflow-wrap:anywhere}
+.log .item .t.r{text-align:right}
+.log .w{color:var(--ball)}
+
+/* score sheet */
+.sheet{position:fixed;inset:0;background:rgba(5,10,14,.72);display:flex;align-items:flex-end;justify-content:center;z-index:20;overflow-y:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet[hidden]{display:none}
+.sheet .card{width:100%;max-width:430px;margin-top:auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scorebox{border-radius:14px;background:var(--panel-2);border:2px solid var(--line);padding:10px;text-align:center;min-width:0}
+.scorebox.active{border-color:var(--ball)}
+.scorebox.winner{background:#22382a;border-color:var(--good)}
+.scorebox .side{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);font-weight:600}
+.scorebox .who{font-weight:600;font-size:14px;overflow-wrap:anywhere;line-height:1.2;margin-top:2px}
+.scorebox .val{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;margin-top:6px;min-height:44px}
+.scorebox .val.empty{color:var(--mute)}
+.scorebox .tagw{display:inline-block;font-size:11px;font-weight:600;color:var(--good);margin-top:4px;min-height:14px}
+.pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pad button{min-height:52px;border-radius:12px;background:var(--panel-2);font-family:var(--display);font-weight:800;font-size:26px}
+.pad button.alt{font-size:14px;font-family:var(--body);font-weight:600;color:var(--mute)}
+.err{color:var(--bad);font-size:13px;text-align:center;margin:0;min-height:18px}
+
+/* standings */
+.table{display:flex;flex-direction:column;gap:6px}
+.trow{display:grid;grid-template-columns:28px 1fr auto 18px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel);width:100%;text-align:left}
+.trow .rk{font-family:var(--display);font-weight:800;font-size:22px;color:var(--mute)}
+.trow.q1 .rk{color:var(--ball)}
+.trow .nm{font-weight:600;min-width:0}
+.trow .meta{font-size:12px;color:var(--mute)}
+.trow .pm{font-family:var(--display);font-weight:800;font-size:26px;text-align:right;line-height:1}
+.trow .pm small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute);letter-spacing:.5px}
+.trow .chev{color:var(--mute)}
+.seg{display:flex;background:var(--panel);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;min-height:38px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mute)}
+.seg button.on{background:var(--panel-2);color:var(--fg)}
+
+/* player detail */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--panel);border-radius:14px;padding:12px;min-width:0}
+.stat.big{grid-column:1/-1;background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}
+.stat .v{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
+.stat .d{font-size:13px;color:var(--mute);margin-top:4px}
+.chart{background:var(--panel);border-radius:14px;padding:12px;position:relative}
+.chart svg{display:block;width:100%;height:auto;max-width:100%}
+.chart text{font-family:var(--body);font-size:11px;fill:var(--mute)}
+.chart .tip{position:absolute;pointer-events:none;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;white-space:nowrap;transform:translate(-50%,-110%)}
+.chart .tip[hidden]{display:none}
+
+/* season sheet */
+.field{display:flex;flex-direction:column;gap:6px}
+.field input{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px;-webkit-appearance:none;appearance:none;text-align:left}
+.field input[type=date]{color:var(--fg)}
+.field input::-webkit-date-and-time-value{text-align:left}
+
+/* bracket */
+.teamrow{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel)}
+.teamrow .sd{font-family:var(--display);font-weight:800;font-size:22px;color:var(--ball)}
+.teamrow .nm{font-weight:600;min-width:0}
+.teamrow .meta{font-size:12px;color:var(--mute)}
+.teamrow .rt{font-family:var(--display);font-weight:800;font-size:20px;color:var(--mute)}
+.bracket{overflow-x:auto;padding-bottom:6px;background:var(--panel);border-radius:14px}
+.bracket svg{display:block;max-width:none;height:auto}
+.bracket .rounds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(150px,1fr);gap:12px;min-width:min-content}
+.bracket .round{display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+.bracket .rlabel{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);font-weight:600;text-align:center}
+.match{background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.match .slot{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:center;padding:8px 10px;font-size:13px;font-weight:600;min-height:40px}
+.match .slot+.slot{border-top:1px solid var(--line)}
+.match .slot .s{font-family:var(--display);font-weight:800;color:var(--ball);font-size:15px}
+.match .slot.tbd{color:var(--mute);font-weight:500}
+.match .slot.bye{color:var(--mute);font-style:italic;font-weight:500}
+.rr{display:flex;flex-direction:column;gap:8px}
+
+/* history */
+.nights{display:flex;flex-direction:column;gap:8px}
+.night{display:grid;grid-template-columns:1fr auto 18px;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--panel);text-align:left;width:100%}
+.night .d{font-weight:600}
+.night .m{font-size:12px;color:var(--mute)}
+.night .c{font-family:var(--display);font-weight:800;font-size:22px;text-align:right}
+.night .c small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* tabs */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:#0b141a;border-top:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .in{max-width:430px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav.tabs button{min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mute);font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button.on{color:var(--ball)}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ball);color:var(--ball-ink);font-weight:600;padding:10px 16px;border-radius:999px;font-size:14px;z-index:30}
+.toast[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header class="top"><h1>Pickle <span>League</span></h1><div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span></header>
+  <main>
+
+    <!-- TONIGHT: check-in -->
+    <section class="view" id="v-checkin">
+      <div><p class="eyebrow">Tonight</p><h2>Who's here?</h2></div>
+      <div class="roster" id="roster"></div>
+      <div class="addrow" id="addrow" hidden><input id="newName" placeholder="New player's name" maxlength="20" autocomplete="off"><button class="ghost" id="addConfirm">Add</button></div>
+      <p class="hint" id="checkinHint"></p>
+      <button class="cta" id="startBtn">Start the night</button>
+    </section>
+
+    <!-- TONIGHT: court -->
+    <section class="view" id="v-court" hidden>
+      <div class="gamebar"><div class="g" id="gameNum">Game 1</div>
+        <div class="row" style="gap:8px"><button class="ghost" id="editPresent">Players</button><button class="ghost" id="undoBtn">Undo</button></div></div>
+      <div class="courtwrap">
+        <svg viewBox="0 0 210 110" aria-hidden="true">
+          <rect x="0" y="0" width="210" height="110" fill="var(--surround)"/>
+          <rect x="17" y="16" width="176" height="80" fill="var(--court)"/>
+          <rect x="77" y="16" width="28" height="80" fill="var(--kitchen)"/>
+          <rect x="105" y="16" width="28" height="80" fill="var(--kitchen)"/>
+          <g fill="none" stroke="var(--paint)" stroke-width="1.6">
+            <rect x="17" y="16" width="176" height="80"/>
+            <line x1="77" y1="16" x2="77" y2="96"/><line x1="133" y1="16" x2="133" y2="96"/>
+            <line x1="17" y1="56" x2="77" y2="56"/><line x1="133" y1="56" x2="193" y2="56"/>
+          </g>
+          <line x1="105" y1="10" x2="105" y2="102" stroke="#0b1f2b" stroke-width="2.4"/>
+          <line x1="105" y1="10" x2="105" y2="102" stroke="#9fb3bf" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+          <circle cx="105" cy="10" r="2.4" fill="#0b1f2b"/><circle cx="105" cy="102" r="2.4" fill="#0b1f2b"/>
+        </svg>
+        <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>
+        <div class="teams">
+          <div class="team"><div class="pname" id="a1"></div><div class="pname" id="a2"></div></div>
+          <div class="team"><div class="pname" id="b1"></div><div class="pname" id="b2"></div></div>
+        </div>
+      </div>
+      <button class="cta" id="enterScore">Enter final score</button>
+      <div class="queue">
+        <div class="panel"><p class="eyebrow">Up next</p><div class="names" id="nextNames"></div></div>
+        <div class="panel"><p class="eyebrow">Sitting</p><div class="names" id="sitting"></div></div>
+      </div>
+      <div><p class="eyebrow" style="margin-bottom:8px">Tonight so far</p><div class="log" id="log"></div></div>
+      <button class="ghost" id="endNight" style="align-self:center">End night</button>
+    </section>
+
+    <!-- SEASON: standings -->
+    <section class="view" id="v-standings" hidden>
+      <div class="row"><div style="min-width:0"><p class="eyebrow" id="stEyebrow">Season 1</p><h2>Standings</h2></div><button class="ghost" id="seasonBtn">Settings</button></div>
+      <div class="seg"><button class="on" data-scope="season">Season</button><button data-scope="tonight">Tonight</button></div>
+      <div class="table" id="standings"></div>
+      <p class="hint" id="qualHint"></p>
+    </section>
+
+    <!-- SEASON: player detail -->
+    <section class="view" id="v-player" hidden>
+      <button class="back" id="playerBack"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>Standings</button>
+      <div><p class="eyebrow">Player</p><h2 id="plName"></h2></div>
+      <div class="stats" id="plStats"></div>
+      <div class="chart" id="plLine"></div>
+      <div class="chart" id="plBars"></div>
+    </section>
+
+    <!-- BRACKET -->
+    <section class="view" id="v-bracket" hidden>
+      <div><p class="eyebrow" id="brEyebrow">If the season ended today</p><h2>Tournament bracket</h2></div>
+      <div class="seg" id="pairSeg"><button class="on" data-pair="split">Split (1+5, 2+6…)</button><button data-pair="snake">Snake (1+8, 2+7…)</button></div>
+      <div id="teams" class="table"></div>
+      <div id="bracket"></div>
+      <p class="hint" id="brHint"></p>
+    </section>
+
+    <!-- HISTORY: nights list -->
+    <section class="view" id="v-history" hidden>
+      <div><p class="eyebrow">All seasons</p><h2>History</h2></div>
+      <div class="nights" id="nights"></div>
+    </section>
+
+    <!-- HISTORY: night detail -->
+    <section class="view" id="v-night" hidden>
+      <button class="back" id="nightBack"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>History</button>
+      <div><p class="eyebrow">Night recap</p><h2 id="nightTitle"></h2></div>
+      <div class="cards" id="recap"></div>
+      <button class="cta" id="copyRecap">Copy recap for the group text</button>
+      <div><p class="eyebrow" style="margin-bottom:8px">Every game</p><div class="log" id="nightLog"></div></div>
+    </section>
+  </main>
+
+  <nav class="tabs"><div class="in">
+    <button data-tab="tonight"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14M3 12h4M17 12h4"/></svg>Tonight</button>
+    <button data-tab="season"><svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Standings</button>
+    <button data-tab="bracket"><svg viewBox="0 0 24 24"><path d="M3 5h5v4H3zM3 15h5v4H3zM8 7h4v10H8M12 12h4M16 10h5v4h-5z"/></svg>Bracket</button>
+    <button data-tab="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+  </div></nav>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="card">
+    <div class="row"><h2 id="sheetTitle">Final score</h2><button class="ghost" id="sheetClose">Cancel</button></div>
+    <div class="scores">
+      <button class="scorebox" id="boxA"><div class="side">Side A</div><div class="who" id="whoA"></div><div class="val num" id="valA"></div><div class="tagw" id="tagA"></div></button>
+      <button class="scorebox" id="boxB"><div class="side">Side B</div><div class="who" id="whoB"></div><div class="val num" id="valB"></div><div class="tagw" id="tagB"></div></button>
+    </div>
+    <p class="hint" id="sheetSub" style="text-align:center"></p>
+    <div class="pad" id="pad"></div>
+    <p class="err" id="err"></p>
+    <button class="cta" id="saveScore" disabled>Save &amp; next game</button>
+  </div>
+</div>
+<div class="sheet" id="seasonSheet" hidden>
+  <div class="card">
+    <div class="row"><h2>Season settings</h2><button class="ghost" id="seasonClose">Done</button></div>
+    <label class="field"><span class="eyebrow">Name</span><input id="seasonName" maxlength="30" autocomplete="off"></label>
+    <label class="field"><span class="eyebrow">Started</span><input id="seasonStart" type="date"></label>
+    <p class="hint">A season runs until you end it. Nights keep counting toward standings and the bracket until then.</p>
+    <button class="ghost" id="endSeason" style="border-color:var(--bad);color:var(--bad)">End this season</button>
+    <p class="hint" id="endHint" hidden>Standings reset and the next season starts with the next night. History keeps everything.</p>
+  </div>
+</div>
+<div class="sheet" id="pinSheet" hidden>
+  <div class="card">
+    <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
+    <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone.</p>
+    <label class="field"><span class="eyebrow">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="4 digits"></label>
+    <p class="err" id="pinErr"></p>
+    <button class="cta" id="pinGo">Unlock scoring</button>
+  </div>
+</div>
+<div class="sheet" id="connecting"><div class="card" style="border-radius:20px;margin:auto;text-align:center"><h2>Connecting…</h2><p class="hint" id="connHint">Loading the league.</p></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- data ----------
+let PLAYERS = ['Devin','Kevin','Tom','Evan','Ben','Joe','Adam','Wayne'];
+const NIGHT1 = {date:'2026-11-03', games:[
+ {a:['Ben','Tom'],b:['Devin','Kevin'],sa:8,sb:11},{a:['Evan','Devin'],b:['Kevin','Tom'],sa:5,sb:11},
+ {a:['Evan','Tom'],b:['Ben','Kevin'],sa:11,sb:7},{a:['Evan','Ben'],b:['Devin','Tom'],sa:3,sb:11},
+ {a:['Evan','Kevin'],b:['Ben','Devin'],sa:11,sb:8},{a:['Ben','Tom'],b:['Devin','Kevin'],sa:4,sb:11},
+ {a:['Evan','Devin'],b:['Kevin','Tom'],sa:11,sb:5},{a:['Evan','Kevin'],b:['Ben','Devin'],sa:1,sb:11},
+ {a:['Evan','Devin'],b:['Kevin','Ben'],sa:11,sb:3},{a:['Evan','Ben'],b:['Kevin','Devin'],sa:0,sb:11}]};
+NIGHT1.season=1;
+const state = {
+  seasons:[{id:1,name:'Season 1',start:'2026-11-03',end:null}],
+  pairing:'split',
+  nights:[NIGHT1],
+  tonight:{date:'2026-11-10', present:new Set(['Devin','Kevin','Tom','Evan','Ben']), started:false, games:[], current:null},
+  scope:'season', pending:null, tab:'tonight', sub:null, player:null, night:null
+};
+
+// ---------- helpers ----------
+const $ = s => document.querySelector(s);
+const fmt = n => (n>0?'+':'')+n;
+const r1 = n => Math.round(n*10)/10;
+const pairKey = (x,y)=>[x,y].sort().join('|');
+const inGame = (g,p)=>g.a.includes(p)||g.b.includes(p);
+const dateLong = d => new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+const dateShort = d => new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+function diffs(g){ const d=g.sa-g.sb; const m={}; g.a.forEach(p=>m[p]=d); g.b.forEach(p=>m[p]=-d); return m; }
+function tally(games){ const t={}; games.forEach(g=>{ const d=diffs(g); for(const p in d){ t[p]=t[p]||{pm:0,gp:0,w:0,l:0}; t[p].pm+=d[p]; t[p].gp++; d[p]>0?t[p].w++:t[p].l++; } }); return t; }
+const season = ()=>state.seasons[state.seasons.length-1];
+// every night ever, including the one in progress
+function allNightsEver(){ return state.tonight.games.length? state.nights.concat([{date:state.tonight.date,games:state.tonight.games,season:season().id,live:true}]) : state.nights; }
+// nights in the current season only (what standings and the bracket use)
+function allNights(){ return allNightsEver().filter(n=>n.season===season().id); }
+function allGames(){ return allNights().flatMap(n=>n.games); }
+function nightsPlayed(p){ return allNights().filter(n=>n.games.some(g=>inGame(g,p))).length; }
+
+// ---------- rotation engine ----------
+function nextGame(present, played){
+  const P=[...present]; if(P.length<4) return null;
+  const gp={}, partner={}, opp={}; P.forEach(p=>gp[p]=0);
+  played.forEach(g=>{ [...g.a,...g.b].forEach(p=>{ if(p in gp) gp[p]++; });
+    partner[pairKey(...g.a)]=(partner[pairKey(...g.a)]||0)+1; partner[pairKey(...g.b)]=(partner[pairKey(...g.b)]||0)+1;
+    g.a.forEach(x=>g.b.forEach(y=>{ opp[pairKey(x,y)]=(opp[pairKey(x,y)]||0)+1; })); });
+  const last=played[played.length-1]; const satLast=p=>last&&!inGame(last,p);
+  const minGp=Math.min(...Object.values(gp));
+  let best=null,bestCost=Infinity;
+  for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++)for(let k=j+1;k<P.length;k++)for(let l=k+1;l<P.length;l++){
+    const f=[P[i],P[j],P[k],P[l]];
+    for(const [a,b] of [[[f[0],f[1]],[f[2],f[3]]],[[f[0],f[2]],[f[1],f[3]]],[[f[0],f[3]],[f[1],f[2]]]]){
+      let cost=0; f.forEach(p=>cost+=(gp[p]-minGp)*10);
+      P.filter(p=>!f.includes(p)).forEach(p=>{ if(satLast(p)) cost+=6; });
+      cost+=((partner[pairKey(...a)]||0)+(partner[pairKey(...b)]||0))*4;
+      a.forEach(x=>b.forEach(y=>cost+=(opp[pairKey(x,y)]||0)));
+      cost+=Math.random()*0.5;
+      if(cost<bestCost){bestCost=cost;best={a,b};}
+    }
+  }
+  if(played.length%2) best={a:best.b,b:best.a};
+  return best;
+}
+
+// ---------- navigation ----------
+// tabs: tonight | season | history. Each tab remembers its drill-in page (sub).
+function show(tab, sub){
+  state.tab=tab; if(sub!==undefined) state.sub=sub;
+  const T=state.tonight;
+  const pages={
+    'v-checkin': tab==='tonight' && !T.started,
+    'v-court':   tab==='tonight' && T.started,
+    'v-standings': tab==='season' && state.sub!=='player',
+    'v-player':  tab==='season' && state.sub==='player',
+    'v-bracket': tab==='bracket',
+    'v-history': tab==='history' && state.sub!=='night',
+    'v-night':   tab==='history' && state.sub==='night'
+  };
+  for(const id in pages) document.getElementById(id).hidden=!pages[id];
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
+  $('#hdrDate').textContent = tab==='tonight'? dateShort(state.tonight.date) : season().name;
+  if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
+  if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
+  if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
+
+// ---------- check-in ----------
+function renderCheckin(){
+  const t=tally(state.nights.flatMap(n=>n.games));
+  $('#hdrDate').textContent=dateShort(state.tonight.date);
+  $('#roster').innerHTML = PLAYERS.map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
+    return `<button class="chip ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?fmt(r1(s.pm/s.gp))+' avg · '+s.gp+' games':'New this season'}</span></span></button>`; }).join('')
+    + `<button class="chip add" id="addBtn">+ Add a new player</button>`;
+  const n=state.tonight.present.size;
+  $('#checkinHint').textContent = n<4?`Need 4 to play (${n} checked in).`: n===4?'4 players: partners rotate every game.': n===5?'5 players: one sits each game.': n===6?'6 players: two sit each game.': n===7?'7 players: three sit each game. Consider a second court.':'8+ players: strongly consider two courts.';
+  $('#startBtn').disabled=n<4;
+}
+$('#roster').addEventListener('click',e=>{
+  if(e.target.closest('#addBtn')){ $('#addrow').hidden=false; $('#newName').focus(); return; }
+  const b=e.target.closest('.chip'); if(!b||!b.dataset.p) return; const p=b.dataset.p;
+  state.tonight.present.has(p)?state.tonight.present.delete(p):state.tonight.present.add(p); state.tonight.current=null; renderCheckin(); persist(); });
+function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
+  if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return; }
+  PLAYERS.push(n); state.tonight.present.add(n); state.tonight.current=null; $('#newName').value=''; $('#addrow').hidden=true; renderCheckin(); persist(); toast(`${n} added and checked in`); }
+$('#addConfirm').onclick=addPlayer; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+$('#startBtn').onclick=()=>{ state.tonight.started=true; show('tonight'); persist(); };
+
+// ---------- court ----------
+function nameHtml(p){ const t=tally(state.tonight.games)[p]; return `${p}<small class="num">${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
+function renderCourt(){
+  const T=state.tonight; let fresh=false; if(!T.current){ T.current=nextGame(T.present,T.games); fresh=true; }
+  const g=T.current; if(!g){ T.started=false; show('tonight'); return; }
+  if(fresh) persist();
+  $('#gameNum').textContent=`Game ${T.games.length+1}`;
+  $('#a1').innerHTML=nameHtml(g.a[0]); $('#a2').innerHTML=nameHtml(g.a[1]); $('#b1').innerHTML=nameHtml(g.b[0]); $('#b2').innerHTML=nameHtml(g.b[1]);
+  const sitting=[...T.present].filter(p=>!inGame(g,p)); $('#sitting').textContent=sitting.length?sitting.join(', '):'Nobody';
+  const nxt=nextGame(T.present,T.games.concat([{a:g.a,b:g.b,sa:11,sb:0}]));
+  $('#nextNames').innerHTML=nxt?`${nxt.a.join(' & ')}<span class="vs">vs</span>${nxt.b.join(' & ')}`:'';
+  $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then tap which side won.</p>';
+  $('#undoBtn').disabled=T.games.length===0; $('#endNight').disabled=T.games.length===0;
+}
+function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
+  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
+$('#editPresent').onclick=()=>{ state.tonight.started=false; state.tonight.current=null; $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
+$('#undoBtn').onclick=()=>{ const g=state.tonight.games.pop(); if(g){ state.tonight.current={a:g.a,b:g.b}; renderCourt(); persist(); toast('Last score removed'); } };
+$('#enterScore').onclick=openSheet;
+$('#endNight').onclick=()=>{
+  const T=state.tonight; if(!T.games.length) return;
+  state.nights.push({date:T.date,games:T.games,season:season().id});
+  const d=new Date(T.date+'T12:00'); d.setDate(d.getDate()+7);
+  state.tonight={date:d.toISOString().slice(0,10),present:new Set(T.present),started:false,games:[],current:null};
+  $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
+};
+
+// ---------- score sheet ----------
+// Both scores, A and B, typed on one pad. Tap a box to edit it; A fills first, then B.
+function openSheet(){
+  const g=state.tonight.current; state.pending={sa:null,sb:null,active:'a'};
+  $('#whoA').textContent=g.a.join(' & '); $('#whoB').textContent=g.b.join(' & ');
+  $('#pad').innerHTML=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>`<button data-n="${n}" class="num">${n}</button>`).join('');
+  updateSheet(); $('#sheet').hidden=false;
+}
+function validate(sa,sb){
+  if(sa===null||sb===null) return {ok:false,msg:''};
+  const hi=Math.max(sa,sb), lo=Math.min(sa,sb);
+  if(sa===sb) return {ok:false,msg:'Someone has to win.'};
+  if(hi<11) return {ok:false,msg:'Games go to 11. Winner needs at least 11.'};
+  if(hi-lo<2) return {ok:false,msg:'Win by 2. A game can\'t end 11–10.'};
+  if(hi>11&&hi-lo!==2) return {ok:false,msg:`Past 11 it ends the moment someone leads by 2, so ${hi}–${lo} can't happen.`};
+  return {ok:true,msg:''};
+}
+function updateSheet(){
+  const p=state.pending; const v=validate(p.sa,p.sb);
+  ['a','b'].forEach(s=>{ const val=p['s'+s]; const box=$('#box'+s.toUpperCase()), el=$('#val'+s.toUpperCase());
+    el.textContent=val===null?'–':val; el.classList.toggle('empty',val===null);
+    box.classList.toggle('active',p.active===s); box.classList.toggle('winner',v.ok&&val===Math.max(p.sa,p.sb));
+    $('#tag'+s.toUpperCase()).textContent=v.ok?(val===Math.max(p.sa,p.sb)?`Won · ${fmt(Math.abs(p.sa-p.sb))}`:`${fmt(-Math.abs(p.sa-p.sb))}`):''; });
+  $('#sheetSub').textContent = p.sa===null?'Tap Side A’s score':p.sb===null?'Now Side B’s score':v.ok?'Looks good. Save it.':'Tap a box to change a score';
+  $('#err').textContent=v.msg; $('#saveScore').disabled=!v.ok;
+}
+$('#pad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const p=state.pending;
+  p['s'+p.active]=+b.dataset.n; if(p.active==='a'&&p.sb===null) p.active='b'; updateSheet(); });
+$('#boxA').onclick=()=>{ state.pending.active='a'; updateSheet(); };
+$('#boxB').onclick=()=>{ state.pending.active='b'; updateSheet(); };
+$('#sheetClose').onclick=()=>{ $('#sheet').hidden=true; state.pending=null; };
+$('#saveScore').onclick=()=>{ const p=state.pending,g=state.tonight.current;
+  state.tonight.games.push({a:g.a,b:g.b,sa:p.sa,sb:p.sb}); state.tonight.current=null; $('#sheet').hidden=true; renderCourt(); persist(); toast(`Saved ${p.sa}–${p.sb}`); };
+
+// ---------- standings ----------
+// Season rating = total +/- divided by (games + SHRINK): a hot 4-game night can't outrank 40 solid games, but nobody is excluded.
+const SHRINK=5;
+function ranking(tonight){
+  const games=tonight?state.tonight.games:allGames(); const t=tally(games);
+  return PLAYERS.map(p=>({p,s:t[p],avg:t[p]?t[p].pm/t[p].gp:null,rating:t[p]?(tonight?t[p].pm/t[p].gp:t[p].pm/(t[p].gp+SHRINK)):null,np:nightsPlayed(p)}))
+    .sort((x,y)=>(y.s?1:0)-(x.s?1:0)||(y.rating-x.rating)||((y.s?y.s.w/y.s.gp:0)-(x.s?x.s.w/x.s.gp:0)));
+}
+function renderStandings(){
+  const tonight=state.scope==='tonight'; const games=tonight?state.tonight.games:allGames();
+  const rows=ranking(tonight);
+  let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${season().name} · since ${dateShort(season().start)} · ${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
+  $('#standings').innerHTML=rows.map(r=>{
+    if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
+    rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
+    return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}</div>
+      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l} · ${r.s.gp} games${tonight?'':' over '+r.np+' night'+(r.np===1?'':'s')} · ${fmt(r1(r.avg))} avg</div></div>
+      <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
+  $('#qualHint').textContent=tonight?'Ranked by average point differential per game tonight.':`Rating = total +/− ÷ (games + ${SHRINK}). It leans toward your average as you play more, so a hot first night can't hold #1 all season and a busy month never knocks you out. Tap a player for their season.`;
+}
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b)); renderStandings(); });
+$('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow'); if(!b) return; state.player=b.dataset.p; show('season','player'); });
+$('#playerBack').onclick=()=>show('season',null);
+
+// ---------- season settings ----------
+$('#seasonBtn').onclick=()=>{ const s=season(); $('#seasonName').value=s.name; $('#seasonStart').value=s.start; $('#endSeason').textContent='End this season'; $('#endSeason').dataset.armed=''; $('#endHint').hidden=true; $('#seasonSheet').hidden=false; };
+$('#seasonClose').onclick=()=>{ const s=season(); s.name=$('#seasonName').value.trim()||s.name; if($('#seasonStart').value) s.start=$('#seasonStart').value; $('#seasonSheet').hidden=true; renderStandings(); persist(); };
+$('#endSeason').onclick=()=>{
+  const b=$('#endSeason');
+  if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent='Tap again to confirm'; $('#endHint').hidden=false; return; }
+  const s=season(); s.name=$('#seasonName').value.trim()||s.name; s.end=state.tonight.date;
+  state.seasons.push({id:s.id+1,name:`Season ${s.id+1}`,start:state.tonight.date,end:null});
+  $('#seasonSheet').hidden=true; renderStandings(); persist(); toast(`${s.name} ended. ${season().name} starts with the next night.`);
+};
+
+// ---------- bracket ----------
+document.querySelectorAll('#pairSeg button').forEach(b=>b.onclick=()=>{ state.pairing=b.dataset.pair; document.querySelectorAll('#pairSeg button').forEach(x=>x.classList.toggle('on',x===b)); renderBracket(); });
+function renderBracket(){
+  const seeds=ranking(false).filter(r=>r.s);
+  $('#brEyebrow').textContent=`If ${season().name} ended today · ${seeds.length} players seeded`;
+  if(seeds.length<4){ $('#teams').innerHTML=''; $('#bracket').innerHTML=''; $('#brHint').textContent='Need at least 4 players with games to build a bracket.'; return; }
+  const n=seeds.length - (seeds.length%2); const alt=seeds.length%2?seeds[seeds.length-1]:null;
+  const S=seeds.slice(0,n); const teams=[];
+  // Split: top half paired with bottom half in order, so climbing a seed always earns a better partner.
+  // Snake: 1+8, 2+7... makes every team equal, which removes any reason to finish #1. Kept as an option, not the default.
+  if(state.pairing==='snake'){ for(let i=0;i<n/2;i++) teams.push([S[i],S[n-1-i]]); }
+  else { for(let i=0;i<n/2;i++) teams.push([S[i],S[i+n/2]]); }
+  teams.forEach((t,i)=>{ t.seed=i+1; t.name=t[0].p+' & '+t[1].p; t.rating=(t[0].rating+t[1].rating)/2; });
+  teams.sort((a,b)=>b.rating-a.rating).forEach((t,i)=>t.seed=i+1);
+  $('#teams').innerHTML = teams.map(t=>`<div class="teamrow"><div class="sd num">${t.seed}</div><div class="nm">${t.name}<div class="meta num">Player seeds #${seeds.indexOf(t[0])+1} and #${seeds.indexOf(t[1])+1}</div></div><div class="rt num">${fmt(r1(t.rating))}</div></div>`).join('')
+    + (alt?`<div class="teamrow"><div class="sd">–</div><div class="nm">${alt.p}<div class="meta">Alternate (odd headcount). Subs in for anyone who can't make it.</div></div><div class="rt num">${fmt(r1(alt.rating))}</div></div>`:'');
+  const T=teams.length; let html='', hint='';
+  if(T===3){ html=`<div class="rr">${[[0,1],[0,2],[1,2]].map(([i,j])=>`<div class="match"><div class="slot"><span class="s num">${teams[i].seed}</span><span>${teams[i].name}</span></div><div class="slot"><span class="s num">${teams[j].seed}</span><span>${teams[j].name}</span></div></div>`).join('')}</div>`; hint='Three teams: round robin, every team plays the other two. Best record wins; point differential breaks ties.'; }
+  else {
+    const size=T<=2?2:T<=4?4:8; const order=size===2?[1,2]:size===4?[1,4,2,3]:[1,8,4,5,3,6,2,7];
+    const byT=s=>teams.find(t=>t.seed===s)||null;
+    let cur=[]; for(let i=0;i<order.length;i+=2) cur.push({a:byT(order[i]),b:byT(order[i+1]),n:i/2+1});
+    const labels=size===2?['Final']:size===4?['Semifinals','Final']:['Quarterfinals','Semifinals','Final'];
+    const rs=[cur]; let next=cur.length+1;
+    for(let r=1;r<labels.length;r++){ const row=[]; for(let i=0;i<cur.length;i+=2){ const x=cur[i],y=cur[i+1];
+        const adv=m=>m.b===null?m.a:(m.a===null?m.b:null);
+        row.push({a:adv(x),b:adv(y),fa:x.n,fb:y.n,n:next++}); }
+      rs.push(row); cur=row; }
+    html=svgBracket(rs,labels);
+    hint=T===2?'Two teams: one match for the title. Best of 3 recommended.':T<size?`${T} teams in an ${size}-team bracket: top seeds get a first-round bye.`:`${T} teams, single elimination. Higher seed takes Side A.`;
+  }
+  $('#bracket').innerHTML=html; $('#brHint').textContent=hint+(state.pairing==='split'?' Split pairing: every seed you climb gets you a better partner, so the regular season matters right to the end.':' Snake pairing: all teams come out even, but finishing #1 gets you the weakest partner.');
+}
+// Printed-bracket look: each team is a line with the seed in a box, pairs joined by a vertical, feeding the next round, ending at a champion line.
+function svgBracket(rs,labels){
+  const colW=124, slotH=26, pairGap=14, matchGap=22, top=26;
+  const n1=rs[0].length; const mH=slotH*2+pairGap;
+  // y position (top of match) per round; later rounds center on their feeders
+  const pos=[]; pos[0]=rs[0].map((m,i)=>top+i*(mH+matchGap));
+  for(let r=1;r<rs.length;r++) pos[r]=rs[r].map((m,i)=>{ const a=pos[r-1][2*i], b=pos[r-1][2*i+1]; return (a+b)/2; });
+  const H=top+n1*(mH+matchGap)-matchGap+10, W=16+colW*(rs.length+1);
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const fit=s=>s.length>16?s.slice(0,15)+'…':s;
+  let out='';
+  const slotSvg=(x,y,t,ref)=>{
+    const line=`<line x1="${x}" y1="${y+slotH}" x2="${x+colW-16}" y2="${y+slotH}" stroke="${t?'var(--paint)':'var(--line)'}" stroke-width="1.5"/>`;
+    if(t) return line+`<rect x="${x}" y="${y+4}" width="18" height="18" rx="3" fill="var(--ball)"/><text x="${x+9}" y="${y+17}" text-anchor="middle" style="fill:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:12px">${t.seed}</text><text x="${x+24}" y="${y+18}" style="fill:var(--fg);font-weight:600;font-size:12px">${esc(fit(t.name))}</text>`;
+    return line+`<text x="${x+4}" y="${y+18}" style="fill:var(--mute);font-size:12px;font-style:italic">${ref===null?'Bye':'Winner of M'+ref}</text>`;
+  };
+  rs.forEach((round,r)=>{
+    const x=16+r*colW;
+    out+=`<text x="${x+(colW-16)/2}" y="14" text-anchor="middle" style="fill:var(--mute);font-size:10px;letter-spacing:1.4px;font-weight:600">${labels[r].toUpperCase()}</text>`;
+    round.forEach((m,i)=>{ const y=pos[r][i];
+      out+=slotSvg(x,y,m.a,m.a?undefined:(m.fa??null))+slotSvg(x,y+slotH+pairGap,m.b,m.b?undefined:(m.fb??null));
+      // join the pair and run a feeder to the next column
+      const yA=y+slotH, yB=y+slotH*2+pairGap, xr=x+colW-16, mid=(yA+yB)/2;
+      out+=`<path d="M${xr} ${yA} V${yB} M${xr} ${mid} H${xr+16}" fill="none" stroke="var(--line)" stroke-width="1.5"/>`;
+    });
+  });
+  // champion
+  const xC=16+rs.length*colW, yC=pos[rs.length-1][0]+slotH+pairGap/2;
+  out+=`<text x="${xC+(colW-16)/2}" y="14" text-anchor="middle" style="fill:var(--ball);font-size:10px;letter-spacing:1.4px;font-weight:600">CHAMPION</text>
+    <line x1="${xC}" y1="${yC}" x2="${xC+colW-16}" y2="${yC}" stroke="var(--ball)" stroke-width="2.5"/>
+    <path transform="translate(${xC+2},${yC-26}) scale(.9)" d="M8 21h8M12 17v4M5 3h14v5a7 7 0 0 1-14 0zM5 5H2v2a3 3 0 0 0 3 3M19 5h3v2a3 3 0 0 1-3 3" fill="none" stroke="var(--ball)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="${xC+28}" y="${yC-8}" style="fill:var(--mute);font-size:12px;font-style:italic">${season().name} champs</text>`;
+  return `<div class="bracket"><svg style="width:${rs.length<=2?"100%":W+"px"}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tournament bracket">${out}</svg></div>`;
+}
+
+// ---------- player detail + charts ----------
+function renderPlayer(){
+  const p=state.player; $('#plName').textContent=p;
+  const nights=allNights(); const games=allGames().filter(g=>inGame(g,p)); const t=tally(games)[p];
+  if(!t){ $('#plStats').innerHTML=`<div class="stat big"><div class="d">${p} hasn't played a game yet.</div></div>`; $('#plLine').innerHTML=''; $('#plBars').innerHTML=''; return; }
+  const partners={}; games.forEach(g=>{ const team=g.a.includes(p)?g.a:g.b; const mate=team.find(x=>x!==p); const d=diffs(g)[p]; partners[mate]=partners[mate]||{pm:0,n:0}; partners[mate].pm+=d; partners[mate].n++; });
+  const pl=Object.entries(partners).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n);
+  const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
+  $('#plStats').innerHTML=`
+    <div class="stat big"><p class="eyebrow">Season avg +/−</p><div class="v num ${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(r1(t.pm/t.gp))}</div><div class="d num">${fmt(t.pm)} total · ${t.w}–${t.l} · ${t.gp} games over ${nightsPlayed(p)} night${nightsPlayed(p)===1?'':'s'}</div></div>
+    <div class="stat"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
+    <div class="stat"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
+    <div class="stat"><p class="eyebrow">Partners</p><div class="v num">${pl.length}</div></div>
+    <div class="stat"><p class="eyebrow">Best partner</p><div class="v">${pl[0][0]}</div><div class="d num">${fmt(r1(pl[0][1].pm/pl[0][1].n))} avg · ${pl[0][1].n} game${pl[0][1].n===1?'':'s'}</div></div>
+    <div class="stat" style="grid-column:span 2"><p class="eyebrow">Worst partner</p><div class="v">${pl[pl.length-1][0]}</div><div class="d num">${fmt(r1(pl[pl.length-1][1].pm/pl[pl.length-1][1].n))} avg · ${pl[pl.length-1][1].n} game${pl[pl.length-1][1].n===1?'':'s'}</div></div>`;
+  // cumulative +/- line, one point per game played
+  let run=0; const pts=games.map((g,i)=>{ run+=diffs(g)[p]; return {i:i+1,v:run,g}; });
+  $('#plLine').innerHTML=lineChart(pts,'Running +/− across the season');
+  // per-night bars
+  const bars=nights.map(n=>{ const s=tally(n.games.filter(g=>inGame(g,p)))[p]; return {label:dateShort(n.date).replace(/^\w+,\s*/,''),v:s?s.pm:null,gp:s?s.gp:0}; });
+  $('#plBars').innerHTML=barChart(bars,'+/− by night');
+}
+function lineChart(pts,title){
+  const W=380,H=170,L=34,R=10,T=26,B=24; const xs=i=>L+(pts.length>1?(i-1)/(pts.length-1):0.5)*(W-L-R);
+  const vals=pts.map(p=>p.v); let lo=Math.min(0,...vals), hi=Math.max(0,...vals); if(hi===lo){hi+=5;lo-=5;} const pad=(hi-lo)*0.1; lo-=pad; hi+=pad;
+  const ys=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+  const ticks=[lo+pad,0,hi-pad].map(v=>Math.round(v)).filter((v,i,a)=>a.indexOf(v)===i);
+  const path=pts.map((p,i)=>(i?'L':'M')+xs(p.i).toFixed(1)+' '+ys(p.v).toFixed(1)).join(' ');
+  const area=path+` L${xs(pts[pts.length-1].i).toFixed(1)} ${ys(0).toFixed(1)} L${xs(1).toFixed(1)} ${ys(0).toFixed(1)} Z`;
+  const last=pts[pts.length-1];
+  return `<p class="eyebrow">${title}</p><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">
+    ${ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${ys(v)+4}" text-anchor="end">${fmt(v)}</text>`).join('')}
+    <line x1="${L}" x2="${W-R}" y1="${ys(0)}" y2="${ys(0)}" stroke="var(--mute)" stroke-width="1"/>
+    <path d="${area}" fill="var(--ball)" opacity=".12"/>
+    <path d="${path}" fill="none" stroke="var(--ball)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${xs(last.i)}" cy="${ys(last.v)}" r="4.5" fill="var(--ball)" stroke="var(--panel)" stroke-width="2"/>
+    <text x="${xs(last.i)}" y="${ys(last.v)-10}" text-anchor="end" style="fill:var(--fg);font-weight:600">${fmt(last.v)}</text>
+    <text x="${L}" y="${H-6}">Game 1</text><text x="${W-R}" y="${H-6}" text-anchor="end">Game ${last.i}</text>
+    ${pts.map(p=>`<rect class="hit" x="${xs(p.i)-6}" y="${T}" width="12" height="${H-T-B}" fill="transparent" data-tip="Game ${p.i}: ${p.g.sa}–${p.g.sb}, running ${fmt(p.v)}"><title>Game ${p.i}: ${p.g.sa}–${p.g.sb} · running ${fmt(p.v)}</title></rect>`).join('')}
+  </svg>`;
+}
+function barChart(bars,title){
+  const W=380,H=150,L=34,R=10,T=22,B=26; const n=bars.length; const slot=(W-L-R)/n; const bw=Math.min(40,slot*0.6);
+  const vals=bars.map(b=>b.v??0); const m=Math.max(5,...vals.map(Math.abs))*1.15; const ys=v=>T+(m-v)/(2*m)*(H-T-B);
+  return `<p class="eyebrow">${title}</p><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">
+    <line x1="${L}" x2="${W-R}" y1="${ys(0)}" y2="${ys(0)}" stroke="var(--mute)" stroke-width="1"/>
+    <text x="${L-6}" y="${ys(m/1.15)+4}" text-anchor="end">${fmt(Math.round(m/1.15))}</text><text x="${L-6}" y="${ys(-m/1.15)+4}" text-anchor="end">${fmt(-Math.round(m/1.15))}</text>
+    ${bars.map((b,i)=>{ const x=L+slot*i+(slot-bw)/2; if(b.v===null) return `<text x="${x+bw/2}" y="${ys(0)-6}" text-anchor="middle">out</text><text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${b.label}</text>`;
+      const y0=ys(0), y1=ys(b.v); const top=Math.min(y0,y1), h=Math.max(2,Math.abs(y1-y0));
+      return `<rect x="${x}" y="${top}" width="${bw}" height="${h}" rx="3" fill="${b.v>=0?'var(--good)':'var(--bad)'}"><title>${b.label}: ${fmt(b.v)} over ${b.gp} games</title></rect>
+      <text x="${x+bw/2}" y="${b.v>=0?top-5:top+h+12}" text-anchor="middle" style="fill:var(--fg);font-weight:600">${fmt(b.v)}</text>
+      <text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${b.label}</text>`; }).join('')}
+  </svg>`;
+}
+
+// ---------- history ----------
+function renderHistory(){
+  const nights=allNightsEver(); const multi=state.seasons.length>1;
+  $('#nights').innerHTML = nights.length? nights.slice().reverse().map((n,ri)=>{ const idx=nights.length-1-ri; const t=tally(n.games); const mvp=Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm)[0];
+    const sn=state.seasons.find(s=>s.id===n.season);
+    return `<button class="night" data-i="${idx}"><div><div class="d">${dateLong(n.date)}${n.live?' <span class="hint">(in progress)</span>':''}</div><div class="m">${multi&&sn?sn.name+' · ':''}${Object.keys(t).length} players · MVP ${mvp} ${fmt(t[mvp].pm)}</div></div><div class="c num">${n.games.length}<small>games</small></div><span class="chev" style="color:var(--mute)">›</span></button>`; }).join('')
+    : '<p class="hint">No nights yet.</p>';
+}
+$('#nights').addEventListener('click',e=>{ const b=e.target.closest('.night'); if(!b) return; state.night=+b.dataset.i; show('history','night'); });
+$('#nightBack').onclick=()=>show('history',null);
+function renderNight(){
+  const N=allNightsEver()[state.night]; if(!N){ show('history',null); return; }
+  $('#nightTitle').textContent=dateLong(N.date);
+  const t=tally(N.games); const ps=Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm); const mvp=ps[0];
+  const blow=N.games.slice().sort((a,b)=>Math.abs(b.sa-b.sb)-Math.abs(a.sa-a.sb))[0];
+  const close=N.games.slice().sort((a,b)=>Math.abs(a.sa-a.sb)-Math.abs(b.sa-b.sb))[0];
+  const pairs={}; N.games.forEach(g=>{ const d=g.sa-g.sb; const add=(pr,v)=>{const k=pr.join(' & '); pairs[k]=pairs[k]||{pm:0,n:0}; pairs[k].pm+=v; pairs[k].n++;}; add(g.a,d); add(g.b,-d); });
+  const bp=Object.entries(pairs).sort((a,b)=>b[1].pm-a[1].pm)[0]; const bagels=N.games.filter(g=>g.sa===0||g.sb===0).length;
+  const wn=g=>(g.sa>g.sb?g.a:g.b).join(' & '), ln=g=>(g.sa>g.sb?g.b:g.a).join(' & ');
+  $('#recap').innerHTML=`
+    <div class="stat big"><p class="eyebrow">Night MVP</p><div class="v">${mvp}</div><div class="d num">${fmt(t[mvp].pm)} over ${t[mvp].gp} games · ${t[mvp].w}–${t[mvp].l}</div></div>
+    <div class="stat"><p class="eyebrow">Games</p><div class="v num">${N.games.length}</div><div class="d">${ps.length} players</div></div>
+    <div class="stat"><p class="eyebrow">Bagels</p><div class="v num">${bagels}</div><div class="d">11–0 games</div></div>
+    <div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} game${bp[1].n===1?'':'s'}</div></div>
+    <div class="stat"><p class="eyebrow">Biggest blowout</p><div class="v num">${blow.sa}–${blow.sb}</div><div class="d">${wn(blow)} over ${ln(blow)}</div></div>
+    <div class="stat"><p class="eyebrow">Tightest game</p><div class="v num">${close.sa}–${close.sb}</div><div class="d">${wn(close)} edged ${ln(close)}</div></div>
+    <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Tonight's +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>`;
+  $('#nightLog').innerHTML=logHtml(N.games,false);
+  $('#copyRecap').onclick=()=>{ const lines=[`Pickle League · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`,'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
+    navigator.clipboard?.writeText(lines).then(()=>toast('Copied')).catch(()=>toast('Copy blocked here')); };
+}
+
+// ---------- live sync (Firebase Realtime Database) ----------
+firebase.initializeApp({"apiKey": "AIzaSyBoLJ8B69UYz-eQ2FhmXg5-RxT9iDVAak4", "authDomain": "pickleball-4d0c4.firebaseapp.com", "databaseURL": "https://pickleball-4d0c4-default-rtdb.firebaseio.com", "projectId": "pickleball-4d0c4", "appId": "1:800379995116:web:9d7a435ae762cb1f5f36c9"});
+const fdb = firebase.database(); const leagueRef = fdb.ref('league'); const pinRef = fdb.ref('pin');
+let applying=false, loaded=false, lastWrite=null;
+function snapshotState(){
+  return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null },
+    updatedAt: Date.now() };
+}
+function persist(){
+  if(applying||!loaded) return;
+  const snap=snapshotState(); lastWrite=snap.updatedAt;
+  leagueRef.set(snap).catch(e=>{ toast('Save failed: '+(e.code||e.message)); $('#sync').className='sync off'; });
+}
+function applyRemote(d){
+  if(!d) return;
+  applying=true;
+  try{
+    PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split';
+    state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
+    state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
+    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:t.current||null };
+    state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
+    if(state.tab) show(state.tab, state.sub);
+  } finally { applying=false; }
+}
+leagueRef.on('value', snap=>{
+  const d=snap.val();
+  if(!loaded){
+    loaded=true; $('#connecting').hidden=true;
+    if(!d){ persist(); toast('League created from last Tuesday\'s games'); const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); }
+    else { applyRemote(d); const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); }
+    return;
+  }
+  if(d && d.updatedAt===lastWrite) return; // our own write echoed back
+  const sheetOpen=!$('#sheet').hidden;
+  applyRemote(d);
+  if(sheetOpen && !state.tonight.current){ $('#sheet').hidden=true; toast('Someone else just scored that game'); }
+}, err=>{ $('#connHint').textContent='Could not reach the league database. Check your connection and reload.'; $('#sync').className='sync off'; });
+fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val()?'on':'off'); });
+setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
+
+// ---------- group PIN gate ----------
+const EDIT_SEL='#roster,#startBtn,#editPresent,#undoBtn,#enterScore,#endNight,#seasonBtn,#addConfirm,#newName';
+let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
+let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
+document.addEventListener('click', e=>{
+  if(unlocked) return; const t=e.target.closest(EDIT_SEL); if(!t) return;
+  e.stopPropagation(); e.preventDefault(); openPin();
+}, true);
+document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
+function openPin(){
+  const creating = pinOnServer===null;
+  $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
+  $('#pinHint').textContent = creating?'No PIN yet. Pick 4 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone.';
+  $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
+  $('#pinInput').value=''; $('#pinErr').textContent=''; $('#pinSheet').hidden=false; setTimeout(()=>$('#pinInput').focus(),50);
+}
+$('#pinClose').onclick=()=>{ $('#pinSheet').hidden=true; };
+function tryPin(){
+  const v=$('#pinInput').value.trim();
+  if(!/^\d{4,6}$/.test(v)){ $('#pinErr').textContent='4 to 6 digits.'; return; }
+  const done=()=>{ unlocked=true; try{ localStorage.setItem('pickle-unlocked','1'); }catch(e){} $('#pinSheet').hidden=true; toast('Scoring unlocked on this phone'); };
+  if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
+  else if(v===String(pinOnServer)) done();
+  else $('#pinErr').textContent='Wrong PIN. Ask whoever runs the night.';
+}
+$('#pinGo').onclick=tryPin; $('#pinInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryPin(); });
+
+// ---------- misc ----------
+let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,1800); }
+// startup happens once the league loads (see live sync above)
+window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
+</script>
+
+</body>
+</html>
