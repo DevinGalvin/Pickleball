@@ -89,6 +89,15 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .sidelbl.a{left:10px}.sidelbl.b{right:10px}
 .courts{display:flex;flex-direction:column;gap:10px}
 .board{display:flex;flex-direction:column;gap:10px}
+/* the matchup bar is the answer to "who's playing, which side"; the court under it is the show */
+.matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:8px}
+.matchup .tm{background:var(--panel);border-radius:12px;padding:8px 10px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.matchup .tm.a{border-left:5px solid var(--ball)}.matchup .tm.b{border-right:5px solid #ff7a59;text-align:right}
+.matchup .lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
+.matchup .tm.a .lbl{color:var(--ball)}.matchup .tm.b .lbl{color:#ff7a59}
+.matchup b{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.05;text-transform:uppercase;letter-spacing:.3px;overflow-wrap:anywhere}
+.matchup .vsx{align-self:center;color:var(--mute);font-weight:600;font-size:13px}
+.sidelbl.a{color:var(--ball)}.sidelbl.b{color:#ff7a59}
 .courtlbl{position:absolute;z-index:3;top:4px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.4px;color:var(--ball-ink);background:var(--ball);padding:2px 10px;border-radius:999px}
 .courtwrap.done{opacity:.55}
 .linelbl{position:absolute;z-index:3;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ball);background:rgba(5,10,14,.6);padding:3px 10px;border-radius:999px}
@@ -542,7 +551,10 @@ const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
 </svg>`;
 function boardHtml(g,i,multi){
   const done=scored(g);
-  return `<div class="board"><div class="courtwrap ${done?'done':''}">${COURT_SVG}
+  const nm=p=>p.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  return `<div class="board">
+    <div class="matchup"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
+    <div class="courtwrap ${done?'done':''}">${COURT_SVG}
     <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
     ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">${multi?`Court ${i+1}: final score`:'Enter final score'}</button>`}</div>`;
