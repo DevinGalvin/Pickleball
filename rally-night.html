@@ -595,7 +595,8 @@ function avatarSvg(name,team,u){
     ${noses}${eyes}${brows}
     <path d="M3.2 -19.1q1.1.15 2-.15" fill="none" stroke="${ink}" stroke-width=".42" stroke-opacity=".7" stroke-linecap="round"/>
     ${stubble?`<path d="M-2.4 -19.6C-1.4 -18 .6 -17.5 3 -17.9" stroke="${hcS}" stroke-width="1.2" opacity=".12" fill="none" stroke-linecap="round"/>`:''}`;
-  const extra=(beard?`<path d="M-3.3 -20.4C-3.2 -17.6 -1.5 -16.4 1.8 -16.4C4.1 -16.4 5.3 -17.4 5.5 -19.1C4.8 -18.2 3.7 -17.9 2.4 -17.9C0 -17.9 -2.1 -18.6 -3.3 -20.4Z" fill="${hc}" ${O}/>`:'')
+  // beard on the jaw plus a mustache on the upper lip, under the nose, drooping at the corner of the mouth
+  const extra=(beard?`<path d="M-3.3 -20.4C-3.2 -17.6 -1.5 -16.4 1.8 -16.4C4.1 -16.4 5.3 -17.4 5.5 -19.1C4.8 -18.2 3.7 -17.9 2.4 -17.9C0 -17.9 -2.1 -18.6 -3.3 -20.4Z" fill="${hc}" ${O}/><path d="M2.3 -19.8C3.1 -20.5 4.5 -20.7 5.5 -20.2C6 -19.9 6 -19.3 5.6 -19.1C5.3 -19.5 4.5 -19.6 3.9 -19.5C3.3 -19.4 2.8 -19.2 2.5 -19.3Z" fill="${hc}" ${O}/>`:'')
     +(glasses?`<ellipse cx="3.1" cy="-22.6" rx="2.1" ry="2.2" fill="#fff" fill-opacity=".15" stroke="${ink}" stroke-width=".42"/><path d="M1 -23.2L-4.4 -23.9" stroke="${ink}" stroke-width=".42"/>`:'');
   // body build: chunky / regular / lanky affects torso width and height and leg length
   const bw=[1.22,1,.86][build], bh=[.94,1,1.08][build], lh=[.94,1,1.1][build];
