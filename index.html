@@ -130,6 +130,8 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .scorebox .val{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;margin-top:6px;min-height:44px}
 .scorebox .val.empty{color:var(--mute)}
 .scorebox .tagw{display:inline-block;font-size:11px;font-weight:600;color:var(--good);margin-top:4px;min-height:14px}
+/* before a winner is picked the names are the choice: big, and no empty number slot under them */
+.scores.pick .scorebox{padding:18px 10px}.scores.pick .who{font-family:var(--display);font-weight:800;font-size:24px;line-height:1.05;margin-top:6px;text-transform:uppercase;letter-spacing:.3px}.scores.pick .val,.scores.pick .tagw{display:none}
 .pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .pad button{min-height:52px;border-radius:12px;background:var(--panel-2);font-family:var(--display);font-weight:800;font-size:26px}
 .pad button.alt{font-size:14px;font-family:var(--body);font-weight:600;color:var(--mute)}
@@ -826,7 +828,7 @@ function pendingScore(p){
 }
 function updateSheet(){
   const p=state.pending; const cur=normCur(state.tonight.current)||[]; const g=cur[p.idx]; if(!g) return; const sc=pendingScore(p);
-  const margin=sc?Math.abs(sc.sa-sc.sb):null;
+  const margin=sc?Math.abs(sc.sa-sc.sb):null; $('.scores').classList.toggle('pick',!p.win);
   $('#sheetTitle').textContent=(cur.length>1?`Court ${p.idx+1}: `:'')+(p.win?'Final score':'Who won?');
   ['a','b'].forEach(s=>{ const won=p.win===s; const box=$('#box'+s.toUpperCase()), el=$('#val'+s.toUpperCase()), tag=$('#tag'+s.toUpperCase());
     const v=!p.win?null:won?(p.deuce?p.w:11):(p.deuce?(p.w===null?null:p.w-2):p.lo);
