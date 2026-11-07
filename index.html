@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
 <link rel="icon" href="icon-192-v2.png">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 </head>
@@ -28,21 +28,22 @@
   --display:"Barlow Condensed",system-ui,sans-serif; --body:"Barlow",system-ui,sans-serif;
   color-scheme:dark;
 }
-html,body{height:100%}
+html,body{height:100%;overflow:hidden}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.35;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
 *{box-sizing:border-box}
 button,input{font:inherit;color:inherit}
 button{background:none;border:0;cursor:pointer;padding:0}
 button:focus-visible,input:focus-visible{outline:2px solid var(--ball);outline-offset:2px}
-.app{max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+/* App shell: fixed to the screen, only <main> scrolls. The tab bar is a normal flex child, so it sits on the true bottom edge in a home-screen install (fixed-bottom bars float up there). */
+.app{max-width:430px;margin:0 auto;height:100%;height:100dvh;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 header.top{display:flex;align-items:baseline;justify-content:space-between;padding:14px 4px 10px;gap:8px}
 .sync{width:8px;height:8px;border-radius:50%;background:var(--mute);flex:none;align-self:center}.sync.on{background:var(--good)}.sync.off{background:var(--bad)}
 #connecting.sheet{align-items:center}
 header.top h1{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.5px;margin:0;text-transform:uppercase}
 header.top h1 span{color:var(--ball)}
 header.top .date{color:var(--mute);font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
-main{flex:1;display:flex;flex-direction:column;padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;padding-bottom:24px}
 .view{display:flex;flex-direction:column;gap:14px}
 .view[hidden]{display:none}
 .eyebrow{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);font-weight:600;margin:0}
@@ -182,7 +183,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* tabs */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;background:#0b141a;border-top:1px solid var(--line);
+nav.tabs{flex:none;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-right,0px)));background:#0b141a;border-top:1px solid var(--line);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
 nav.tabs .in{max-width:430px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
 nav.tabs button{min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mute);font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
@@ -409,7 +410,7 @@ function show(tab, sub){
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
-  window.scrollTo(0,0);
+  document.querySelector('main').scrollTop=0;
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
 
