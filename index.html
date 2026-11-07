@@ -150,8 +150,8 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 /* season sheet */
 .field{display:flex;flex-direction:column;gap:6px}
 .field input{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px;-webkit-appearance:none;appearance:none;text-align:left}
-.field input[type=date]{color:var(--fg)}
-.field input::-webkit-date-and-time-value{text-align:left}
+.field input[type=date]{color:var(--fg);height:48px;display:flex;align-items:center;padding-block:0}
+.field input::-webkit-date-and-time-value{text-align:left;margin:auto 0;line-height:1.2}
 
 /* bracket */
 .teamrow{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel)}
