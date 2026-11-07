@@ -531,44 +531,57 @@ document.addEventListener('visibilitychange',()=>pauseSims(document.hidden));
 const SKIN=['#f1c7a3','#e0a77c','#c6865a','#9c6240','#6d4330'];
 const HAIRC=['#2b1d12','#5a3a1e','#8a6a3a','#c9b28a','#9aa0a6','#e7e9ec'];
 function hashStr(t){ let h=2166136261; for(const c of t){ h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h; }
-// side-view character, facing right, feet at (0,0), about 19 units tall. `g` is the group id prefix for the moving parts.
+// Side-view character, facing right, feet at (0,0), about 25 units tall. Two arms, bent knees, a real shirt and shoes, a face with a nose,
+// ear and brow. Shading is flat transparent shapes so no gradient defs are needed. The front arm swings; the legs scissor at the hip.
 function avatarSvg(name,team){
   const h=hashStr(name); const skin=SKIN[h%5], hair=HAIRC[(h>>4)%6]; const style=(h>>8)%7; const glasses=((h>>12)%3)===0, beard=((h>>14)%3)===0;
-  const shirt=team==='a'?'#d6f23a':'#ff7a59', shirt2=team==='a'?'#b9d329':'#e0623f', shorts=team==='a'?'#1f2d12':'#3a1c14';
-  const head=`<circle cx=".6" cy="-16" r="3.3" fill="${skin}" stroke="#0b141a" stroke-width=".3"/><circle cx="2" cy="-16.3" r=".5" fill="#1a1a1a"/><path d="M2.6 -14.8q.6.5 1.2 0" stroke="#6b3a2a" stroke-width=".4" fill="none"/>`;
+  const shirt=team==='a'?'#d6f23a':'#ff7a59', shirt2=team==='a'?'#a9c41f':'#d9532f', shorts=team==='a'?'#1d2a12':'#2e1a14', sh2=team==='a'?'#121b0a':'#1c0f0a';
+  const O='stroke="#0b141a" stroke-width=".32" stroke-linejoin="round"';
+  const leg=(x)=>`<path d="M${x-1.1} -9.5h2.6l.4 3.8l-.6 4.2h-2.4l-.5-4.2z" fill="${skin}" ${O}/><path d="M${x-1.2} -2.6h2.9v1.3h-2.9z" fill="#f6f6f6"/><path d="M${x-1.8} -1.4h3.9q1.3 0 1.4 1.1l-.1.3h-5.4z" fill="#f2f2f2" ${O}/><path d="M${x-1.8} -.1h5.3" stroke="#555" stroke-width=".5"/>`;
   const hairs=[
-    `<path d="M-2.7 -16.6a3.3 3.3 0 0 1 6.4-1.1l.3.7h-6.6z" fill="${hair}"/>`,                                            // short
-    `<path d="M-2.8 -17a3.4 3.4 0 0 1 6.6-.6h.9q.6.8-.3 1.1h-7.2z" fill="${shirt2}"/><path d="M3.6 -16.6h2.6q.5.4 0 .8h-2.6z" fill="${shirt2}"/>`, // cap with brim
-    ``,                                                                                                                     // bald
-    `<path d="M-2.9 -16.2h7.2q.4-.5 0-1h-7.2z" fill="#fff"/><path d="M3.6 -16.7h2.4q.6.4 0 .9h-2.4z" fill="#fff"/>`,        // visor
-    `<path d="M-2.7 -16.6a3.3 3.3 0 0 1 6.4-1.1l.3.7h-6.6z" fill="${hair}"/><rect x="-2.9" y="-17.2" width="7" height="1" rx=".4" fill="#e63946"/>`, // headband
-    `<path d="M-3.2 -16.5h7.6l-.6-1.6h-6.4z" fill="#8a7b5a"/><path d="M-2.4 -18.1a3 3 0 0 1 6 0z" fill="#8a7b5a"/>`,       // bucket hat
-    `<path d="M-2.7 -16.6a3.3 3.3 0 0 1 6.4-1.1l.3.7h-6.6z" fill="${hair}"/><path d="M-2.9 -16.5v2.2q.7.3 1-.2v-2z" fill="${hair}"/>` // longer on the sides
+    `<path d="M-2.4 -22.3a3.7 3.7 0 0 1 7.2-1.3q.5.9.1 1.3z" fill="${hair}" ${O}/>`,
+    `<path d="M-2.6 -22.6a3.8 3.8 0 0 1 7.4-.8l.3.6h-7.8z" fill="${shirt2}" ${O}/><path d="M4.3 -22.9h3.1q.7.5 0 1h-3.1z" fill="${shirt2}" ${O}/>`,
+    `<ellipse cx=".4" cy="-23.6" rx="1.4" ry=".5" fill="#fff" opacity=".35"/>`,
+    `<path d="M-2.6 -22.4h7.4q.5-.5 0-1.1h-7.4z" fill="#fff" ${O}/><path d="M4.3 -22.9h2.9q.7.5 0 1h-2.9z" fill="#fff" ${O}/>`,
+    `<path d="M-2.4 -22.3a3.7 3.7 0 0 1 7.2-1.3q.5.9.1 1.3z" fill="${hair}" ${O}/><rect x="-2.9" y="-22.9" width="7.9" height="1.1" rx=".5" fill="#e63946" ${O}/>`,
+    `<path d="M-3.4 -22.2h8.6l-.8-1.9h-7.1z" fill="#8a7b5a" ${O}/><path d="M-2.4 -24.1a3.3 3.3 0 0 1 6.6 0z" fill="#8a7b5a" ${O}/>`,
+    `<path d="M-2.4 -22.3a3.7 3.7 0 0 1 7.2-1.3q.5.9.1 1.3z" fill="${hair}" ${O}/><path d="M-2.9 -22.2v2.6q.9.4 1.3-.2v-2.4z" fill="${hair}" ${O}/>`
   ][style];
-  const extra=(glasses?`<ellipse cx="2.2" cy="-16.3" rx="1.2" ry=".9" fill="rgba(255,255,255,.25)" stroke="#111" stroke-width=".35"/><path d="M1 -16.4h-3" stroke="#111" stroke-width=".35"/>`:'')+(beard?`<path d="M-1.6 -15.2q1.8 3.4 4.6.6q-.4 2.4-2.6 2.4t-2-3z" fill="${hair}" opacity=".9"/>`:'');
+  const face=`<circle cx="1" cy="-21.3" r="3.7" fill="${skin}" ${O}/><path d="M-1.4 -19.6a3.7 3.7 0 0 0 4.9 1.4" fill="#000" opacity=".1"/>
+    <circle cx="-2.2" cy="-21.2" r=".85" fill="${skin}" ${O}/><path d="M4.1 -21.4l1 1.1h-1.1" fill="${skin}" stroke="#0b141a" stroke-width=".3" stroke-linejoin="round"/>
+    <path d="M2.3 -22.9q.9-.4 1.6 0" stroke="#2a1a10" stroke-width=".45" fill="none" stroke-linecap="round"/><circle cx="3" cy="-22.1" r=".5" fill="#1a1a1a"/><path d="M3 -19.4q.8.4 1.4-.1" stroke="#7a3b2a" stroke-width=".4" fill="none" stroke-linecap="round"/>`;
+  const extra=(glasses?`<ellipse cx="3" cy="-22" rx="1.3" ry="1" fill="rgba(255,255,255,.25)" stroke="#111" stroke-width=".35"/><path d="M1.7 -22.1h-3.6" stroke="#111" stroke-width=".35"/>`:'')
+    +(beard?`<path d="M-1.2 -20.2q1.6 3.6 5.4 1.6q-.5 2.4-2.6 2.6q-2.6.2-2.8-4.2z" fill="${hair}" opacity=".95"/>`:'');
   return `<g class="body">
-    <ellipse cx="0" cy=".4" rx="4.2" ry="1.3" fill="#000" opacity=".3"/>
-    <g class="legL"><rect x="-2.3" y="-6.5" width="2" height="6.4" rx="1" fill="${skin}"/><rect x="-2.6" y="-1.3" width="2.8" height="1.5" rx=".6" fill="#f4f4f4"/></g>
-    <g class="legR"><rect x=".4" y="-6.5" width="2" height="6.4" rx="1" fill="${skin}"/><rect x=".2" y="-1.3" width="2.8" height="1.5" rx=".6" fill="#f4f4f4"/></g>
-    <rect x="-3.2" y="-8" width="6.4" height="3.2" rx="1" fill="${shorts}" stroke="#0b141a" stroke-width=".3"/>
-    <rect x="-3.4" y="-13.6" width="6.8" height="6.4" rx="2" fill="${shirt}" stroke="#0b141a" stroke-width=".3"/><rect x="-3.4" y="-13.6" width="2.4" height="6.4" rx="1.6" fill="${shirt2}" opacity=".5"/>
-    <g class="arm"><rect x="1.2" y="-12.6" width="1.7" height="5.6" rx=".85" fill="${skin}" stroke="#0b141a" stroke-width=".3"/><g transform="translate(2.1,-7.2)"><rect x="-.45" y="0" width=".9" height="2.2" rx=".45" fill="#2a2a2a"/><ellipse cx="0" cy="4.3" rx="1.9" ry="2.4" fill="#7c3aed" stroke="#fff" stroke-width=".45"/></g></g>
-    <g class="head">${head}${hairs}${extra}</g>
+    <ellipse cx=".6" cy=".5" rx="5" ry="1.4" fill="#000" opacity=".28"/>
+    <g class="armB"><path d="M-2.2 -16.6q-1.6 2.6-.6 5.6l1.3-.2q-.6-2.8.7-5z" fill="${skin}" ${O}/></g>
+    <g class="legL"><g transform="translate(-.9,0)">${leg(0)}</g></g>
+    <g class="legR"><g transform="translate(1.1,0)">${leg(0)}</g></g>
+    <path d="M-3.4 -11.2q-.1 2.3.4 3.6h2.6l.4-1.8l.4 1.8h2.7q.5-1.3.3-3.6z" fill="${shorts}" ${O}/><path d="M-3.1 -10.4h6.9" stroke="${sh2}" stroke-width=".4"/>
+    <path d="M-3.3 -18.2q.4-.6 1.2-.7h5.2q.8.1 1.2.7l.4 7.2h-8.4z" fill="${shirt}" ${O}/><path d="M-3.3 -18.2l.4 7.2h2.2l-.3-7.9z" fill="${shirt2}" opacity=".45"/>
+    <path d="M-.6 -18.9h3.2l-.9 1.4h-1.4z" fill="${skin}" ${O}/><path d="M1.9 -17.8q1.8-.1 2.4 1.8l-1 .6q-.5-1.3-1.5-1.4z" fill="${shirt2}"/>
+    <g class="arm"><path d="M2 -16.9q2.4.3 2.6 2.9l-.3 2.8h-1.5l.2-2.6q-.1-1.4-1.3-1.6z" fill="${skin}" ${O}/><path d="M2.9 -11.4h1.6v2.5q-.1 .9-.8 .9t-.8-.9z" fill="${skin}" ${O}/>
+      <g transform="translate(3.7,-8.3)"><rect x="-.5" y="0" width="1" height="2.4" rx=".5" fill="#2a2a2a"/><ellipse cx="0" cy="4.6" rx="2.1" ry="2.6" fill="#7c3aed" stroke="#fff" stroke-width=".5"/><ellipse cx="-.5" cy="4.2" rx=".9" ry="1.4" fill="#fff" opacity=".18"/></g></g>
+    <g class="head">${face}${hairs}${extra}</g>
   </g>`;
 }
 const BOX={a0:{x:47,y:36},a1:{x:47,y:76},b0:{x:163,y:36},b1:{x:163,y:76}};
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const PACE={serve:140,drive:190,lob:90,dink:65,drop:105,wild:170,smash:260};
+const ARC={serve:12,drive:7,lob:28,dink:6,drop:13,wild:9,smash:4};
 class Rally{
   constructor(svg,g,fresh){
     this.svg=svg; this.still=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
     const mk=(side,i,name)=>{ const home=BOX[side+i]; const face=side==='a'?1:-1;
-      return {side,i,name,home,face,x:side==='a'?-12:222,y:home.y,tx:home.x,ty:home.y,speed:110,phase:0,moving:false,swing:0,jump:0,mode:'play'}; };
+      return {side,i,name,home,face,x:side==='a'?-14:224,y:home.y,tx:home.x,ty:home.y,speed:115,phase:0,moving:false,swing:0,over:0,hop:0,mode:'play'}; };
     this.players=[mk('a',0,g.a[0]),mk('a',1,g.a[1]),mk('b',0,g.b[0]),mk('b',1,g.b[1])];
     if(!fresh) this.players.forEach(p=>{ p.x=p.home.x; p.y=p.home.y; });
-    svg.innerHTML=this.players.map((p,k)=>`<g class="p" data-k="${k}">${avatarSvg(p.name,p.side)}<text y="4.6">${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text></g>`).join('')
-      +`<ellipse class="bshadow" cx="0" cy="0" rx="2.2" ry=".9" fill="#000" opacity=".35"/><g class="ball"><circle r="2.3" fill="#d6f23a"/><circle r=".45" cx="-.7" cy=".5" fill="#5a6a12"/><circle r=".45" cx=".8" cy="-.6" fill="#5a6a12"/><circle r=".45" cx=".9" cy="1" fill="#5a6a12"/></g>`;
-    this.els=[...svg.querySelectorAll('g.p')].map(el=>({el,body:el.querySelector('.body'),legL:el.querySelector('.legL'),legR:el.querySelector('.legR'),arm:el.querySelector('.arm'),head:el.querySelector('.head')}));
+    svg.innerHTML=this.players.map((p,k)=>`<g class="p" data-k="${k}">${avatarSvg(p.name,p.side)}<text y="5.4">${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text></g>`).join('')
+      +`<ellipse class="bshadow" cx="0" cy="0" rx="2.2" ry=".9" fill="#000" opacity=".35"/><g class="ball"><circle r="2.3" fill="#d6f23a" stroke="#9fb52a" stroke-width=".3"/><circle r=".45" cx="-.7" cy=".5" fill="#5a6a12"/><circle r=".45" cx=".8" cy="-.6" fill="#5a6a12"/><circle r=".45" cx=".9" cy="1" fill="#5a6a12"/></g>`;
+    this.els=[...svg.querySelectorAll('g.p')].map(el=>({el,body:el.querySelector('.body'),legL:el.querySelector('.legL'),legR:el.querySelector('.legR'),arm:el.querySelector('.arm'),armB:el.querySelector('.armB'),head:el.querySelector('.head')}));
     this.ballEl=svg.querySelector('.ball'); this.shadowEl=svg.querySelector('.bshadow');
-    this.ball={x:20,y:76,z:0,state:'wait',t:0}; this.wait=fresh?0.9:0.2; this.lastKitchen=false; this.result=null;
+    // a beat before the serve: everyone settles, then the server bounces the ball a couple of times and serves underhand
+    this.ball={x:0,y:0,z:0,state:'wait',t:0}; this.wait=fresh?1.3:.8; this.shots=0; this.lastKitchen=false; this.result=null; this.time=0;
     this.last=performance.now(); this.paused=false; this.dead=false;
     if(this.still){ this.players.forEach(p=>{ p.x=p.home.x; p.y=p.home.y; }); this.draw(); return; }
     this.raf=requestAnimationFrame(t=>this.tick(t));
@@ -576,80 +589,93 @@ class Rally{
   stop(){ this.dead=true; cancelAnimationFrame(this.raf); }
   pause(){ this.paused=true; cancelAnimationFrame(this.raf); }
   resume(){ if(this.dead||this.still||!this.paused) return; this.paused=false; this.last=performance.now(); this.raf=requestAnimationFrame(t=>this.tick(t)); }
-  // who's across the net, and where the next ball goes. Speed, height and target all vary so no two rallies look alike.
-  serve(){ const srv=this.players[1]; this.ball={x:srv.x+2,y:srv.y,z:4,state:'flight',t:0}; this.launch(srv,{x:163+rnd(-14,14),y:36+rnd(-12,12)},'serve'); }
+  // The server (Side A, lower box) steps back to the baseline, bounces the ball, then serves cross-court.
+  preserve(){ const srv=this.players[1]; srv.tx=24; srv.ty=srv.home.y+rnd(-4,4); this.ball={x:srv.x+5,y:srv.y,z:0,state:'bouncing',t:0,n:0}; }
+  serve(){ const srv=this.players[1]; this.ball.x=srv.x+4; this.ball.y=srv.y; this.ball.z=3; this.launch(srv,{x:163+rnd(-16,16),y:36+rnd(-13,13)},'serve'); }
+  // Launch a shot. Each shot has a plan for the other side: take it on the volley, or let it bounce (and how far the hop runs).
   launch(hitter,to,kind){
     const b=this.ball; const from={x:b.x,y:b.y}; const dist=Math.hypot(to.x-from.x,to.y-from.y);
-    const pace={serve:150,drive:190,lob:95,dink:70,drop:110,wild:170}[kind];
-    b.from=from; b.to=to; b.dur=Math.max(.28,dist/pace); b.h={serve:11,drive:7,lob:26,dink:6,drop:12,wild:9}[kind]; b.t=0; b.state='flight'; b.kind=kind;
-    hitter.swing=1; this.hitter=hitter;
-    // the other side reads the shot: nearest player goes for it, partner covers the open half
+    b.from=from; b.to=to; b.dur=Math.max(.3,dist/PACE[kind]); b.h=ARC[kind]; b.t=0; b.state='flight'; b.kind=kind; this.shots++;
+    hitter.swing=1; hitter.over=kind==='smash'?1:0; if(kind==='smash') hitter.hop=1;
     const rec=this.players.filter(p=>p.side!==hitter.side);
-    const dA=Math.hypot(rec[0].x-to.x,rec[0].y-to.y), dB=Math.hypot(rec[1].x-to.x,rec[1].y-to.y);
-    let r=dA<=dB?rec[0]:rec[1]; if(Math.abs(dA-dB)<18&&Math.random()<.3) r=r===rec[0]?rec[1]:rec[0]; // poach
-    const back=r.side==='a'?-4:4; r.tx=to.x+back; r.ty=to.y; this.receiver=r;
-    const mate=rec.find(p=>p!==r); mate.tx=mate.home.x+(mate.side==='a'?rnd(-6,12):rnd(-12,6)); mate.ty=to.y<56?76:36;
-    // the hitting side resets: hitter stays, partner drifts toward the kitchen line
+    // two-bounce rule: the serve and the return must bounce. After that, volleys happen, especially at the kitchen.
+    const canVolley=this.shots>2 && kind!=='serve';
+    const volley=canVolley && Math.random()<(kind==='lob'?.6:kind==='dink'||kind==='drop'?.55:.3);
+    b.plan=volley?'volley':'ground'; b.hitT=volley?rnd(.66,.86):null;
+    const meet=volley?{x:from.x+(to.x-from.x)*b.hitT,y:from.y+(to.y-from.y)*b.hitT}:to;
+    const dA=Math.hypot(rec[0].x-meet.x,rec[0].y-meet.y), dB=Math.hypot(rec[1].x-meet.x,rec[1].y-meet.y);
+    let r=dA<=dB?rec[0]:rec[1]; if(Math.abs(dA-dB)<18&&Math.random()<.3) r=r===rec[0]?rec[1]:rec[0];
+    this.receiver=r; this.aim(r,meet,volley?2:5);
+    const mate=rec.find(p=>p!==r); mate.tx=mate.home.x+(mate.side==='a'?rnd(-6,14):rnd(-14,6)); mate.ty=meet.y<56?76:36;
     const hm=this.players.find(p=>p.side===hitter.side&&p!==hitter); hm.tx=hm.side==='a'?rnd(55,72):rnd(138,155); hm.ty=hm.home.y+rnd(-8,8);
   }
+  aim(p,pt,back){ p.tx=pt.x+(p.side==='a'?-back:back); p.ty=pt.y; }
   nextShot(){
-    const r=this.receiver; const opp=r.side==='a'?'b':'a'; const b=this.ball; const inKitchen=this.lastKitchen;
-    const roll=Math.random(); let kind, to;
-    if(inKitchen&&roll<.6){ kind='dink'; to=opp==='b'?{x:rnd(108,130),y:rnd(22,90)}:{x:rnd(80,102),y:rnd(22,90)}; }
-    else if(roll<.14){ kind='lob'; to=opp==='b'?{x:rnd(165,188),y:rnd(22,90)}:{x:rnd(22,45),y:rnd(22,90)}; }
-    else if(roll<.36){ kind='drop'; to=opp==='b'?{x:rnd(108,132),y:rnd(24,88)}:{x:rnd(78,102),y:rnd(24,88)}; }
-    else if(roll<.46){ kind='wild'; to=opp==='b'?{x:rnd(140,190),y:rnd(18,94)}:{x:rnd(20,70),y:rnd(18,94)}; }
-    else { kind='drive'; to=opp==='b'?{x:rnd(140,188),y:rnd(22,90)}:{x:rnd(22,70),y:rnd(22,90)}; }
+    const r=this.receiver; const opp=r.side==='a'?'b':'a'; const b=this.ball; const roll=Math.random(); let kind, to;
+    const high = b.kind==='lob' || (b.plan==='volley'&&b.z>7);
+    const B=opp==='b';
+    if(high && roll<.7){ kind='smash'; to=B?{x:rnd(140,186),y:rnd(22,90)}:{x:rnd(24,70),y:rnd(22,90)}; }
+    else if(this.lastKitchen&&roll<.6){ kind='dink'; to=B?{x:rnd(108,130),y:rnd(22,90)}:{x:rnd(80,102),y:rnd(22,90)}; }
+    else if(roll<.14){ kind='lob'; to=B?{x:rnd(165,188),y:rnd(22,90)}:{x:rnd(22,45),y:rnd(22,90)}; }
+    else if(roll<.36){ kind='drop'; to=B?{x:rnd(108,132),y:rnd(24,88)}:{x:rnd(78,102),y:rnd(24,88)}; }
+    else if(roll<.46){ kind='wild'; to=B?{x:rnd(140,190),y:rnd(18,94)}:{x:rnd(20,70),y:rnd(18,94)}; }
+    else { kind='drive'; to=B?{x:rnd(140,188),y:rnd(22,90)}:{x:rnd(22,70),y:rnd(22,90)}; }
     this.lastKitchen = kind==='dink'||kind==='drop';
     this.launch(r,to,kind);
   }
   finish(winner){ this.result=winner; this.players.forEach(p=>{ p.mode=p.side===winner?'win':'lose'; p.tx=p.x; p.ty=p.y; }); this.ball.state='gone'; }
   tick(now){
     if(this.dead||this.paused) return;
-    const dt=Math.min(.05,(now-this.last)/1000); this.last=now; this.time=(this.time||0)+dt;
+    const dt=Math.min(.05,(now-this.last)/1000); this.last=now; this.time+=dt;
     const b=this.ball;
-    if(b.state==='wait'){ this.wait-=dt; if(this.wait<=0 && this.players.every(p=>Math.hypot(p.x-p.tx,p.y-p.ty)<2)) this.serve(); }
+    if(b.state==='wait'){ if(this.players.every(p=>Math.hypot(p.x-p.tx,p.y-p.ty)<2)){ this.wait-=dt; if(this.wait<=0) this.preserve(); } }
+    else if(b.state==='bouncing'){ const srv=this.players[1]; b.x=srv.x+5; b.y=srv.y;
+      if(Math.hypot(srv.x-srv.tx,srv.y-srv.ty)<1.5){ b.t+=dt/.5; b.z=Math.abs(Math.sin(Math.PI*b.t))*5; if(b.t>=1){ b.t=0; b.n++; if(b.n>=2){ b.z=0; b.state='toss'; b.t=0; } } } }
+    else if(b.state==='toss'){ b.t+=dt/.35; b.z=Math.sin(Math.PI*Math.min(1,b.t))*4; if(b.t>=1) this.serve(); }
     else if(b.state==='flight'){
-      b.t+=dt/b.dur; const t=Math.min(1,b.t); b.x=b.from.x+(b.to.x-b.from.x)*t; b.y=b.from.y+(b.to.y-b.from.y)*t; b.z=b.h*4*t*(1-t)+ (1-t)*2;
-      if(b.t>=1){ // bounce: a short hop onward, then the receiver takes it
-        const dx=b.to.x-b.from.x, dy=b.to.y-b.from.y, L=Math.hypot(dx,dy)||1; const hop=b.kind==='lob'?10:b.kind==='dink'?3:6;
-        b.from={x:b.x,y:b.y}; b.to={x:b.x+dx/L*hop,y:b.y+dy/L*hop}; b.dur=b.kind==='dink'?.22:.3; b.h=b.kind==='dink'?2.5:4.5; b.t=0; b.state='hop';
-        const r=this.receiver; r.tx=b.to.x+(r.side==='a'?-3:3); r.ty=b.to.y; }
+      b.t+=dt/b.dur; const t=Math.min(1,b.t); b.x=b.from.x+(b.to.x-b.from.x)*t; b.y=b.from.y+(b.to.y-b.from.y)*t; b.z=b.h*4*t*(1-t)+(1-t)*2.5;
+      if(b.plan==='volley'&&b.t>=b.hitT){ this.nextShot(); }
+      else if(b.t>=1){ // bounce: hop onward a random distance, then it gets hit somewhere along the hop
+        const dx=b.to.x-b.from.x, dy=b.to.y-b.from.y, L=Math.hypot(dx,dy)||1; const base=b.kind==='lob'?12:b.kind==='dink'?3:b.kind==='smash'?14:7; const hop=base*rnd(.6,2);
+        b.from={x:b.x,y:b.y}; b.to={x:b.x+dx/L*hop,y:b.y+dy/L*hop}; b.dur=Math.max(.2,hop/40); b.h=Math.min(9,hop*.5+1.5); b.t=0; b.state='hop'; b.hitT=rnd(.35,.85);
+        const r=this.receiver; this.aim(r,{x:b.from.x+(b.to.x-b.from.x)*b.hitT,y:b.from.y+(b.to.y-b.from.y)*b.hitT},3); }
     } else if(b.state==='hop'){
       b.t+=dt/b.dur; const t=Math.min(1,b.t); b.x=b.from.x+(b.to.x-b.from.x)*t; b.y=b.from.y+(b.to.y-b.from.y)*t; b.z=b.h*4*t*(1-t);
-      if(b.t>=.55){ b.z=Math.max(b.z,3); this.nextShot(); }
+      if(b.t>=b.hitT){ b.z=Math.max(b.z,2.5); this.nextShot(); }
     }
-    // players move toward their targets; legs scissor while moving; swings and jumps decay
     this.players.forEach(p=>{
       const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy); const step=p.speed*dt;
-      if(p.mode==='play'){ if(d>step){ p.x+=dx/d*step; p.y+=dy/d*step; p.moving=true; p.phase+=step*.55; } else { p.x=p.tx; p.y=p.ty; p.moving=false; } }
-      if(p.swing>0) p.swing=Math.max(0,p.swing-dt*4.5);
+      if(p.mode==='play'){ if(d>step){ p.x+=dx/d*step; p.y+=dy/d*step; p.moving=true; p.phase+=step*.5; } else { p.x=p.tx; p.y=p.ty; p.moving=false; } }
+      if(p.swing>0) p.swing=Math.max(0,p.swing-dt*4); if(p.hop>0) p.hop=Math.max(0,p.hop-dt*3); if(p.swing===0) p.over=0;
     });
     this.draw();
     this.raf=requestAnimationFrame(t=>this.tick(t));
   }
   draw(){
-    const T=this.time||0;
-    this.players.forEach((p,k)=>{ const e=this.els[k]; let jump=0, tilt=0, armRot=p.swing>0?(-125*Math.sin(Math.PI*p.swing)+12):12, sy=1, headRot=0;
-      if(p.mode==='win'){ jump=Math.abs(Math.sin(T*7+k))*6; armRot=-150+Math.sin(T*12)*15; }
-      if(p.mode==='lose'){ sy=.92; headRot=22; armRot=30; }
-      const bob=p.moving?0:Math.sin(T*2.2+k)*.4;
-      e.el.setAttribute('transform',`translate(${p.x.toFixed(2)},${(p.y-jump+bob).toFixed(2)})`);
-      e.body.setAttribute('transform',`scale(${p.face},${sy}) rotate(${tilt})`);
-      const leg=p.moving?Math.sin(p.phase)*28:(p.mode==='win'?-10:0);
-      e.legL.setAttribute('transform',`rotate(${leg} -1.3 -6.5)`); e.legR.setAttribute('transform',`rotate(${-leg} 1.4 -6.5)`);
-      e.arm.setAttribute('transform',`rotate(${armRot} 2 -12)`); e.head.setAttribute('transform',`rotate(${headRot} .6 -13)`);
-      // the order players are drawn in follows their y, so a player closer to the bottom draws in front
+    const T=this.time;
+    this.players.forEach((p,k)=>{ const e=this.els[k]; let jump=0, lean=0, sy=1, headRot=0, armB=-6;
+      // front arm: ready at 10°, a groundstroke sweeps forward and up, a smash goes overhead
+      let arm = p.swing>0 ? (p.over ? -175+60*(1-Math.sin(Math.PI*p.swing)) : -115*Math.sin(Math.PI*p.swing)+10) : 10;
+      if(p.hop>0) jump=Math.sin(Math.PI*p.hop)*5;
+      if(p.mode==='win'){ jump=Math.abs(Math.sin(T*7+k))*6; arm=-150+Math.sin(T*12)*15; armB=-140+Math.sin(T*12+1)*15; }
+      if(p.mode==='lose'){ sy=.92; headRot=24; arm=30; armB=20; }
+      if(p.moving) lean=7; else if(p.mode==='play') lean=3;
+      const bob=p.moving?Math.abs(Math.sin(p.phase*2))*.8:Math.sin(T*2.2+k)*.35;
+      e.el.setAttribute('transform',`translate(${p.x.toFixed(2)},${(p.y-jump-bob).toFixed(2)})`);
+      e.body.setAttribute('transform',`scale(${p.face},${sy}) rotate(${lean} 0 0)`);
+      const leg=p.moving?Math.sin(p.phase)*30:(p.mode==='win'?-12:0);
+      e.legL.setAttribute('transform',`rotate(${leg} -.9 -9.5)`); e.legR.setAttribute('transform',`rotate(${-leg} 1.1 -9.5)`);
+      e.arm.setAttribute('transform',`rotate(${arm} 2 -16.5)`); e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*25:0)} -2 -16.5)`);
+      e.head.setAttribute('transform',`rotate(${headRot} 1 -18)`);
     });
     [...this.els].sort((u,v)=>this.players[+u.el.dataset.k].y-this.players[+v.el.dataset.k].y).forEach(e=>this.svg.appendChild(e.el));
     const b=this.ball; const gone=b.state==='gone'||b.state==='wait';
     this.ballEl.style.opacity=gone?0:1; this.shadowEl.style.opacity=gone?0:.35;
-    if(!gone){ this.ballEl.setAttribute('transform',`translate(${b.x.toFixed(2)},${(b.y-b.z*1.1).toFixed(2)}) rotate(${(T*720)%360}) scale(${(1+b.z*.03).toFixed(2)})`);
+    if(!gone){ this.ballEl.setAttribute('transform',`translate(${b.x.toFixed(2)},${(b.y-b.z*1.1).toFixed(2)}) rotate(${(T*720)%360}) scale(${(1+b.z*.025).toFixed(2)})`);
       this.shadowEl.setAttribute('cx',b.x.toFixed(2)); this.shadowEl.setAttribute('cy',b.y.toFixed(2)); this.shadowEl.setAttribute('rx',(2.2*Math.max(.4,1-b.z*.03)).toFixed(2)); }
     this.svg.appendChild(this.shadowEl); this.svg.appendChild(this.ballEl);
   }
 }
-const rnd=(a,b)=>a+Math.random()*(b-a);
 function renderCourt(){
   const T=state.tonight; T.current=normCur(T.current); let fresh=false;
   if(!T.current){ T.current=nextRound(T.present,T.games,T.courts||1); fresh=true; }
