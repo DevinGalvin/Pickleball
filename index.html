@@ -83,6 +83,11 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .pname small{display:block;font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.8px;opacity:.85;text-transform:none;margin-top:2px}
 .sidelbl{position:absolute;top:6px;font-family:var(--display);font-weight:800;font-size:16px;color:var(--paint);opacity:.9;letter-spacing:1px}
 .sidelbl.a{left:10px}.sidelbl.b{right:10px}
+.courts{display:flex;flex-direction:column;gap:10px}
+.board{display:flex;flex-direction:column;gap:10px}
+.courtlbl{position:absolute;top:6px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.4px;color:var(--ball-ink);background:var(--ball);padding:2px 10px;border-radius:999px}
+.courtwrap.done{opacity:.55}
+.board .saved{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;border:1.5px solid var(--good);color:var(--good);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px;cursor:default}
 .winrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
 .winbtn:hover{background:var(--ball);color:var(--ball-ink);border-color:var(--ball)}
@@ -197,6 +202,7 @@ nav.tabs button.on{color:var(--ball)}
       <div><p class="eyebrow">Tonight</p><h2>Who's here?</h2></div>
       <div class="roster" id="roster"></div>
       <div class="addrow" id="addrow" hidden><input id="newName" placeholder="New player's name" maxlength="20" autocomplete="off"><button class="ghost" id="addConfirm">Add</button></div>
+      <div class="seg" id="courtsSeg" hidden><button data-c="1" class="on">One court</button><button data-c="2">Two courts</button></div>
       <p class="hint" id="checkinHint"></p>
       <button class="cta" id="startBtn">Start the night</button>
     </section>
@@ -205,31 +211,11 @@ nav.tabs button.on{color:var(--ball)}
     <section class="view" id="v-court" hidden>
       <div class="gamebar"><div class="g" id="gameNum">Game 1</div>
         <div class="row" style="gap:8px"><button class="ghost" id="editPresent">Players</button><button class="ghost" id="undoBtn">Undo</button></div></div>
-      <div class="courtwrap">
-        <svg viewBox="0 0 210 110" aria-hidden="true">
-          <rect x="0" y="0" width="210" height="110" fill="var(--surround)"/>
-          <rect x="17" y="16" width="176" height="80" fill="var(--court)"/>
-          <rect x="77" y="16" width="28" height="80" fill="var(--kitchen)"/>
-          <rect x="105" y="16" width="28" height="80" fill="var(--kitchen)"/>
-          <g fill="none" stroke="var(--paint)" stroke-width="1.6">
-            <rect x="17" y="16" width="176" height="80"/>
-            <line x1="77" y1="16" x2="77" y2="96"/><line x1="133" y1="16" x2="133" y2="96"/>
-            <line x1="17" y1="56" x2="77" y2="56"/><line x1="133" y1="56" x2="193" y2="56"/>
-          </g>
-          <line x1="105" y1="10" x2="105" y2="102" stroke="#0b1f2b" stroke-width="2.4"/>
-          <line x1="105" y1="10" x2="105" y2="102" stroke="#9fb3bf" stroke-width="1" stroke-dasharray="1.5 1.5"/>
-          <circle cx="105" cy="10" r="2.4" fill="#0b1f2b"/><circle cx="105" cy="102" r="2.4" fill="#0b1f2b"/>
-        </svg>
-        <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>
-        <div class="teams">
-          <div class="team"><div class="pname" id="a1"></div><div class="pname" id="a2"></div></div>
-          <div class="team"><div class="pname" id="b1"></div><div class="pname" id="b2"></div></div>
-        </div>
-      </div>
-      <button class="cta" id="enterScore">Enter final score</button>
+      <!-- one board per court in play; rendered by renderCourt -->
+      <div class="courts" id="courts"></div>
       <div class="queue">
-        <div class="panel"><p class="eyebrow">Up next</p><div class="names" id="nextNames"></div></div>
-        <div class="panel"><p class="eyebrow">Sitting</p><div class="names" id="sitting"></div></div>
+        <div class="panel" id="nextPanel"><p class="eyebrow">Up next</p><div class="names" id="nextNames"></div></div>
+        <div class="panel" id="sitPanel"><p class="eyebrow">Sitting</p><div class="names" id="sitting"></div></div>
       </div>
       <div><p class="eyebrow" style="margin-bottom:8px">Tonight so far</p><div class="log" id="log"></div></div>
       <button class="ghost" id="endNight" style="align-self:center">End night</button>
@@ -255,7 +241,6 @@ nav.tabs button.on{color:var(--ball)}
     <!-- BRACKET -->
     <section class="view" id="v-bracket" hidden>
       <div><p class="eyebrow" id="brEyebrow">If the season ended today</p><h2>Tournament bracket</h2></div>
-      <div class="seg" id="pairSeg"><button class="on" data-pair="split">Split (1+5, 2+6…)</button><button data-pair="snake">Snake (1+8, 2+7…)</button></div>
       <div id="teams" class="table"></div>
       <div id="bracket"></div>
       <p class="hint" id="brHint"></p>
@@ -304,6 +289,7 @@ nav.tabs button.on{color:var(--ball)}
     <div class="row"><h2>Season settings</h2><button class="ghost" id="seasonClose">Done</button></div>
     <label class="field"><span class="eyebrow">Name</span><input id="seasonName" maxlength="30" autocomplete="off"></label>
     <label class="field"><span class="eyebrow">Started</span><input id="seasonStart" type="date"></label>
+    <div class="field"><span class="eyebrow">Tournament pairing</span><div class="seg" id="pairSeg"><button class="on" data-pair="split">Split (1+5, 2+6…)</button><button data-pair="snake">Snake (1+8, 2+7…)</button></div><p class="hint" id="pairHint"></p></div>
     <p class="hint">A season runs until you end it. Nights keep counting toward standings and the bracket until then.</p>
     <button class="ghost" id="endSeason" style="border-color:var(--bad);color:var(--bad)">End this season</button>
     <p class="hint" id="endHint" hidden>Standings reset and the next season starts with the next night. History keeps everything.</p>
@@ -335,7 +321,7 @@ const state = {
   seasons:[{id:1,name:'Season 1',start:'2026-11-03',end:null}],
   pairing:'split',
   nights:[NIGHT1],
-  tonight:{date:'2026-11-10', present:new Set(['Devin','Kevin','Tom','Evan','Ben']), started:false, games:[], current:null},
+  tonight:{date:'2026-11-10', present:new Set(['Devin','Kevin','Tom','Evan','Ben']), started:false, games:[], current:null, courts:1},
   scope:'season', pending:null, tab:'tonight', sub:null, player:null, night:null
 };
 
@@ -364,7 +350,8 @@ function nextGame(present, played){
   played.forEach(g=>{ [...g.a,...g.b].forEach(p=>{ if(p in gp) gp[p]++; });
     partner[pairKey(...g.a)]=(partner[pairKey(...g.a)]||0)+1; partner[pairKey(...g.b)]=(partner[pairKey(...g.b)]||0)+1;
     g.a.forEach(x=>g.b.forEach(y=>{ opp[pairKey(x,y)]=(opp[pairKey(x,y)]||0)+1; })); });
-  const last=played[played.length-1]; const satLast=p=>last&&!inGame(last,p);
+  // "sat last" means sat out the whole previous round (both courts when there were two)
+  const LR=lastRound(played); const satLast=p=>LR.length>0&&!LR.some(g=>inGame(g,p));
   const minGp=Math.min(...Object.values(gp));
   let best=null,bestCost=Infinity;
   for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++)for(let k=j+1;k<P.length;k++)for(let l=k+1;l<P.length;l++){
@@ -380,6 +367,25 @@ function nextGame(present, played){
   }
   if(played.length%2) best={a:best.b,b:best.a};
   return best;
+}
+// Games played at the same time share a round number (r). Older games have none; each counts as its own round.
+function lastRound(played){ if(!played.length) return []; const L=played[played.length-1]; return L.r!=null? played.filter(g=>g.r===L.r) : [L]; }
+function nextR(games){ return games.length? ((games[games.length-1].r ?? games.length)+1) : 1; }
+// A round is one game per court. Court 2 only fills when 4 more people are free after court 1 is set.
+function nextRound(present, played, courts){
+  const g1=nextGame(present, played); if(!g1) return null;
+  const out=[g1];
+  if(courts>1){ const rest=[...present].filter(p=>!inGame(g1,p)); if(rest.length>=4){ const g2=nextGame(rest, played); if(g2) out.push(g2); } }
+  return out;
+}
+// tonight.current is the round in progress: an array of games, scored ones carry sa/sb. Older data stored a single game object.
+function normCur(c){ if(!c) return null; if(Array.isArray(c)){ const a=c.filter(g=>g&&g.a&&g.b); return a.length?a:null; } return c.a&&c.b?[c]:null; }
+const scored=g=>g.sa!=null&&g.sb!=null;
+// Commit any scored games in the current round as a round of their own, drop the unscored rest. Used when the round is cut short (courts or players change).
+function flushScored(){
+  const T=state.tonight; const cur=normCur(T.current); T.current=null; if(!cur) return;
+  const done=cur.filter(scored); if(!done.length) return;
+  const r=nextR(T.games); done.forEach(g=>T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r}));
 }
 
 // ---------- navigation ----------
@@ -414,52 +420,91 @@ function renderCheckin(){
   $('#roster').innerHTML = PLAYERS.map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
     return `<button class="chip ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?fmt(r1(s.pm/s.gp))+' avg · '+s.gp+' games':'New this season'}</span></span></button>`; }).join('')
     + `<button class="chip add" id="addBtn">+ Add a new player</button>`;
-  const n=state.tonight.present.size;
-  $('#checkinHint').textContent = n<4?`Need 4 to play (${n} checked in).`: n===4?'4 players: partners rotate every game.': n===5?'5 players: one sits each game.': n===6?'6 players: two sit each game.': n===7?'7 players: three sit each game. Consider a second court.':'8+ players: strongly consider two courts.';
+  const T=state.tonight; const n=T.present.size;
+  // Court 2 is an opt-in, never a default: it isn't always free. Only offered at 8+, where it means nobody (or far fewer) sits.
+  if(n<8) T.courts=1; const two=T.courts===2;
+  $('#courtsSeg').hidden=n<8; document.querySelectorAll('#courtsSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.c===(two?2:1)));
+  $('#checkinHint').textContent = n<4?`Need 4 to play (${n} checked in).`: n===4?'4 players: partners rotate every game.': n===5?'5 players: one sits each game.': n===6?'6 players: two sit each game.': n===7?'7 players: three sit each game.'
+    : two ? (n===8?'Two courts: everyone plays every round.':`Two courts: ${n-8} sit each round.`) : `${n} players: ${n-4} sit each game. Is court 2 open tonight?`;
   $('#startBtn').disabled=n<4;
 }
 $('#roster').addEventListener('click',e=>{
   if(e.target.closest('#addBtn')){ $('#addrow').hidden=false; $('#newName').focus(); return; }
   const b=e.target.closest('.chip'); if(!b||!b.dataset.p) return; const p=b.dataset.p;
-  state.tonight.present.has(p)?state.tonight.present.delete(p):state.tonight.present.add(p); state.tonight.current=null; renderCheckin(); persist(); });
+  state.tonight.present.has(p)?state.tonight.present.delete(p):state.tonight.present.add(p); flushScored(); renderCheckin(); persist(); });
+$('#courtsSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const c=+b.dataset.c; if(c===state.tonight.courts) return;
+  state.tonight.courts=c; flushScored(); renderCheckin(); persist(); });
 function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
   if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return; }
-  PLAYERS.push(n); state.tonight.present.add(n); state.tonight.current=null; $('#newName').value=''; $('#addrow').hidden=true; renderCheckin(); persist(); toast(`${n} added and checked in`); }
+  PLAYERS.push(n); state.tonight.present.add(n); flushScored(); $('#newName').value=''; $('#addrow').hidden=true; renderCheckin(); persist(); toast(`${n} added and checked in`); }
 $('#addConfirm').onclick=addPlayer; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
 const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
 $('#startBtn').onclick=()=>{ if(!state.tonight.games.length) state.tonight.date=todayISO(); state.tonight.started=true; show('tonight'); persist(); };
 
 // ---------- court ----------
 function nameHtml(p){ const t=tally(state.tonight.games)[p]; return `${p}<small class="num">${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
-function renderCourt(){
-  const T=state.tonight; let fresh=false; if(!T.current){ T.current=nextGame(T.present,T.games); fresh=true; }
-  const g=T.current; if(!g){ T.started=false; show('tonight'); return; }
-  if(fresh) persist();
-  $('#gameNum').textContent=`Game ${T.games.length+1}`;
-  $('#a1').innerHTML=nameHtml(g.a[0]); $('#a2').innerHTML=nameHtml(g.a[1]); $('#b1').innerHTML=nameHtml(g.b[0]); $('#b2').innerHTML=nameHtml(g.b[1]);
-  const sitting=[...T.present].filter(p=>!inGame(g,p)); $('#sitting').textContent=sitting.length?sitting.join(', '):'Nobody';
-  const nxt=nextGame(T.present,T.games.concat([{a:g.a,b:g.b,sa:11,sb:0}]));
-  $('#nextNames').innerHTML=nxt?`${nxt.a.join(' & ')}<span class="vs">vs</span>${nxt.b.join(' & ')}`:'';
-  $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then tap which side won.</p>';
-  $('#undoBtn').disabled=T.games.length===0; $('#endNight').disabled=T.games.length===0;
+const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
+  <rect x="0" y="0" width="210" height="110" fill="var(--surround)"/>
+  <rect x="17" y="16" width="176" height="80" fill="var(--court)"/>
+  <rect x="77" y="16" width="28" height="80" fill="var(--kitchen)"/>
+  <rect x="105" y="16" width="28" height="80" fill="var(--kitchen)"/>
+  <g fill="none" stroke="var(--paint)" stroke-width="1.6">
+    <rect x="17" y="16" width="176" height="80"/>
+    <line x1="77" y1="16" x2="77" y2="96"/><line x1="133" y1="16" x2="133" y2="96"/>
+    <line x1="17" y1="56" x2="77" y2="56"/><line x1="133" y1="56" x2="193" y2="56"/>
+  </g>
+  <line x1="105" y1="10" x2="105" y2="102" stroke="#0b1f2b" stroke-width="2.4"/>
+  <line x1="105" y1="10" x2="105" y2="102" stroke="#9fb3bf" stroke-width="1" stroke-dasharray="1.5 1.5"/>
+  <circle cx="105" cy="10" r="2.4" fill="#0b1f2b"/><circle cx="105" cy="102" r="2.4" fill="#0b1f2b"/>
+</svg>`;
+function boardHtml(g,i,multi){
+  const done=scored(g);
+  return `<div class="board"><div class="courtwrap ${done?'done':''}">${COURT_SVG}
+    <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}
+    <div class="teams"><div class="team"><div class="pname">${nameHtml(g.a[0])}</div><div class="pname">${nameHtml(g.a[1])}</div></div>
+    <div class="team"><div class="pname">${nameHtml(g.b[0])}</div><div class="pname">${nameHtml(g.b[1])}</div></div></div></div>
+    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">${multi?`Court ${i+1}: final score`:'Enter final score'}</button>`}</div>`;
 }
+function renderCourt(){
+  const T=state.tonight; T.current=normCur(T.current); let fresh=false;
+  if(!T.current){ T.current=nextRound(T.present,T.games,T.courts||1); fresh=true; }
+  const cur=T.current; if(!cur){ T.started=false; show('tonight'); return; }
+  if(fresh) persist();
+  const multi=cur.length>1;
+  $('#gameNum').textContent= multi?`Round ${nextR(T.games)}`:`Game ${T.games.length+1}`;
+  $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
+  const sitting=[...T.present].filter(p=>!cur.some(g=>inGame(g,p))); $('#sitting').textContent=sitting.join(', '); $('#sitPanel').hidden=!sitting.length; $('#nextPanel').style.gridColumn=sitting.length?'':'1 / -1';
+  const r=nextR(T.games); const nxt=nextRound(T.present,T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
+  $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
+  $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then tap which side won.</p>';
+  $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').disabled=T.games.length===0;
+}
+$('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
   return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
-$('#editPresent').onclick=()=>{ state.tonight.started=false; state.tonight.current=null; $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
-$('#undoBtn').onclick=()=>{ const g=state.tonight.games.pop(); if(g){ state.tonight.current={a:g.a,b:g.b}; renderCourt(); persist(); toast('Last score removed'); } };
-$('#enterScore').onclick=openSheet;
+$('#editPresent').onclick=()=>{ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
+// Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
+$('#undoBtn').onclick=()=>{
+  const T=state.tonight; const cur=normCur(T.current)||[];
+  const open=cur.filter(scored).sort((x,y)=>(y.at||0)-(x.at||0))[0];
+  if(open){ delete open.sa; delete open.sb; delete open.at; renderCourt(); persist(); toast('Score removed'); return; }
+  const LR=lastRound(T.games); if(!LR.length) return;
+  T.games=T.games.filter(g=>!LR.includes(g)); T.current=LR.map(g=>({a:g.a,b:g.b}));
+  renderCourt(); persist(); toast(LR.length>1?'Last round reopened':'Last score removed');
+};
 $('#endNight').onclick=()=>{
-  const T=state.tonight; if(!T.games.length) return;
+  const T=state.tonight; flushScored(); if(!T.games.length) return;
   state.nights.push({date:T.date,games:T.games,season:season().id});
   const d=new Date(T.date+'T12:00'); d.setDate(d.getDate()+7);
-  state.tonight={date:d.toISOString().slice(0,10),present:new Set(T.present),started:false,games:[],current:null};
+  state.tonight={date:d.toISOString().slice(0,10),present:new Set(T.present),started:false,games:[],current:null,courts:1};
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
 };
 
 // ---------- score sheet ----------
 // Both scores, A and B, typed on one pad. Tap a box to edit it; A fills first, then B.
-function openSheet(){
-  const g=state.tonight.current; state.pending={sa:null,sb:null,active:'a'};
+function openSheet(i){
+  const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return; state.pending={sa:null,sb:null,active:'a',idx:i};
+  $('#sheetTitle').textContent=cur.length>1?`Court ${i+1} final`:'Final score';
   $('#whoA').textContent=g.a.join(' & '); $('#whoB').textContent=g.b.join(' & ');
   $('#pad').innerHTML=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>`<button data-n="${n}" class="num">${n}</button>`).join('');
   updateSheet(); $('#sheet').hidden=false;
@@ -487,8 +532,11 @@ $('#pad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!
 $('#boxA').onclick=()=>{ state.pending.active='a'; updateSheet(); };
 $('#boxB').onclick=()=>{ state.pending.active='b'; updateSheet(); };
 $('#sheetClose').onclick=()=>{ $('#sheet').hidden=true; state.pending=null; };
-$('#saveScore').onclick=()=>{ const p=state.pending,g=state.tonight.current;
-  state.tonight.games.push({a:g.a,b:g.b,sa:p.sa,sb:p.sb}); state.tonight.current=null; $('#sheet').hidden=true; renderCourt(); persist(); toast(`Saved ${p.sa}–${p.sb}`); };
+$('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
+  g.sa=p.sa; g.sb=p.sb; g.at=Date.now();
+  // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
+  if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r})); T.current=null; }
+  $('#sheet').hidden=true; renderCourt(); persist(); toast(`Saved ${p.sa}–${p.sb}`); };
 
 // ---------- standings ----------
 // Season rating = total +/- divided by (games + SHRINK): a hot 4-game night can't outrank 40 solid games, but nobody is excluded.
@@ -501,22 +549,22 @@ function ranking(tonight){
 function renderStandings(){
   const tonight=state.scope==='tonight'; const games=tonight?state.tonight.games:allGames();
   const rows=ranking(tonight);
-  let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${season().name} · since ${dateShort(season().start)} · ${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
+  let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
   $('#standings').innerHTML=rows.map(r=>{
     if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
     rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
     return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}</div>
-      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l} · ${r.s.gp} games${tonight?'':' over '+r.np+' night'+(r.np===1?'':'s')} · ${fmt(r1(r.avg))} avg</div></div>
+      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l} · ${r.s.gp} games${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>
       <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
-  $('#qualHint').textContent=tonight?'Ranked by average point differential per game tonight.':`Rating = total +/− ÷ (games + ${SHRINK}). It leans toward your average as you play more, so a hot first night can't hold #1 all season and a busy month never knocks you out. Tap a player for their season.`;
+  $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games. Tap a name for details.`;
 }
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b)); renderStandings(); });
 $('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow'); if(!b) return; state.player=b.dataset.p; show('season','player'); });
 $('#playerBack').onclick=()=>show('season',null);
 
 // ---------- season settings ----------
-$('#seasonBtn').onclick=()=>{ const s=season(); $('#seasonName').value=s.name; $('#seasonStart').value=s.start; $('#endSeason').textContent='End this season'; $('#endSeason').dataset.armed=''; $('#endHint').hidden=true; $('#seasonSheet').hidden=false; };
-$('#seasonClose').onclick=()=>{ const s=season(); s.name=$('#seasonName').value.trim()||s.name; if($('#seasonStart').value) s.start=$('#seasonStart').value; $('#seasonSheet').hidden=true; renderStandings(); persist(); };
+$('#seasonBtn').onclick=()=>{ const s=season(); $('#seasonName').value=s.name; $('#seasonStart').value=s.start; $('#endSeason').textContent='End this season'; $('#endSeason').dataset.armed=''; $('#endHint').hidden=true; syncPairSeg(); $('#seasonSheet').hidden=false; };
+$('#seasonClose').onclick=()=>{ const s=season(); s.name=$('#seasonName').value.trim()||s.name; if($('#seasonStart').value) s.start=$('#seasonStart').value; $('#seasonSheet').hidden=true; renderStandings(); if(state.tab==='bracket') renderBracket(); persist(); };
 $('#endSeason').onclick=()=>{
   const b=$('#endSeason');
   if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent='Tap again to confirm'; $('#endHint').hidden=false; return; }
@@ -526,10 +574,12 @@ $('#endSeason').onclick=()=>{
 };
 
 // ---------- bracket ----------
-document.querySelectorAll('#pairSeg button').forEach(b=>b.onclick=()=>{ state.pairing=b.dataset.pair; document.querySelectorAll('#pairSeg button').forEach(x=>x.classList.toggle('on',x===b)); renderBracket(); });
+function syncPairSeg(){ document.querySelectorAll('#pairSeg button').forEach(x=>x.classList.toggle('on',x.dataset.pair===state.pairing));
+  $('#pairHint').textContent=state.pairing==='split'?'Top half paired with bottom half in order. Every seed you climb gets you a better partner.':'1 with last, 2 with second to last. Teams come out even, but finishing #1 gets you the weakest partner.'; }
+document.querySelectorAll('#pairSeg button').forEach(b=>b.onclick=()=>{ state.pairing=b.dataset.pair; syncPairSeg(); persist(); });
 function renderBracket(){
   const seeds=ranking(false).filter(r=>r.s);
-  $('#brEyebrow').textContent=`If ${season().name} ended today · ${seeds.length} players seeded`;
+  $('#brEyebrow').textContent='If the season ended today';
   if(seeds.length<4){ $('#teams').innerHTML=''; $('#bracket').innerHTML=''; $('#brHint').textContent='Need at least 4 players with games to build a bracket.'; return; }
   const n=seeds.length - (seeds.length%2); const alt=seeds.length%2?seeds[seeds.length-1]:null;
   const S=seeds.slice(0,n); const teams=[];
@@ -539,10 +589,10 @@ function renderBracket(){
   else { for(let i=0;i<n/2;i++) teams.push([S[i],S[i+n/2]]); }
   teams.forEach((t,i)=>{ t.seed=i+1; t.name=t[0].p+' & '+t[1].p; t.rating=(t[0].rating+t[1].rating)/2; });
   teams.sort((a,b)=>b.rating-a.rating).forEach((t,i)=>t.seed=i+1);
-  $('#teams').innerHTML = teams.map(t=>`<div class="teamrow"><div class="sd num">${t.seed}</div><div class="nm">${t.name}<div class="meta num">Player seeds #${seeds.indexOf(t[0])+1} and #${seeds.indexOf(t[1])+1}</div></div><div class="rt num">${fmt(r1(t.rating))}</div></div>`).join('')
-    + (alt?`<div class="teamrow"><div class="sd">–</div><div class="nm">${alt.p}<div class="meta">Alternate (odd headcount). Subs in for anyone who can't make it.</div></div><div class="rt num">${fmt(r1(alt.rating))}</div></div>`:'');
+  $('#teams').innerHTML = teams.map(t=>`<div class="teamrow"><div class="sd num">${t.seed}</div><div class="nm">${t.name}</div><div class="rt num">${fmt(r1(t.rating))}</div></div>`).join('')
+    + (alt?`<div class="teamrow"><div class="sd">–</div><div class="nm">${alt.p}<div class="meta">Alternate · subs in if someone can't make it</div></div><div class="rt num">${fmt(r1(alt.rating))}</div></div>`:'');
   const T=teams.length; let html='', hint='';
-  if(T===3){ html=`<div class="rr">${[[0,1],[0,2],[1,2]].map(([i,j])=>`<div class="match"><div class="slot"><span class="s num">${teams[i].seed}</span><span>${teams[i].name}</span></div><div class="slot"><span class="s num">${teams[j].seed}</span><span>${teams[j].name}</span></div></div>`).join('')}</div>`; hint='Three teams: round robin, every team plays the other two. Best record wins; point differential breaks ties.'; }
+  if(T===3){ html=`<div class="rr">${[[0,1],[0,2],[1,2]].map(([i,j])=>`<div class="match"><div class="slot"><span class="s num">${teams[i].seed}</span><span>${teams[i].name}</span></div><div class="slot"><span class="s num">${teams[j].seed}</span><span>${teams[j].name}</span></div></div>`).join('')}</div>`; hint='Round robin. Best record wins, point differential breaks ties.'; }
   else {
     const size=T<=2?2:T<=4?4:8; const order=size===2?[1,2]:size===4?[1,4,2,3]:[1,8,4,5,3,6,2,7];
     const byT=s=>teams.find(t=>t.seed===s)||null;
@@ -554,9 +604,9 @@ function renderBracket(){
         row.push({a:adv(x),b:adv(y),fa:x.n,fb:y.n,n:next++}); }
       rs.push(row); cur=row; }
     html=svgBracket(rs,labels);
-    hint=T===2?'Two teams: one match for the title. Best of 3 recommended.':T<size?`${T} teams in an ${size}-team bracket: top seeds get a first-round bye.`:`${T} teams, single elimination. Higher seed takes Side A.`;
+    hint=T===2?'One match for the title. Best of 3.':T<size?`Top seeds get a first-round bye.`:`Single elimination. Higher seed takes Side A.`;
   }
-  $('#bracket').innerHTML=html; $('#brHint').textContent=hint+(state.pairing==='split'?' Split pairing: every seed you climb gets you a better partner, so the regular season matters right to the end.':' Snake pairing: all teams come out even, but finishing #1 gets you the weakest partner.');
+  $('#bracket').innerHTML=html; $('#brHint').textContent=hint;
 }
 // Printed-bracket look: each team is a line with the seed in a box, pairs joined by a vertical, feeding the next round, ending at a champion line.
 function svgBracket(rs,labels){
@@ -693,7 +743,7 @@ const fdb = firebase.database(); const leagueRef = fdb.ref('league'); const pinR
 let applying=false, loaded=false, lastWrite=null;
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
-    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null },
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1 },
     updatedAt: Date.now() };
 }
 function persist(){
@@ -708,7 +758,8 @@ function applyRemote(d){
     PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split';
     state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
-    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:t.current||null };
+    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1 };
+    if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     if(state.tab) show(state.tab, state.sub);
   } finally { applying=false; }
@@ -724,13 +775,14 @@ leagueRef.on('value', snap=>{
   if(d && d.updatedAt===lastWrite) return; // our own write echoed back
   const sheetOpen=!$('#sheet').hidden;
   applyRemote(d);
-  if(sheetOpen && !state.tonight.current){ $('#sheet').hidden=true; toast('Someone else just scored that game'); }
+  const pg=state.pending && normCur(state.tonight.current)?.[state.pending.idx];
+  if(sheetOpen && (!pg || scored(pg))){ $('#sheet').hidden=true; state.pending=null; toast('Someone else just scored that game'); }
 }, err=>{ $('#connHint').textContent='Could not reach the league database. Check your connection and reload.'; $('#sync').className='sync off'; });
 fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val()?'on':'off'); });
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#startBtn,#editPresent,#undoBtn,#enterScore,#endNight,#seasonBtn,#addConfirm,#newName';
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName';
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
 document.addEventListener('click', e=>{

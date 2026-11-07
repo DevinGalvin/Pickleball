@@ -2,7 +2,7 @@
 """Build the live GitHub Pages version from the demo artifact (rally-night.html).
 Adds: full HTML head + PWA meta, Firebase Realtime Database sync, group PIN gate."""
 import re, sys
-SRC='/home/claude/rally-night.html'; OUT='/home/claude/tuesday-pickle/index.html'
+import os; HERE=os.path.dirname(os.path.abspath(__file__)); SRC=os.path.join(HERE,'rally-night.html'); OUT=os.path.join(HERE,'index.html')
 s=open(SRC).read()
 
 FIREBASE = {
@@ -62,7 +62,7 @@ const fdb = firebase.database(); const leagueRef = fdb.ref('league'); const pinR
 let applying=false, loaded=false, lastWrite=null;
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
-    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null },
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1 },
     updatedAt: Date.now() };
 }
 function persist(){
@@ -77,7 +77,8 @@ function applyRemote(d){
     PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split';
     state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
-    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:t.current||null };
+    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1 };
+    if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     if(state.tab) show(state.tab, state.sub);
   } finally { applying=false; }
@@ -93,13 +94,14 @@ leagueRef.on('value', snap=>{
   if(d && d.updatedAt===lastWrite) return; // our own write echoed back
   const sheetOpen=!$('#sheet').hidden;
   applyRemote(d);
-  if(sheetOpen && !state.tonight.current){ $('#sheet').hidden=true; toast('Someone else just scored that game'); }
+  const pg=state.pending && normCur(state.tonight.current)?.[state.pending.idx];
+  if(sheetOpen && (!pg || scored(pg))){ $('#sheet').hidden=true; state.pending=null; toast('Someone else just scored that game'); }
 }, err=>{ $('#connHint').textContent='Could not reach the league database. Check your connection and reload.'; $('#sync').className='sync off'; });
 fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val()?'on':'off'); });
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#startBtn,#editPresent,#undoBtn,#enterScore,#endNight,#seasonBtn,#addConfirm,#newName';
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName';
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
 document.addEventListener('click', e=>{
