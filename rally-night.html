@@ -122,9 +122,12 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .seg button.on{background:var(--panel-2);color:var(--fg)}
 
 /* player detail */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.stat{grid-column:span 2}
+.stat.half{grid-column:span 3}
 .stat{background:var(--panel);border-radius:14px;padding:12px;min-width:0}
 .stat.big{grid-column:1/-1;background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}
+.stat.big.down{background:linear-gradient(135deg,#3b2426,#16242e);border-color:#5a2f33}
 .stat .v{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
 .stat .d{font-size:13px;color:var(--mute);margin-top:4px}
 .chart{background:var(--panel);border-radius:14px;padding:12px;position:relative}
@@ -667,12 +670,12 @@ function renderPlayer(){
   const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
   const ats=atsRecord(games,p);
   $('#plStats').innerHTML=`
-    <div class="stat big"><p class="eyebrow">Season avg +/−</p><div class="v num ${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(r1(t.pm/t.gp))}</div><div class="d num">${fmt(t.pm)} total · ${t.w}–${t.l} · ${t.gp} games over ${nightsPlayed(p)} night${nightsPlayed(p)===1?'':'s'}</div></div>
+    <div class="stat big ${t.pm<0?'down':''}"><p class="eyebrow">Season avg +/−</p><div class="v num ${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(r1(t.pm/t.gp))}</div><div class="d num">${fmt(t.pm)} total · ${t.w}–${t.l} · ${t.gp} games over ${nightsPlayed(p)} night${nightsPlayed(p)===1?'':'s'}</div></div>
     <div class="stat"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
     <div class="stat"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
     <div class="stat"><p class="eyebrow">Vs the line</p><div class="v num">${ats.w}–${ats.l}${ats.p?'–'+ats.p:''}</div><div class="d">${ats.w+ats.l+ats.p?'against the spread':'no lines yet'}</div></div>
-    <div class="stat"><p class="eyebrow">Best partner</p><div class="v">${pl[0][0]}</div><div class="d num">${fmt(r1(pl[0][1].pm/pl[0][1].n))} avg · ${pl[0][1].n} game${pl[0][1].n===1?'':'s'}</div></div>
-    <div class="stat" style="grid-column:span 2"><p class="eyebrow">Worst partner</p><div class="v">${pl[pl.length-1][0]}</div><div class="d num">${fmt(r1(pl[pl.length-1][1].pm/pl[pl.length-1][1].n))} avg · ${pl[pl.length-1][1].n} game${pl[pl.length-1][1].n===1?'':'s'}</div></div>`;
+    <div class="stat half"><p class="eyebrow">Best partner</p><div class="v">${pl[0][0]}</div><div class="d num">${fmt(r1(pl[0][1].pm/pl[0][1].n))} avg · ${pl[0][1].n} game${pl[0][1].n===1?'':'s'}</div></div>
+    <div class="stat half"><p class="eyebrow">Worst partner</p><div class="v">${pl[pl.length-1][0]}</div><div class="d num">${fmt(r1(pl[pl.length-1][1].pm/pl[pl.length-1][1].n))} avg · ${pl[pl.length-1][1].n} game${pl[pl.length-1][1].n===1?'':'s'}</div></div>`;
   // cumulative +/- line, one point per game played
   let run=0; const pts=games.map((g,i)=>{ run+=diffs(g)[p]; return {i:i+1,v:run,g}; });
   $('#plLine').innerHTML=lineChart(pts,'Running +/− across the season');
@@ -687,13 +690,13 @@ function lineChart(pts,title){
   const ticks=[lo+pad,0,hi-pad].map(v=>Math.round(v)).filter((v,i,a)=>a.indexOf(v)===i);
   const path=pts.map((p,i)=>(i?'L':'M')+xs(p.i).toFixed(1)+' '+ys(p.v).toFixed(1)).join(' ');
   const area=path+` L${xs(pts[pts.length-1].i).toFixed(1)} ${ys(0).toFixed(1)} L${xs(1).toFixed(1)} ${ys(0).toFixed(1)} Z`;
-  const last=pts[pts.length-1];
+  const last=pts[pts.length-1]; const ink=last.v<0?'var(--bad)':'var(--good)';
   return `<p class="eyebrow">${title}</p><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">
     ${ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${ys(v)}" y2="${ys(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${ys(v)+4}" text-anchor="end">${fmt(v)}</text>`).join('')}
     <line x1="${L}" x2="${W-R}" y1="${ys(0)}" y2="${ys(0)}" stroke="var(--mute)" stroke-width="1"/>
-    <path d="${area}" fill="var(--ball)" opacity=".12"/>
-    <path d="${path}" fill="none" stroke="var(--ball)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${xs(last.i)}" cy="${ys(last.v)}" r="4.5" fill="var(--ball)" stroke="var(--panel)" stroke-width="2"/>
+    <path d="${area}" fill="${ink}" opacity=".14"/>
+    <path d="${path}" fill="none" stroke="${ink}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${xs(last.i)}" cy="${ys(last.v)}" r="4.5" fill="${ink}" stroke="var(--panel)" stroke-width="2"/>
     <text x="${xs(last.i)}" y="${ys(last.v)-10}" text-anchor="end" style="fill:var(--fg);font-weight:600">${fmt(last.v)}</text>
     <text x="${L}" y="${H-6}">Game 1</text><text x="${W-R}" y="${H-6}" text-anchor="end">Game ${last.i}</text>
     ${pts.map(p=>`<rect class="hit" x="${xs(p.i)-6}" y="${T}" width="12" height="${H-T-B}" fill="transparent" data-tip="Game ${p.i}: ${p.g.sa}–${p.g.sb}, running ${fmt(p.v)}"><title>Game ${p.i}: ${p.g.sa}–${p.g.sb} · running ${fmt(p.v)}</title></rect>`).join('')}
