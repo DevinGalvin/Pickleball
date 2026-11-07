@@ -560,9 +560,9 @@ function avatarSvg(name,team,u){
   const bcap=`<path d="M-5.6 -24.6L-11.4 -23.6q-1 .8 0 1.6L-5.4 -23.2z" fill="${cap}" ${O}/><path d="${capDome}" fill="${cap}" ${O}/><path d="M-4.6 -24.4C-4 -28 -1 -29.8 2.4 -29.4" stroke="#000" stroke-width=".35" opacity=".2" fill="none"/>
     <path d="M-5.6 -23.8C-3.6 -25.3 -1.4 -25.9 .8 -26.6L6 -25.6L5.9 -24.7C3.5 -25.4 .8 -25.6 -1.4 -25C-3.4 -24.6 -4.8 -24 -5.6 -23.2z" fill="#000" opacity=".2"/>
     <path d="M4.6 -25.6q.9-1.4 1.9-1q.3.7-.1 1.2z" fill="${hc}" ${O}/><circle cx=".6" cy="-30.6" r=".6" fill="${cap}" ${O}/>`;
-  const visor=short+`<path d="M-5.8 -25.4h11.4l4.2.8q.8.7-.2 1.4H-5.8z" fill="#fff" ${O}/>`;
+  const bcapNavy=bcap.split(cap).join('#2f4063');
   const band=short+`<rect x="-5.9" y="-25.9" width="11.8" height="1.7" rx=".8" fill="#e63946" ${O}/>`;
-  const styles=[short+sideburn, swept+sideburn, sideburn+bcap, wavy+sideburn, buzz+sideburn, curly+sideburn, spiky+sideburn, visor+sideburn, band+sideburn, shaggy+sideburn,
+  const styles=[short+sideburn, swept+sideburn, sideburn+bcap, wavy+sideburn, buzz+sideburn, curly+sideburn, spiky+sideburn, sideburn+bcapNavy, band+sideburn, shaggy+sideburn,
     sideburn+`<ellipse cx="-.6" cy="-27.2" rx="2.6" ry="1.3" fill="url(#${u}-shine)"/>`];
   // face parts with variants
   const skull="M.4 -28.4C-3.2 -28.4 -5.4 -26 -5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5C5.6 -19.3 5.3 -19.9 4.8 -20.3L5.4 -20.8C5.2 -21.6 5.1 -22.4 5.2 -23.2C5.3 -24 5.7 -24.6 5.3 -25.4C4.3 -27.5 2.6 -28.4 .4 -28.4Z";
