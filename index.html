@@ -136,6 +136,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .pad{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .pad button{min-height:52px;border-radius:12px;background:var(--panel-2);font-family:var(--display);font-weight:800;font-size:26px}
 .pad button.alt{font-size:14px;font-family:var(--body);font-weight:600;color:var(--mute)}
+.pad button.wide{grid-column:span 2}.pad button.full{grid-column:1/-1}.pad button.pair{font-size:20px}
 .err{color:var(--bad);font-size:13px;text-align:center;margin:0;min-height:18px}
 
 /* standings */
@@ -174,6 +175,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .field input::-webkit-date-and-time-value{text-align:left;margin:auto 0;line-height:1.2}
 
 /* bracket */
+.preview{margin:0;padding:10px 12px;border:1.5px dashed var(--line);border-radius:12px;color:var(--mute);font-size:14px}
 .teamrow{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel)}
 .teamrow .sd{font-family:var(--display);font-weight:800;font-size:22px;color:var(--ball)}
 .teamrow .nm{font-weight:600;min-width:0}
@@ -280,7 +282,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <!-- TONIGHT: court -->
     <section class="view" id="v-court" hidden>
       <div class="gamebar"><div class="g" id="gameNum">Game 1</div>
-        <div class="row" style="gap:8px"><button class="ghost" id="editPresent">Players</button><button class="ghost" id="undoBtn">Undo</button></div></div>
+        <div class="row" style="gap:8px"><button class="ghost" id="editPresent">Who's here</button><button class="ghost" id="undoBtn">Undo</button></div></div>
       <!-- one board per court in play; rendered by renderCourt -->
       <div class="courts" id="courts"></div>
       <div class="queue">
@@ -310,7 +312,8 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
     <!-- BRACKET -->
     <section class="view" id="v-bracket" hidden>
-      <div><p class="eyebrow" id="brEyebrow">If the season ended today</p><h2>Tournament bracket</h2></div>
+      <div><p class="eyebrow">Bracket preview</p><h2>If the tournament started today</h2></div>
+      <p class="preview">Not locked in. Seeds come from today's standings, so this redraws after every night until you end the season.</p>
       <div id="teams" class="table"></div>
       <div id="bracket"></div>
       <p class="hint" id="brHint"></p>
@@ -350,7 +353,6 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     </div>
     <p class="hint" id="sheetSub" style="text-align:center"></p>
     <div class="pad" id="pad"></div>
-    <p class="err" id="err"></p>
     <button class="cta" id="saveScore" disabled>Save &amp; next game</button>
   </div>
 </div>
@@ -462,8 +464,6 @@ const hasLine=g=>typeof g.line==='number';
 function lineText(g){ if(!hasLine(g)) return 'No line yet'; const L=g.line; if(Math.abs(L)<1) return "Pick 'em"; return `${(L>0?g.a:g.b).join(' & ')} −${Math.abs(L)}`; }
 // how the favorite did against the line: + covered by that much, − fell short, 0 push
 function cover(g){ if(!hasLine(g)||!scored(g)) return null; return (g.sa-g.sb)-g.line; }
-// short tag for the game log: who beat the number and by how much
-function atsText(g){ const c=cover(g); if(c===null||Math.abs(g.line)<1) return ''; return c>0?`Fav +${c}`:c<0?`Dog +${-c}`:'Push'; }
 // tonight.current is the round in progress: an array of games, scored ones carry sa/sb. Older data stored a single game object.
 function normCur(c){ if(!c) return null; if(Array.isArray(c)){ const a=c.filter(g=>g&&g.a&&g.b); return a.length?a:null; } return c.a&&c.b?[c]:null; }
 const scored=g=>g.sa!=null&&g.sb!=null;
@@ -496,7 +496,7 @@ function show(tab, sub){
   pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
-  $('#hdrDate').textContent = tab==='tonight'? (state.tonight.games.length||state.tonight.started? dateShort(state.tonight.date) : 'Next night') : season().name;
+  $('#hdrDate').textContent = tab==='tonight'? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : todayISO()) : season().name;
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
@@ -507,7 +507,7 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dat
 // ---------- check-in ----------
 function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games));
-  $('#hdrDate').textContent=dateShort(state.tonight.date);
+  $('#hdrDate').textContent=dateShort(todayISO()); // check-in happens the day you play, whatever day that is
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
     return `<button class="chip ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
@@ -785,14 +785,14 @@ function renderCourt(){
   document.querySelectorAll('#courts .board').forEach((b,i)=>{ const g=cur[i]; sims[i]=scored(g)?null:new Rally(b.querySelector('svg.sim'),g,fresh); });
   const sitting=[...T.present].filter(p=>!cur.some(g=>inGame(g,p))); $('#sitting').textContent=sitting.join(', '); $('#sitPanel').hidden=!sitting.length; $('#nextPanel').style.gridColumn=sitting.length?'':'1 / -1';
   const r=nextR(T.games); const nxt=nextRound(T.present,T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
-  $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}${hasLine(g)?`<span class="line num">${lineText(g)}</span>`:''}`).join('<br>'):'';
-  $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then tap which side won.</p>';
+  $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
+  $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then enter the final score.</p>';
   if(T.games.length>logCount){ const f=$('#log .item'); if(f) f.classList.add('new'); } logCount=T.games.length;
   $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').disabled=T.games.length===0;
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
-  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}${atsText(x)?`<small>${atsText(x)}</small>`:''}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
+  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
 $('#editPresent').onclick=()=>{ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>{
@@ -815,44 +815,47 @@ $('#endNight').onclick=()=>{
 function hideSheet(sel){ const el=$(sel); if(el.hidden) return; el.classList.add('out'); clearTimeout(el._t); el._t=setTimeout(()=>{ if(el.classList.contains('out')){ el.hidden=true; el.classList.remove('out'); } },200); }
 function showSheet(sel){ const el=$(sel); clearTimeout(el._t); el.classList.remove('out'); el.hidden=false; }
 // ---------- score sheet ----------
-// Both scores, A and B, typed on one pad. Tap a box to edit it; A fills first, then B.
+// Winner first, then the loser's score. Games go to 11, so that's two taps and nothing to validate. "Went past 11" covers deuce
+// games: the winner's score sets both, since past 11 it ends the moment someone leads by 2.
 function openSheet(i){
-  const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return; state.pending={sa:null,sb:null,active:'a',idx:i};
-  $('#sheetTitle').textContent=cur.length>1?`Court ${i+1} final`:'Final score';
+  const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return; state.pending={idx:i,win:null,lo:null,deuce:false,w:null};
   $('#whoA').textContent=g.a.join(' & '); $('#whoB').textContent=g.b.join(' & ');
-  $('#pad').innerHTML=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>`<button data-n="${n}" class="num">${n}</button>`).join('');
   updateSheet(); showSheet('#sheet');
 }
-function validate(sa,sb){
-  if(sa===null||sb===null) return {ok:false,msg:''};
-  const hi=Math.max(sa,sb), lo=Math.min(sa,sb);
-  if(sa===sb) return {ok:false,msg:'Someone has to win.'};
-  if(hi<11) return {ok:false,msg:'Games go to 11. Winner needs at least 11.'};
-  if(hi-lo<2) return {ok:false,msg:'Win by 2. A game can\'t end 11–10.'};
-  if(hi>11&&hi-lo!==2) return {ok:false,msg:`Past 11 it ends the moment someone leads by 2, so ${hi}–${lo} can't happen.`};
-  return {ok:true,msg:''};
+function pendingScore(p){
+  if(!p.win) return null; const w=p.deuce?p.w:11, l=p.deuce?(p.w===null?null:p.w-2):p.lo; if(w===null||l===null) return null;
+  return p.win==='a'?{sa:w,sb:l}:{sa:l,sb:w};
 }
 function updateSheet(){
-  const p=state.pending; const v=validate(p.sa,p.sb);
-  ['a','b'].forEach(s=>{ const val=p['s'+s]; const box=$('#box'+s.toUpperCase()), el=$('#val'+s.toUpperCase());
-    el.textContent=val===null?'–':val; el.classList.toggle('empty',val===null);
-    box.classList.toggle('active',p.active===s); box.classList.toggle('winner',v.ok&&val===Math.max(p.sa,p.sb));
-    $('#tag'+s.toUpperCase()).textContent=v.ok?(val===Math.max(p.sa,p.sb)?`Won · ${fmt(Math.abs(p.sa-p.sb))}`:`${fmt(-Math.abs(p.sa-p.sb))}`):''; });
-  $('#sheetSub').textContent = p.sa===null?'Tap Side A’s score':p.sb===null?'Now Side B’s score':v.ok?'Looks good. Save it.':'Tap a box to change a score';
-  $('#err').textContent=v.msg; $('#saveScore').disabled=!v.ok;
+  const p=state.pending; const cur=normCur(state.tonight.current)||[]; const g=cur[p.idx]; if(!g) return; const sc=pendingScore(p);
+  const margin=sc?Math.abs(sc.sa-sc.sb):null;
+  $('#sheetTitle').textContent=(cur.length>1?`Court ${p.idx+1}: `:'')+(p.win?'Final score':'Who won?');
+  ['a','b'].forEach(s=>{ const won=p.win===s; const box=$('#box'+s.toUpperCase()), el=$('#val'+s.toUpperCase()), tag=$('#tag'+s.toUpperCase());
+    const v=!p.win?null:won?(p.deuce?p.w:11):(p.deuce?(p.w===null?null:p.w-2):p.lo);
+    el.textContent=!p.win?'':v===null?'–':v; el.classList.toggle('empty',v===null);
+    box.classList.toggle('winner',won); box.classList.toggle('active',!!p.win&&!won&&!sc);
+    tag.textContent=won?(sc?`Won · +${margin}`:'Won'):(sc?`−${margin}`:''); });
+  const loser=(p.win==='a'?g.b:g.a).join(' & ');
+  $('#sheetSub').textContent=!p.win?'Tap the side that won':sc?'Looks good. Save it.':p.deuce?'How far did it go?':`How many did ${loser} get?`;
+  $('#pad').innerHTML=!p.win?'':p.deuce
+    ?[12,13,14,15,16,17,18,19].map(n=>`<button data-w="${n}" class="num pair">${n}–${n-2}</button>`).join('')+`<button data-back="1" class="alt full">Back</button>`
+    :[0,1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}" class="num">${n}</button>`).join('')+`<button data-deuce="1" class="alt wide">Went past 11</button>`;
+  $('#saveScore').disabled=!sc;
 }
 $('#pad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const p=state.pending;
-  p['s'+p.active]=+b.dataset.n; if(p.active==='a'&&p.sb===null) p.active='b'; updateSheet(); });
-$('#boxA').onclick=()=>{ state.pending.active='a'; updateSheet(); };
-$('#boxB').onclick=()=>{ state.pending.active='b'; updateSheet(); };
+  if(b.dataset.n!=null) p.lo=+b.dataset.n; else if(b.dataset.w) p.w=+b.dataset.w; else if(b.dataset.deuce){ p.deuce=true; p.lo=null; } else if(b.dataset.back){ p.deuce=false; p.w=null; }
+  updateSheet(); });
+const pickWin=s=>{ const p=state.pending; if(!p||p.win===s) return; Object.assign(p,{win:s,lo:null,deuce:false,w:null}); updateSheet(); };
+$('#boxA').onclick=()=>pickWin('a');
+$('#boxB').onclick=()=>pickWin('b');
 $('#sheetClose').onclick=()=>{ hideSheet('#sheet'); state.pending=null; };
-$('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
-  g.sa=p.sa; g.sb=p.sb; g.at=Date.now();
+$('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const cur=normCur(T.current)||[]; const g=cur[p.idx]; const sc=pendingScore(p); if(!g||!sc) return;
+  g.sa=sc.sa; g.sb=sc.sb; g.at=Date.now();
   // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
   if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{})})); T.current=null; }
   hideSheet('#sheet'); persist();
   // play the result on the board that just finished, then draw what comes next
-  playResult(p.idx, p.sa, p.sb); setTimeout(renderCourt, 1500); };
+  playResult(p.idx, sc.sa, sc.sb); setTimeout(renderCourt, 1500); };
 function playResult(i,sa,sb){
   const wrap=document.querySelectorAll('#courts .courtwrap')[i]; if(!wrap) return;
   wrap.classList.add('result'); const aw=sa>sb; if(sims[i]) sims[i].finish(aw?'a':'b');
@@ -879,7 +882,7 @@ function renderStandings(){
     if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
     rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
     return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}</div>
-      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l} · ${r.s.gp} games${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>
+      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l}${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>
       <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
   const had=Object.keys(before).length;
   document.querySelectorAll('#standings .trow').forEach((el,i)=>{
@@ -909,7 +912,6 @@ function syncPairSeg(){ document.querySelectorAll('#pairSeg button').forEach(x=>
 document.querySelectorAll('#pairSeg button').forEach(b=>b.onclick=()=>{ state.pairing=b.dataset.pair; syncPairSeg(); persist(); });
 function renderBracket(){
   const seeds=ranking(false).filter(r=>r.s);
-  $('#brEyebrow').textContent='If the season ended today';
   if(seeds.length<4){ $('#teams').innerHTML=''; $('#bracket').innerHTML=''; $('#brHint').textContent='Need at least 4 players with games to build a bracket.'; return; }
   const n=seeds.length - (seeds.length%2); const alt=seeds.length%2?seeds[seeds.length-1]:null;
   const S=seeds.slice(0,n); const teams=[];
@@ -987,23 +989,20 @@ function wireBracket(){
 }
 
 // ---------- player detail + charts ----------
-// against-the-spread record: a player covers when their side beats the line (pick 'em games don't count)
-function atsRecord(games,p){ const r={w:0,l:0,p:0}; games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const side=g.a.includes(p)?1:-1; const v=c*side; v>0?r.w++:v<0?r.l++:r.p++; }); return r; }
 function renderPlayer(){
   const p=state.player; $('#plName').textContent=p;
   const nights=allNights(); const games=allGames().filter(g=>inGame(g,p)); const t=tally(games)[p];
   if(!t){ $('#plStats').innerHTML=`<div class="stat big"><div class="d">${p} hasn't played a game yet.</div></div>`; $('#plLine').innerHTML=''; $('#plBars').innerHTML=''; return; }
   const partners={}; games.forEach(g=>{ const team=g.a.includes(p)?g.a:g.b; const mate=team.find(x=>x!==p); const d=diffs(g)[p]; partners[mate]=partners[mate]||{pm:0,n:0}; partners[mate].pm+=d; partners[mate].n++; });
-  const pl=Object.entries(partners).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n);
+  // partner stats need a real sample: 3+ games together, else they're noise
+  const pl=Object.entries(partners).filter(x=>x[1].n>=3).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n); const bp=pl[0];
   const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
-  const ats=atsRecord(games,p);
+  const rating=t.pm/(t.gp+SHRINK); const np=nightsPlayed(p);
   $('#plStats').innerHTML=`
-    <div class="stat big ${t.pm<0?'down':''}"><p class="eyebrow">Season avg +/−</p><div class="v num ${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(r1(t.pm/t.gp))}</div><div class="d num">${fmt(t.pm)} total · ${t.w}–${t.l} · ${t.gp} games over ${nightsPlayed(p)} night${nightsPlayed(p)===1?'':'s'}</div></div>
-    <div class="stat"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
-    <div class="stat"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
-    <div class="stat"><p class="eyebrow">Vs the line</p><div class="v num">${ats.w}–${ats.l}${ats.p?'–'+ats.p:''}</div><div class="d">${ats.w+ats.l+ats.p?'against the spread':'no lines yet'}</div></div>
-    <div class="stat half"><p class="eyebrow">Best partner</p><div class="v">${pl[0][0]}</div><div class="d num">${fmt(r1(pl[0][1].pm/pl[0][1].n))} avg · ${pl[0][1].n} game${pl[0][1].n===1?'':'s'}</div></div>
-    <div class="stat half"><p class="eyebrow">Worst partner</p><div class="v">${pl[pl.length-1][0]}</div><div class="d num">${fmt(r1(pl[pl.length-1][1].pm/pl[pl.length-1][1].n))} avg · ${pl[pl.length-1][1].n} game${pl[pl.length-1][1].n===1?'':'s'}</div></div>`;
+    <div class="stat big ${rating<0?'down':''}"><p class="eyebrow">Season rating</p><div class="v num ${rating>0?'pos':rating<0?'neg':''}">${fmt(r1(rating))}</div><div class="d num">${fmt(r1(t.pm/t.gp))} avg per game · ${fmt(t.pm)} total · ${t.w}–${t.l} over ${np} night${np===1?'':'s'}</div></div>
+    <div class="stat half"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
+    <div class="stat half"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
+    ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}`;
   // cumulative +/- line, one point per game played
   let run=0; const pts=games.map((g,i)=>{ run+=diffs(g)[p]; return {i:i+1,v:run,g}; });
   $('#plLine').innerHTML=lineChart(pts,'Running +/− across the season');
@@ -1070,13 +1069,13 @@ function renderNight(){
   let beat=null; N.games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const by=Math.abs(c); if(by>0&&(!beat||by>beat.by)) beat={g,by,team:(c>0?g.a:g.b).join(' & ')}; });
   $('#recap').innerHTML=`
     <div class="stat big"><p class="eyebrow">Night MVP</p><div class="v">${mvp}</div><div class="d num">${fmt(t[mvp].pm)} over ${t[mvp].gp} games · ${t[mvp].w}–${t[mvp].l}</div></div>
+    <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Tonight's +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>
     <div class="stat"><p class="eyebrow">Games</p><div class="v num">${N.games.length}</div><div class="d">${ps.length} players</div></div>
     <div class="stat"><p class="eyebrow">Bagels</p><div class="v num">${bagels}</div><div class="d">11–0 games</div></div>
-    <div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} game${bp[1].n===1?'':'s'}</div></div>
     <div class="stat"><p class="eyebrow">Biggest blowout</p><div class="v num">${blow.sa}–${blow.sb}</div><div class="d">${wn(blow)} over ${ln(blow)}</div></div>
     <div class="stat"><p class="eyebrow">Tightest game</p><div class="v num">${close.sa}–${close.sb}</div><div class="d">${wn(close)} edged ${ln(close)}</div></div>
-    ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the line</p><div class="v">${beat.team}</div><div class="d num">Line was ${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · covered by ${beat.by}</div></div>`:''}
-    <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Tonight's +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>`;
+    ${bp&&bp[1].n>=3?`<div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} games</div></div>`:''}
+    ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the line</p><div class="v">${beat.team}</div><div class="d num">Line was ${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · covered by ${beat.by}</div></div>`:''}`;
   $('#nightLog').innerHTML=logHtml(N.games,false);
   const del=$('#deleteNight'); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
   del.onclick=()=>{
@@ -1085,7 +1084,7 @@ function renderNight(){
     else { state.nights.splice(state.nights.indexOf(N),1); }
     persist(); show('history',null); toast(N.live?'Tonight cleared':'Night deleted');
   };
-  $('#copyRecap').onclick=()=>{ const lines=[`Pickle League · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`,'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
+  $('#copyRecap').onclick=()=>{ const lines=[`Pickle League · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
     navigator.clipboard?.writeText(lines).then(()=>toast('Copied')).catch(()=>toast('Copy blocked here')); };
 }
 
