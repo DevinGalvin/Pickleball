@@ -141,11 +141,17 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .teamrow .nm{font-weight:600;min-width:0}
 .teamrow .meta{font-size:12px;color:var(--mute)}
 .teamrow .rt{font-family:var(--display);font-weight:800;font-size:20px;color:var(--mute)}
-.bracket{overflow-x:auto;padding-bottom:6px;background:var(--panel);border-radius:14px}
-.bracket svg{display:block;max-width:none;height:auto}
-.bracket .rounds{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(150px,1fr);gap:12px;min-width:min-content}
-.bracket .round{display:flex;flex-direction:column;justify-content:space-around;gap:10px}
-.bracket .rlabel{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);font-weight:600;text-align:center}
+.bracket{background:var(--panel);border-radius:14px;overflow:hidden}
+.rstrip{display:flex;gap:6px;padding:10px 12px 4px;overflow-x:auto;scrollbar-width:none}
+.rstrip::-webkit-scrollbar{display:none}
+.rchip{flex:none;min-height:34px;padding:0 12px;border-radius:999px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;color:var(--mute);background:var(--panel-2)}
+.rchip.on{background:var(--ball);color:var(--ball-ink)}
+.scrollwrap{position:relative}
+.scrollwrap::after{content:"";position:absolute;top:0;right:0;bottom:0;width:48px;background:linear-gradient(to right,transparent,var(--panel));opacity:0;transition:opacity .2s;pointer-events:none}
+.scrollwrap.more::after{opacity:1}
+.scroller{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:16px;padding:8px 16px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.scroller::-webkit-scrollbar{display:none}
+.scroller svg.col{flex:none;display:block;scroll-snap-align:start}
 .match{background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
 .match .slot{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:center;padding:8px 10px;font-size:13px;font-weight:600;min-height:40px}
 .match .slot+.slot{border-top:1px solid var(--line)}
@@ -578,41 +584,54 @@ function renderBracket(){
     html=svgBracket(rs,labels);
     hint=T===2?'One match for the title. Best of 3.':T<size?`Top seeds get a first-round bye.`:`Single elimination. Higher seed takes Side A.`;
   }
-  $('#bracket').innerHTML=html; $('#brHint').textContent=hint;
+  $('#bracket').innerHTML=html; wireBracket(); $('#brHint').textContent=hint;
 }
 // Printed-bracket look: each team is a line with the seed in a box, pairs joined by a vertical, feeding the next round, ending at a champion line.
+// One SVG per round, laid out in a horizontal snap scroller. Each column is self-contained: its slot lines, the pair join and the
+// feeder stub that reaches the column's right edge, so the columns butt together into one continuous tree.
 function svgBracket(rs,labels){
-  const colW=124, slotH=26, pairGap=14, matchGap=22, top=26;
+  const cols=rs.length+1; const pw=$('#bracket').clientWidth||398; const gutter=16;
+  // 2 columns fit the panel; more than that, size columns so the next one peeks in from the right (about 1.6 visible)
+  const colW=cols<=2? Math.floor((pw-gutter)/cols) : Math.min(240, Math.floor((pw-gutter)/1.6));
+  const slotH=32, pairGap=14, matchGap=24, top=10;
   const n1=rs[0].length; const mH=slotH*2+pairGap;
-  // y position (top of match) per round; later rounds center on their feeders
   const pos=[]; pos[0]=rs[0].map((m,i)=>top+i*(mH+matchGap));
   for(let r=1;r<rs.length;r++) pos[r]=rs[r].map((m,i)=>{ const a=pos[r-1][2*i], b=pos[r-1][2*i+1]; return (a+b)/2; });
-  const H=top+n1*(mH+matchGap)-matchGap+10, W=16+colW*(rs.length+1);
-  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const fit=s=>s.length>16?s.slice(0,15)+'…':s;
-  let out='';
-  const slotSvg=(x,y,t,ref)=>{
-    const line=`<line x1="${x}" y1="${y+slotH}" x2="${x+colW-16}" y2="${y+slotH}" stroke="${t?'var(--paint)':'var(--line)'}" stroke-width="1.5"/>`;
-    if(t) return line+`<rect x="${x}" y="${y+4}" width="18" height="18" rx="3" fill="var(--ball)"/><text x="${x+9}" y="${y+17}" text-anchor="middle" style="fill:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:12px">${t.seed}</text><text x="${x+24}" y="${y+18}" style="fill:var(--fg);font-weight:600;font-size:12px">${esc(fit(t.name))}</text>`;
-    return line+`<text x="${x+4}" y="${y+18}" style="fill:var(--mute);font-size:12px;font-style:italic">${ref===null?'Bye':'Winner of M'+ref}</text>`;
+  const H=top+n1*(mH+matchGap)-matchGap+10;
+  const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const maxCh=Math.floor((colW-16-30)/8.2); const fit=t=>t.length>maxCh?t.slice(0,maxCh-1)+'…':t;
+  const slotSvg=(y,t,ref)=>{
+    const line=`<line x1="0" y1="${y+slotH}" x2="${colW-16}" y2="${y+slotH}" stroke="${t?'var(--paint)':'var(--line)'}" stroke-width="1.5"/>`;
+    if(t) return line+`<rect x="0" y="${y+6}" width="22" height="22" rx="4" fill="var(--ball)"/><text x="11" y="${y+22}" text-anchor="middle" style="fill:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:14px">${t.seed}</text><text x="30" y="${y+23}" style="fill:var(--fg);font-weight:600;font-size:15px">${esc(fit(t.name))}</text>`;
+    return line+`<text x="4" y="${y+23}" style="fill:var(--mute);font-size:14px;font-style:italic">${ref===null?'Bye':'Winner of M'+ref}</text>`;
   };
-  rs.forEach((round,r)=>{
-    const x=16+r*colW;
-    out+=`<text x="${x+(colW-16)/2}" y="14" text-anchor="middle" style="fill:var(--mute);font-size:10px;letter-spacing:1.4px;font-weight:600">${labels[r].toUpperCase()}</text>`;
+  const svgs=rs.map((round,r)=>{
+    let out='';
     round.forEach((m,i)=>{ const y=pos[r][i];
-      out+=slotSvg(x,y,m.a,m.a?undefined:(m.fa??null))+slotSvg(x,y+slotH+pairGap,m.b,m.b?undefined:(m.fb??null));
-      // join the pair and run a feeder to the next column
-      const yA=y+slotH, yB=y+slotH*2+pairGap, xr=x+colW-16, mid=(yA+yB)/2;
-      out+=`<path d="M${xr} ${yA} V${yB} M${xr} ${mid} H${xr+16}" fill="none" stroke="var(--line)" stroke-width="1.5"/>`;
+      out+=slotSvg(y,m.a,m.a?undefined:(m.fa??null))+slotSvg(y+slotH+pairGap,m.b,m.b?undefined:(m.fb??null));
+      const yA=y+slotH, yB=y+slotH*2+pairGap, xr=colW-16, mid=(yA+yB)/2;
+      out+=`<path d="M${xr} ${yA} V${yB} M${xr} ${mid} H${colW}" fill="none" stroke="var(--line)" stroke-width="1.5"/>`;
     });
+    return `<svg class="col" width="${colW}" height="${H}" viewBox="0 0 ${colW} ${H}" aria-label="${labels[r]}">${out}</svg>`;
   });
-  // champion
-  const xC=16+rs.length*colW, yC=pos[rs.length-1][0]+slotH+pairGap/2;
-  out+=`<text x="${xC+(colW-16)/2}" y="14" text-anchor="middle" style="fill:var(--ball);font-size:10px;letter-spacing:1.4px;font-weight:600">CHAMPION</text>
-    <line x1="${xC}" y1="${yC}" x2="${xC+colW-16}" y2="${yC}" stroke="var(--ball)" stroke-width="2.5"/>
-    <path transform="translate(${xC+2},${yC-26}) scale(.9)" d="M8 21h8M12 17v4M5 3h14v5a7 7 0 0 1-14 0zM5 5H2v2a3 3 0 0 0 3 3M19 5h3v2a3 3 0 0 1-3 3" fill="none" stroke="var(--ball)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="${xC+28}" y="${yC-8}" style="fill:var(--mute);font-size:12px;font-style:italic">${season().name} champs</text>`;
-  return `<div class="bracket"><svg style="width:${rs.length<=2?"100%":W+"px"}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tournament bracket">${out}</svg></div>`;
+  const yC=pos[rs.length-1][0]+slotH+pairGap/2;
+  svgs.push(`<svg class="col" width="${colW}" height="${H}" viewBox="0 0 ${colW} ${H}" aria-label="Champion">
+    <line x1="0" y1="${yC}" x2="${colW-16}" y2="${yC}" stroke="var(--ball)" stroke-width="2.5"/>
+    <path transform="translate(2,${yC-30})" d="M8 21h8M12 17v4M5 3h14v5a7 7 0 0 1-14 0zM5 5H2v2a3 3 0 0 0 3 3M19 5h3v2a3 3 0 0 1-3 3" fill="none" stroke="var(--ball)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="32" y="${yC-10}" style="fill:var(--mute);font-size:14px;font-style:italic">${esc(season().name)} champs</text></svg>`);
+  const names=labels.concat(['Champion']);
+  return `<div class="bracket" style="--colW:${colW}px">
+    <div class="rstrip" role="tablist">${names.map((n,i)=>`<button class="rchip ${i?'':'on'}" data-r="${i}" role="tab">${n}</button>`).join('')}</div>
+    <div class="scrollwrap"><div class="scroller">${svgs.join('')}</div></div></div>`;
+}
+// strip chips follow the scroll; tapping one scrolls to that round
+function wireBracket(){
+  const b=$('#bracket .bracket'); if(!b) return; const sc=b.querySelector('.scroller'), wrap=b.querySelector('.scrollwrap'), chips=[...b.querySelectorAll('.rchip')];
+  const colW=parseFloat(b.style.getPropertyValue('--colW'))||200;
+  const sync=()=>{ const i=Math.min(chips.length-1,Math.max(0,Math.round(sc.scrollLeft/colW))); chips.forEach((c,k)=>c.classList.toggle('on',k===i));
+    wrap.classList.toggle('more', sc.scrollLeft+sc.clientWidth < sc.scrollWidth-4); };
+  sc.addEventListener('scroll',sync,{passive:true}); chips.forEach(c=>c.onclick=()=>sc.scrollTo({left:+c.dataset.r*colW,behavior:'smooth'}));
+  sync();
 }
 
 // ---------- player detail + charts ----------
