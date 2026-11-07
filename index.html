@@ -562,87 +562,64 @@ document.addEventListener('visibilitychange',()=>pauseSims(document.hidden));
 // is mirrored so the paddle faces the net. Looks are hashed from the name so each guy is the same guy every week.
 const HAIRC=['#3b2a1e','#6b4a2e','#9a7248','#d9b66a','#a9adb3','#b9623a'];
 function hashStr(t){ let h=2166136261; for(const c of t){ h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h; }
-function simDefs(u){
-  const hair=HAIRC.map((c,i)=>`<linearGradient id="${u}-hair${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".5" stop-color="${c}" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>`).join('');
-  return `<defs>
-    <radialGradient id="${u}-skin" cx=".38" cy=".3" r=".75"><stop offset="0" stop-color="#ffe6cf"/><stop offset=".55" stop-color="#f3c6a2"/><stop offset="1" stop-color="#d49a74"/></radialGradient>
-    <linearGradient id="${u}-shirtA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eeff7a"/><stop offset="1" stop-color="#b9d32a"/></linearGradient>
-    <linearGradient id="${u}-shirtB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffa88a"/><stop offset="1" stop-color="#e85f3a"/></linearGradient>
-    <linearGradient id="${u}-shorts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5f82"/><stop offset="1" stop-color="#27354d"/></linearGradient>
-    <linearGradient id="${u}-paddle" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient>
-    <radialGradient id="${u}-shine" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-    ${hair}</defs>`;
-}
+function simDefs(u){ return `<defs><radialGradient id="${u}-shine" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`; }
+// Backyard-sports cartoon, side view facing right (Side B is mirrored). Ink outlines, flat colors with one shadow tone, a huge round
+// head on a short chunky body, big eye, bulb nose, toothy grin. Three builds (chunky, regular, lanky) hashed from the name.
+// Rig: .legL/.legR at the hip (y -9.4) with .shin at the knee (y -4.2); .arm at the shoulder (1.4,-18.2) with .fore at the elbow (2,-13.4); .armB; .head.
 function avatarSvg(name,team,u){
-  // Side view, facing right (Side B is mirrored). Soft 3D look. Two-segment arms and legs so elbows and knees bend; feet at (0,0),
-  // about 28 units tall. Rig groups: .legL/.legR (hip) with .shin (knee), .arm (shoulder) with .fore (elbow), .armB, .head.
   const h=hashStr(name); const hi=(h>>>4)%6, hc=HAIRC[hi]; const style=((h>>>21)%12)===0?9:(h>>>11)%10; const glasses=((h>>>12)%3)===0, beard=((h>>>14)%3)===0;
-  const skin=`url(#${u}-skin)`, shirt=`url(#${u}-shirt${team.toUpperCase()})`, cap=team==='a'?'#9fb82a':'#d9532f'; const hg=`url(#${u}-hair${hi})`;
-  const two=(d)=>`<path d="${d}" fill="${hc}"/><path d="${d}" fill="${hg}"/>`;
-  const grayT=((h>>>16)%3)===0 && hi<4; // graying temples on some
-  // Hair with real volume: it rides about 1.3 units above the skull and the hairline runs across the forehead at y≈-25.3, a normal
-  // forehead above the brow (y≈-24.3). Nothing recedes. Caps are worn backwards; the visor and headband sit over hair.
-  const short =two("M-5.2 -22.4C-6.1 -26.6 -3.6 -29.7 .6 -29.6C3.7 -29.5 5.7 -27.6 5.4 -25.2C3.4 -25.9 .8 -26 -1.4 -25.4C-3.4 -24.9 -4.6 -23.9 -5.2 -22.4Z");
-  const swept =two("M-5.2 -22.4C-6.1 -26.6 -3.6 -29.7 .6 -29.6C3.9 -29.5 6 -27.4 6.2 -24.9C5.5 -24.6 4.8 -24.6 4.2 -24.8C3.2 -25.8 1 -26 -1.4 -25.4C-3.4 -24.9 -4.6 -23.9 -5.2 -22.4Z");
-  const spiky =two("M-5.2 -22.4C-5.9 -25.6 -4.6 -27.8 -3.2 -28.6L-2.4 -27.4L-1.4 -29.8L-.4 -28.2L1 -30.2L1.9 -28.4L3.3 -29.6L3.8 -27.8L5.2 -28.2C5.7 -27.2 5.7 -26.2 5.4 -25.2C3.4 -25.9 .8 -26 -1.4 -25.4C-3.4 -24.9 -4.6 -23.9 -5.2 -22.4Z");
-  const wavy  =two("M-5.4 -22.2C-6.6 -26 -4.8 -28.6 -3 -28.8C-2.4 -30.2 .2 -30.4 1.2 -29.2C3 -30 5 -28.6 5.3 -27C6 -26.4 6 -25.6 5.4 -25.1C3.4 -25.9 .8 -26 -1.4 -25.4C-3.4 -24.9 -4.6 -23.9 -5.4 -22.2Z");
-  const sideburn=`<path d="M-4.3 -23.2q-.5 1.8 0 3.6l1.1.2q-.3-1.9 0-3.7z" fill="${hc}" opacity=".9"/>`;
-  const nape=`<path d="M-5.2 -22.4q-.4 1.4.4 2.4l1-.3q-.6-1-.4-2.1z" fill="${hc}"/>`;
-  const temples=grayT?`<ellipse cx="-3.4" cy="-25" rx="1.3" ry="1.2" fill="#c9ccd0" opacity=".5"/>`:'';
-  const sheen=`<path d="M-3.8 -27.2C-2 -28.9 1.2 -29.1 3.4 -27.9" stroke="#fff" stroke-width=".6" opacity=".32" fill="none" stroke-linecap="round"/>`;
-  const strands=`<path d="M-2.6 -26.2q1.2-.9 2.6-.6M.2 -26.6q1.4-.6 2.8-.2" stroke="#000" stroke-width=".3" opacity=".18" fill="none" stroke-linecap="round"/>`;
-  // backwards cap: dome over the hair, bill pointing behind the head, a tuft of hair showing at the front through the strap opening
-  const capDome=`M-5.4 -23.6C-6.2 -27 -3.6 -30 .6 -29.9C3.8 -29.8 5.9 -27.8 5.6 -25.4C3.4 -26.2 .8 -26.3 -1.4 -25.7C-3.4 -25.2 -4.6 -24.5 -5.4 -23.6Z`;
-  const bcap=`<path d="M-5.4 -24.2L-10.2 -23.4q-.9.7 0 1.4L-5.2 -23z" fill="${cap}"/><path d="M-5.4 -24.2L-10.2 -23.4q-.9.7 0 1.4L-5.2 -23z" fill="#000" opacity=".22"/>
-    <path d="${capDome}" fill="${cap}"/><path d="${capDome}" fill="${hg}"/><path d="M-4.6 -24.2C-4 -27.6 -1 -29.3 2.2 -28.9" stroke="#000" stroke-width=".3" opacity=".22" fill="none"/>
-    <path d="M-5.4 -23.6C-3.4 -25.2 -1.4 -25.7 .8 -26.3L5.6 -25.4L5.5 -24.6C3.3 -25.3 .8 -25.4 -1.4 -24.8C-3.3 -24.4 -4.6 -23.8 -5.4 -23z" fill="#000" opacity=".16"/>
-    <path d="M4.4 -25.4q.8-1.3 1.7-.9q.3.6-.1 1.1z" fill="${hc}"/><circle cx=".6" cy="-30" r=".5" fill="${cap}"/>`;
-  const visor=short+strands+sideburn+nape+temples+`<path d="M-5.4 -25.2h10.9l3.7.7q.7.6-.2 1.2H-5.4z" fill="#fff"/><path d="M-5.4 -24h10.6v-1.2H-5.4z" fill="#000" opacity=".08"/>`;
-  const band=short+sheen+strands+sideburn+nape+temples+`<rect x="-5.6" y="-25.7" width="11.2" height="1.5" rx=".7" fill="#e63946"/><path d="M-5.6 -25h11.2" stroke="#fff" stroke-width=".3" opacity=".5"/>`;
-  // order spreads a real roster across styles; index 9 is bald and only reached by the rare roll above
-  const styles=[short+sheen+strands+sideburn+nape+temples, swept+sheen+strands+sideburn+nape+temples, sideburn+nape+bcap, wavy+sheen+sideburn+nape+temples, short+sheen+strands+sideburn+nape+temples, sideburn+nape+bcap, spiky+sideburn+nape+temples, visor, band,
-    sideburn+`<ellipse cx="-.6" cy="-27" rx="2.4" ry="1.2" fill="url(#${u}-shine)"/>`+two("M-5.1 -22.4q-.3 1.2.4 1.9l.8-.4q-.5-.7-.3-1.7z")
-  ];
-  // Head in profile: cranium, brow ridge, bridge of the nose, lips, chin and jaw. Then ear, eye with lids and lashes, nose with a nostril, mouth with lips.
-  const skull="M.4 -28.3C-3 -28.3 -5.2 -26.1 -5.2 -23.2C-5.2 -21.4 -4.7 -19.9 -3.4 -18.8C-2.4 -17.9 -.3 -17.2 2.3 -17.2C3.8 -17.2 4.8 -17.8 5.1 -18.6C5.3 -19.2 5.1 -19.7 4.7 -20.1L5.3 -20.4C5.1 -21.2 5 -22.1 5.1 -22.9C5.2 -23.8 5.6 -24.4 5.2 -25.1C4.2 -27.2 2.6 -28.3 .4 -28.3Z";
-  const face=`<path d="${skull}" fill="${skin}"/>
-    <path d="M-5.2 -23.2C-5.2 -21.4 -4.7 -19.9 -3.4 -18.8C-2.4 -17.9 -.3 -17.2 2.3 -17.2C3.8 -17.2 4.8 -17.8 5.1 -18.6L5.1 -17.4L-5.4 -18Z" fill="#000" opacity=".1"/>
-    <path d="M-1 -18.1q2.8 1.1 5.6-.6q-1.8 1.9-4 1.6q-1.3-.2-1.6-1z" fill="#000" opacity=".12"/>
-    <ellipse cx="-.6" cy="-26" rx="2.4" ry="1.2" fill="url(#${u}-shine)"/><ellipse cx="4.2" cy="-24.4" rx=".9" ry="1.6" fill="url(#${u}-shine)"/>
-    <path d="M-3.4 -22.9C-5 -23.3 -5.5 -21.2 -4.4 -20.1C-3.8 -19.5 -3.1 -19.9 -3.2 -20.6C-3.3 -21.3 -3.1 -22.3 -3.4 -22.9Z" fill="${skin}"/><path d="M-3.9 -22.3q-.9.5-.6 1.6q.2.6.7.6" stroke="#b87e5f" stroke-width=".35" fill="none"/>
-    <path d="M5.1 -22.7C5.9 -22.2 6.4 -21.5 6.2 -20.9C6 -20.4 5.6 -20.3 5.2 -20.4" fill="${skin}"/><path d="M5.7 -20.7q.4-.2.4.2" stroke="#b87e5f" stroke-width=".38" fill="none" stroke-linecap="round"/><path d="M5.3 -22.4q.7.5.9 1.2" stroke="#fff" stroke-width=".35" opacity=".35" fill="none"/>
-    <ellipse cx="3.2" cy="-20.4" rx="1.4" ry=".8" fill="#ff8f8f" opacity=".16"/><path d="M1.6 -21.2q1.2.3 2.4-.4" stroke="#000" stroke-width=".9" opacity=".06" fill="none" stroke-linecap="round"/><ellipse cx="-2.6" cy="-23.2" rx="1.4" ry="1.8" fill="#000" opacity=".05"/>
-    <path d="M2.2 -24C3 -24.6 4.2 -24.6 5 -24.1" stroke="${hc}" stroke-width=".75" fill="none" stroke-linecap="round"/><path d="M2.2 -24C3 -24.6 4.2 -24.6 5 -24.1" stroke="#000" stroke-width=".3" opacity=".2" fill="none"/>
-    <path d="M2.2 -22.8C2.9 -23.7 4.1 -23.8 4.9 -22.9C4.1 -22.1 2.9 -22.1 2.2 -22.8Z" fill="#fff"/>
-    <circle cx="3.9" cy="-22.85" r=".58" fill="#5b3b24"/><circle cx="3.95" cy="-22.85" r=".3" fill="#111"/><circle cx="4.15" cy="-23.1" r=".15" fill="#fff"/>
-    <path d="M2.2 -22.8C2.9 -23.7 4.1 -23.8 4.9 -22.9" stroke="#3b2a1e" stroke-width=".38" fill="none" stroke-linecap="round"/><path d="M4.7 -23.1l.4-.3" stroke="#3b2a1e" stroke-width=".3"/><path d="M2.4 -23.6C3.1 -24.1 4 -24.1 4.6 -23.6" stroke="#000" stroke-width=".25" opacity=".25" fill="none"/>
-    <path d="M2 -22.9l-.6.1M2 -22.6l-.5.3" stroke="#000" stroke-width=".22" opacity=".22"/>
-    <path d="M2.9 -19.3C3.6 -18.6 4.5 -18.6 5.1 -19.3" stroke="#9c4f3a" stroke-width=".5" fill="none" stroke-linecap="round"/><path d="M3.2 -18.9C3.8 -18.5 4.4 -18.5 4.8 -18.9" stroke="#e8a090" stroke-width=".35" opacity=".7" fill="none" stroke-linecap="round"/>
-`;
-  const extra=(beard?`<path d="M-3.3 -20.2C-3.2 -17.9 -1.6 -16.9 1.6 -16.9C3.9 -16.9 5.1 -17.8 5.3 -19.2C4.6 -18.3 3.6 -18 2.2 -18C-.2 -18 -2.2 -18.6 -3.3 -20.2Z" fill="${hc}" opacity=".92"/><path d="M-3.3 -20.2C-3.2 -17.9 -1.6 -16.9 1.6 -16.9C3.9 -16.9 5.1 -17.8 5.3 -19.2" fill="url(#${u}-hair${hi})"/>`:`<path d="M-2.4 -19.4C-1.4 -18 .8 -17.6 3.2 -18" stroke="${hc}" stroke-width=".9" opacity=".1" fill="none"/>`)
-    +(glasses?`<path d="M2.1 -22.6C2.4 -23.9 4.6 -24 5.1 -22.8C5 -21.6 2.4 -21.5 2.1 -22.6Z" fill="#fff" fill-opacity=".14" stroke="#222" stroke-width=".45"/><path d="M2.1 -23.2L-4.2 -23.6" stroke="#222" stroke-width=".45"/><path d="M5.1 -22.8l.4-.3" stroke="#222" stroke-width=".45"/>`:'');
-  // True profile. Chest bulges forward, back is rounded, the near arm hangs across the middle of the torso with the paddle in front,
-  // the far arm is behind the torso (only seen when raised), the far leg sits behind the near one and a shade darker. Feet point forward.
-  // Hips y -9.8, knees y -4.5, shoulder (1.6,-19.6), elbow (2.2,-14.6). About 31 units tall.
-  const leg=(x,cls,far)=>`<rect x="${x-1.6}" y="-10.4" width="3.2" height="6.4" rx="1.5" fill="${skin}"/>${far?`<rect x="${x-1.6}" y="-10.4" width="3.2" height="6.4" rx="1.5" fill="#000" opacity=".18"/>`:''}
-    <g class="${cls}"><rect x="${x-1.4}" y="-4.9" width="2.8" height="4.3" rx="1.3" fill="${skin}"/><rect x="${x-1.45}" y="-3" width="2.9" height="1.5" rx=".5" fill="#f6f6f6"/><path d="M${x-1.45} -2.3h2.9" stroke="#2f3f5a" stroke-width=".35"/>
-    <path d="M${x-2.2} -1.7h2.6q3.2 0 3.6 1.2q.1.8-.8.8h-5.6q-.9 0-.9-.8q.1-1.1 1.1-1.2z" fill="#f4f4f4"/><path d="M${x+.2} -1.4q2 .1 2.8.9" stroke="#2f3f5a" stroke-width=".4" fill="none"/><path d="M${x-3.1} .1h7.4" stroke="#8d949b" stroke-width=".6"/>
-    ${far?`<rect x="${x-1.4}" y="-4.9" width="2.8" height="4.3" rx="1.3" fill="#000" opacity=".18"/><path d="M${x-2.2} -1.7h2.6q3.2 0 3.6 1.2q.1.8-.8.8h-5.6q-.9 0-.9-.8q.1-1.1 1.1-1.2z" fill="#000" opacity=".12"/>`:''}</g>`;
+  const build=(h>>>17)%3; // 0 chunky, 1 regular, 2 lanky
+  const skin='#f7d0a8', skinS='#e2aa7a', ink='#1d1a17';
+  const shirt=team==='a'?'#d6f23a':'#ff7a59', shirtS=team==='a'?'#a9c41f':'#d9532f', cap=team==='a'?'#7fa01c':'#c8442a';
+  const hcS=hi===3?'#b8933f':hi===4?'#7d8288':'#000';
+  const O=`stroke="${ink}" stroke-width=".55" stroke-linejoin="round" stroke-linecap="round"`;
+  const hairPath=(d)=>`<path d="${d}" fill="${hc}" ${O}/><path d="${d}" fill="${hcS}" opacity=".18" transform="translate(-.4,.6)"/>`;
+  // hair shapes sit on a skull whose top is y≈-28.4 and back is x≈-5.3; hairline across the forehead at y≈-25.3
+  const short=hairPath("M-5.4 -22.6C-6.4 -27 -3.8 -30.2 .6 -30.1C4 -30 6.2 -27.8 5.7 -25.3C3.6 -26.1 .8 -26.3 -1.4 -25.6C-3.5 -25 -4.7 -24 -5.4 -22.6Z");
+  const swept=hairPath("M-5.4 -22.6C-6.4 -27 -3.8 -30.2 .6 -30.1C4.2 -30 6.6 -27.6 6.8 -24.9C6 -24.7 5.2 -24.7 4.5 -25C3.3 -26 .8 -26.3 -1.4 -25.6C-3.5 -25 -4.7 -24 -5.4 -22.6Z");
+  const spiky=hairPath("M-5.4 -22.6C-6.2 -26 -4.8 -28.4 -3.4 -29.2L-2.6 -27.8L-1.4 -30.6L-.4 -28.8L1 -31L2 -28.9L3.4 -30.3L3.9 -28.3L5.4 -28.8C6.1 -27.6 6.1 -26.4 5.7 -25.3C3.6 -26.1 .8 -26.3 -1.4 -25.6C-3.5 -25 -4.7 -24 -5.4 -22.6Z");
+  const wavy=hairPath("M-5.6 -22.4C-7 -26.4 -5 -29.2 -3.2 -29.4C-2.6 -31 .2 -31.2 1.2 -29.8C3.2 -30.8 5.4 -29.2 5.6 -27.4C6.4 -26.8 6.4 -25.8 5.7 -25.2C3.6 -26.1 .8 -26.3 -1.4 -25.6C-3.5 -25 -4.7 -24 -5.6 -22.4Z");
+  const sideburn=`<path d="M-4.4 -23.4q-.5 1.9 0 3.8l1.2.2q-.3-2 0-3.9z" fill="${hc}" ${O}/>`;
+  const capDome="M-5.6 -23.8C-6.6 -27.4 -3.8 -30.6 .6 -30.5C4.2 -30.4 6.4 -28.2 6 -25.6C3.6 -26.4 .8 -26.6 -1.4 -25.9C-3.6 -25.3 -4.8 -24.6 -5.6 -23.8Z";
+  const bcap=`<path d="M-5.6 -24.6L-11.4 -23.6q-1 .8 0 1.6L-5.4 -23.2z" fill="${cap}" ${O}/><path d="${capDome}" fill="${cap}" ${O}/><path d="M-4.6 -24.4C-4 -28 -1 -29.8 2.4 -29.4" stroke="${ink}" stroke-width=".35" opacity=".5" fill="none"/>
+    <path d="M-5.6 -23.8C-3.6 -25.3 -1.4 -25.9 .8 -26.6L6 -25.6L5.9 -24.7C3.5 -25.4 .8 -25.6 -1.4 -25C-3.4 -24.6 -4.8 -24 -5.6 -23.2z" fill="#000" opacity=".2"/>
+    <path d="M4.6 -25.6q.9-1.4 1.9-1q.3.7-.1 1.2z" fill="${hc}" ${O}/><circle cx=".6" cy="-30.6" r=".6" fill="${cap}" ${O}/>`;
+  const visor=short+`<path d="M-5.8 -25.4h11.4l4.2.8q.8.7-.2 1.4H-5.8z" fill="#fff" ${O}/>`;
+  const band=short+`<rect x="-5.9" y="-25.9" width="11.8" height="1.7" rx=".8" fill="#e63946" ${O}/>`;
+  const styles=[short+sideburn, swept+sideburn, sideburn+bcap, wavy+sideburn, short+sideburn, sideburn+bcap, spiky+sideburn, visor+sideburn, band+sideburn,
+    sideburn+`<ellipse cx="-.6" cy="-27.2" rx="2.6" ry="1.3" fill="url(#${u}-shine)"/>`];
+  // head: big round skull, cheek, chin; ear; one big eye; bulb nose; grin with teeth
+  const skull="M.4 -28.4C-3.2 -28.4 -5.4 -26 -5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5C5.6 -19.3 5.3 -19.9 4.8 -20.3L5.4 -20.8C5.2 -21.6 5.1 -22.4 5.2 -23.2C5.3 -24 5.7 -24.6 5.3 -25.4C4.3 -27.5 2.6 -28.4 .4 -28.4Z";
+  const face=`<path d="${skull}" fill="${skin}" ${O}/>
+    <path d="M-5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5L5 -17.2L-5.6 -17.8Z" fill="${skinS}" opacity=".55"/>
+    <path d="M-3.6 -23.2C-5.4 -23.7 -5.9 -21.2 -4.6 -20C-3.9 -19.4 -3.1 -19.8 -3.2 -20.6C-3.4 -21.4 -3.2 -22.5 -3.6 -23.2Z" fill="${skin}" ${O}/><path d="M-4.2 -22.4q-.9.6-.5 1.7" stroke="${ink}" stroke-width=".35" fill="none" opacity=".7"/>
+    <path d="M5.1 -23.2C6.4 -22.9 7.4 -21.8 7.1 -20.7C6.9 -20 6.1 -19.8 5.3 -20.2" fill="${skin}" ${O}/><circle cx="6.1" cy="-21.6" r=".6" fill="#fff" opacity=".45"/>
+    <ellipse cx="3.1" cy="-22.6" rx="1.5" ry="1.8" fill="#fff" ${O}/><circle cx="3.6" cy="-22.5" r=".8" fill="${ink}"/><circle cx="3.9" cy="-22.9" r=".3" fill="#fff"/>
+    <path d="M1.4 -24.9C2.6 -25.9 4.2 -25.9 5.2 -25" stroke="${ink}" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M2.3 -19.4C3.3 -18.1 4.7 -18.1 5.4 -19.3" fill="#fff" ${O}/><path d="M2.7 -19.3C3.4 -18.9 4.4 -18.9 5 -19.3" stroke="${ink}" stroke-width=".3" fill="none"/>
+    <path d="M2.3 -19.4q1.6 2.1 3.1.1" fill="none" stroke="${ink}" stroke-width=".55" stroke-linecap="round"/>
+    <ellipse cx="2.4" cy="-20.4" rx="1.3" ry=".8" fill="#ff8a8a" opacity=".35"/>`;
+  const extra=(beard?`<path d="M-3.3 -20.4C-3.2 -17.6 -1.5 -16.4 1.8 -16.4C4.1 -16.4 5.3 -17.4 5.5 -19.1C4.8 -18.2 3.7 -17.9 2.4 -17.9C0 -17.9 -2.1 -18.6 -3.3 -20.4Z" fill="${hc}" ${O}/>`:'')
+    +(glasses?`<ellipse cx="3.1" cy="-22.6" rx="2.2" ry="2.3" fill="#fff" fill-opacity=".15" stroke="${ink}" stroke-width=".6"/><path d="M.9 -23.2L-4.4 -23.9" stroke="${ink}" stroke-width=".6"/>`:'');
+  // body build
+  const bw=[1.25,1,.85][build], bh=[.94,1,1.1][build];
+  const leg=(x,cls,far)=>`<rect x="${x-1.7}" y="-10" width="3.4" height="6.2" rx="1.6" fill="${skin}" ${O}/>${far?`<rect x="${x-1.7}" y="-10" width="3.4" height="6.2" rx="1.6" fill="#000" opacity=".2"/>`:''}
+    <g class="${cls}"><rect x="${x-1.5}" y="-4.6" width="3" height="4.1" rx="1.4" fill="${skin}" ${O}/><rect x="${x-1.55}" y="-2.9" width="3.1" height="1.5" rx=".5" fill="#f6f6f6" ${O}/>
+    <path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#f4f4f4" ${O}/><path d="M${x+.2} -1.5q2.4.1 3.3 1" stroke="${ink}" stroke-width=".35" fill="none" opacity=".5"/>
+    ${far?`<rect x="${x-1.5}" y="-4.6" width="3" height="4.1" rx="1.4" fill="#000" opacity=".2"/><path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#000" opacity=".14"/>`:''}</g>`;
   return `<g class="body">
-    <ellipse cx="1" cy=".7" rx="5.4" ry="1.6" fill="#000" opacity=".26"/>
-    <g class="armB"><path d="M-2.4 -19.6q2-.7 3-.1l-.6 5h-2.6z" fill="${skin}"/><path d="M-2.4 -19.6q2-.7 3-.1l-.6 5h-2.6z" fill="#000" opacity=".22"/><path d="M-2.4 -14.8q1.5-.4 2.4.2l-.4 4.2h-2.3z" fill="${skin}"/><path d="M-2.4 -14.8q1.5-.4 2.4.2l-.4 4.2h-2.3z" fill="#000" opacity=".22"/><circle cx="-1.5" cy="-10.1" r="1.3" fill="${skin}"/><circle cx="-1.5" cy="-10.1" r="1.3" fill="#000" opacity=".22"/></g>
-    <g class="legL">${leg(-.7,'shin',true)}</g><g class="legR">${leg(.7,'shin',false)}</g>
-    <path d="M-3.8 -12.4q0-1.6 1.2-1.8h5.4q1.4.2 1.6 1.8l.2 5.2h-3l-1.1-1.4l-1 1.4h-3.1z" fill="url(#${u}-shorts)"/><path d="M1.6 -11.8l.2 4.2" stroke="#000" stroke-width=".35" opacity=".25"/><path d="M-3.5 -11.9h8.3" stroke="#fff" stroke-width=".3" opacity=".25"/>
-    <path d="M-3.6 -12.2q-.8-3.6-.4-7.2q.4-2.8 3-3.4h2.2q2.8.4 3.6 3q.8 2.4.6 4.4l-.2 3.2z" fill="${shirt}"/><path d="M-3.6 -12.2q-.8-3.6-.4-7.2q.4-2.8 3-3.4h-.4l-.6 10.6z" fill="#000" opacity=".1"/><path d="M4.3 -19.2q.9 2.6.6 5.6" stroke="#fff" stroke-width=".55" opacity=".3" fill="none"/><path d="M-3.4 -12.3h8.2" stroke="#000" stroke-width=".3" opacity=".15"/>
-    <path d="M.6 -22.6q2.6.4 3.4 2.8l-1.4.6q-.5-1.9-2.2-2.2z" fill="#000" opacity=".14"/>
-    <path d="M-1.4 -23.6h3.6l.5 3.6h-4.6z" fill="${skin}"/><path d="M1.5 -22.6q.5.6.3 1.4" stroke="#b87e5f" stroke-width=".3" opacity=".6" fill="none"/>
-    <path d="M-1.8 -22.3q1.3.6 2.4.4q1.4-.2 2.3-1q.3 1.5-1.1 2.1q-1.6.6-3.6-.4z" fill="#fff"/>
-    <ellipse cx=".4" cy="-20.6" rx="3.2" ry="1" fill="#000" opacity=".12"/>
-    <g class="arm"><path d="M.2 -19.7q2.4-.6 3.6.4l-.5 5.2h-3z" fill="${skin}"/><path d="M-.1 -20.1q2.7-.9 4.2.2l-.2 3.4h-3.8z" fill="${shirt}"/><path d="M.1 -16.5h3.8" stroke="#000" stroke-width=".3" opacity=".2"/>
-      <g class="fore"><path d="M.7 -14.7q1.8-.5 3 .2l-.4 4.4h-2.7z" fill="${skin}"/><rect x=".6" y="-11.4" width="3.2" height="1.1" rx=".45" fill="#fff"/><circle cx="2.2" cy="-9.5" r="1.4" fill="${skin}"/><path d="M3.2 -10.1q.9-.2.7.7" stroke="#c98e6c" stroke-width=".4" fill="none"/>
-      <g transform="translate(2.5,-9.1) rotate(-10)"><rect x="-.6" y=".4" width="1.2" height="2.9" rx=".6" fill="#2a2a2a"/><path d="M-.6 1.2h1.2M-.6 2h1.2M-.6 2.8h1.2" stroke="#555" stroke-width=".25"/><ellipse cx="0" cy="5.8" rx="2.5" ry="3" fill="#1f1f1f"/><ellipse cx="0" cy="5.8" rx="2.15" ry="2.65" fill="url(#${u}-paddle)"/><ellipse cx="-.6" cy="4.8" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g></g>
-    <!-- bobblehead: the head is scaled up well past the body on purpose (backyard-sports proportions); the chin still lands on the neck -->
-    <g class="head"><g transform="translate(-.2,2.6) scale(1.27)">${face}${styles[style]}${extra}</g></g>
+    <ellipse cx="1" cy=".7" rx="5.8" ry="1.7" fill="#000" opacity=".25"/>
+    <g class="armB"><path d="M-2.6 -18.4q2.2-.8 3.4 0l-.7 5.2h-2.8z" fill="${skinS}" ${O}/><path d="M-2.6 -13.4q1.6-.5 2.6.2l-.4 4.3h-2.5z" fill="${skinS}" ${O}/><circle cx="-1.6" cy="-8.6" r="1.6" fill="${skinS}" ${O}/></g>
+    <g class="legL">${leg(-.8,'shin',true)}</g><g class="legR">${leg(.8,'shin',false)}</g>
+    <g transform="scale(${bw},${bh})">
+      <path d="M-4 -11.8q0-1.8 1.4-2h5.6q1.6.2 1.8 2l.2 5.4h-3.2l-1.2-1.5l-1.1 1.5h-3.3z" fill="#2f4063" ${O}/><path d="M-3.8 -8h8.4v1.6h-8.2z" fill="#000" opacity=".2"/>
+      <path d="M-4 -11.6q-1-4 -.4-7.8q.5-3.2 3.4-3.8h2.4q3.2.4 4 3.4q.9 2.6.6 4.8l-.2 3.4z" fill="${shirt}" ${O}/><path d="M-4 -11.6q-1-4 -.4-7.8q.4-2.4 2-3.2q-.8 2-.6 4.6q.2 3.4 1 6.4z" fill="${shirtS}" opacity=".5"/><path d="M-3.9 -14h9.2l.2 2.4h-9.6z" fill="${shirtS}" opacity=".45"/>
+    </g>
+    <path d="M-1.6 -23.6h3.8l.5 3.6h-4.8z" fill="${skin}" ${O}/>
+    <g class="arm"><path d="M-.2 -18.6q2.8-.8 4.2.4l-.6 5.4h-3.4z" fill="${skin}" ${O}/><path d="M-.5 -19q3.1-1 4.9.2l-.2 3.6h-4.4z" fill="${shirt}" ${O}/>
+      <g class="fore"><path d="M.4 -13.6q2-.6 3.4.2l-.5 4.4h-3z" fill="${skin}" ${O}/><rect x=".3" y="-10.4" width="3.6" height="1.2" rx=".5" fill="#fff" ${O}/><circle cx="2.2" cy="-8.2" r="1.7" fill="${skin}" ${O}/>
+      <g transform="translate(2.6,-7.7) rotate(-10)"><rect x="-.7" y=".4" width="1.4" height="3" rx=".7" fill="#2a2a2a" ${O}/><ellipse cx="0" cy="6.2" rx="2.8" ry="3.3" fill="#7c3aed" ${O}/><ellipse cx="0" cy="6.2" rx="2.1" ry="2.6" fill="#9a6cf5"/><ellipse cx="-.6" cy="5.2" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g></g>
+    <g class="head"><g transform="translate(-.4,3.2) scale(1.4)">${face}${styles[style]}${extra}</g></g>
   </g>`;
 }
 const BOX={a0:{x:47,y:36},a1:{x:47,y:76},b0:{x:163,y:36},b1:{x:163,y:76}};
@@ -692,7 +669,7 @@ class Rally{
   }
   aim(p,pt,back){ p.tx=pt.x+(p.side==='a'?-back:back); p.ty=pt.y; this.clamp(p); }
   // nobody ever crosses the net (or wanders far off the court): A stays left of 97, B right of 113
-  clamp(p){ const lo=p.side==='a'?6:113, hi=p.side==='a'?97:204; p.tx=Math.min(hi,Math.max(lo,p.tx)); p.ty=Math.min(100,Math.max(29,p.ty)); p.x=Math.min(hi,Math.max(lo,p.x)); p.y=Math.max(29,p.y); }
+  clamp(p){ const lo=p.side==='a'?6:113, hi=p.side==='a'?97:204; p.tx=Math.min(hi,Math.max(lo,p.tx)); p.ty=Math.min(100,Math.max(32,p.ty)); p.x=Math.min(hi,Math.max(lo,p.x)); p.y=Math.max(32,p.y); }
   nextShot(){
     const r=this.receiver; const opp=r.side==='a'?'b':'a'; const b=this.ball; const roll=Math.random(); let kind, to;
     const high = b.kind==='lob' || (b.plan==='volley'&&b.z>7);
@@ -750,17 +727,19 @@ class Rally{
       if(p.mode==='play') lean=4+(p.lean||0)*9;
       const bob=p.moving?Math.abs(Math.sin(p.phase*2))*.8:Math.sin(T*2.2+k)*.35;
       e.el.setAttribute('transform',`translate(${p.x.toFixed(2)},${(p.y-jump-bob).toFixed(2)})`);
-      e.body.setAttribute('transform',`scale(${p.face*.8},${sy*.8}) rotate(${lean.toFixed(1)} 0 0)`);
+      e.body.setAttribute('transform',`scale(${p.face*.78},${sy*.78}) rotate(${lean.toFixed(1)} 0 0)`);
       // legs: thighs scissor from the hip, the trailing shin folds back at the knee; standing is a slight ready crouch
       const back=(p.lean||0)<-.3; const amp=back?22:32; const sw=p.moving?Math.sin(p.phase*(back?1.5:1)):0; const thighL=p.moving?sw*amp:(p.mode==='win'?-12:6), thighR=p.moving?-sw*amp:(p.mode==='win'?-12:-6);
       const kneeL=p.moving?Math.max(0,-sw)*50:-10, kneeR=p.moving?Math.max(0,sw)*50:-10;
-      e.legL.setAttribute('transform',`rotate(${thighL} -.7 -9.8)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -.7 -4.5)`);
-      e.legR.setAttribute('transform',`rotate(${thighR} .7 -9.8)`); e.shinR.setAttribute('transform',`rotate(${kneeR} .7 -4.5)`);
-      e.arm.setAttribute('transform',`rotate(${arm} 1.6 -19.6)`); e.fore.setAttribute('transform',`rotate(${fore} 2.2 -14.6)`);
-      e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*28:0)} -1 -19.4)`);
+      e.legL.setAttribute('transform',`rotate(${thighL} -.8 -9.4)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -.8 -4.2)`);
+      e.legR.setAttribute('transform',`rotate(${thighR} .8 -9.4)`); e.shinR.setAttribute('transform',`rotate(${kneeR} .8 -4.2)`);
+      e.arm.setAttribute('transform',`rotate(${arm} 1.4 -18.2)`); e.fore.setAttribute('transform',`rotate(${fore} 2 -13.4)`);
+      e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*28:0)} -1 -18)`);
       e.head.setAttribute('transform',`rotate(${headRot} .4 -20)`);
     });
     [...this.els].sort((u,v)=>this.players[+u.el.dataset.k].y-this.players[+v.el.dataset.k].y).forEach(e=>this.svg.appendChild(e.el));
+    // when two players stack, only the one in front keeps his name; the other's would print across a face
+    this.players.forEach((p,k)=>{ const hidden=this.players.some((q,j)=>j!==k&&q.y>p.y&&Math.abs(q.x-p.x)<14&&q.y-p.y<16); this.els[k].el.querySelector('text').style.opacity=hidden?0:1; });
     const b=this.ball; const gone=b.state==='gone'||b.state==='wait';
     this.ballEl.style.opacity=gone?0:1; this.shadowEl.style.opacity=gone?0:.35;
     if(!gone){ this.ballEl.setAttribute('transform',`translate(${b.x.toFixed(2)},${(b.y-b.z*1.1).toFixed(2)}) rotate(${(T*720)%360}) scale(${(1+b.z*.025).toFixed(2)})`);
