@@ -579,29 +579,40 @@ function avatarSvg(name,team,u){
   const h=hashStr(name); const hi=(h>>>4)%6, hc=HAIRC[hi]; const style=(h>>>8)%10; const glasses=((h>>>12)%3)===0, beard=((h>>>14)%3)===0;
   const skin=`url(#${u}-skin)`, shirt=`url(#${u}-shirt${team.toUpperCase()})`, cap=team==='a'?'#9fb82a':'#d9532f'; const hg=`url(#${u}-hair${hi})`;
   const two=(d)=>`<path d="${d}" fill="${hc}"/><path d="${d}" fill="${hg}"/>`;
-  const short =two("M-5 -22.6q-.3-6.6 5.4-6.8q4.6 0 5.3 4.6q-2.2-1.8-5.3-1.4q-3.6.5-5.4 3.6z");
-  const swept =two("M-5 -22.4q-.5-7.2 5.8-7q4.4.2 5.2 4q-1.8-1.6-5.4-1.2q-2.6.4-3.4 2.8q-.8-1.2-2.2 1.4z");
-  const spiky =two("M-5 -22.6q-.4-3.2 1.2-5.4l.8 1.6l1.2-2.4l1 1.8l1.4-2.2l1 2l1.6-1.4l.4 2l1.8-1q1 1.6.9 3.3q-2.2-1.8-5.3-1.4q-3.6.5-6 3.1z");
-  const wavy  =two("M-5.2 -22.2q-1-7 5.6-7.2q4.8 0 5.4 4.4q-1.4-1.2-3.1-1q-1.3-1.6-3.3-.5q-2 .2-2.7 2.3q-1.2.4-1.9 2z");
-  const styles=[short,swept,spiky,wavy,short,swept,
-    short+`<path d="M-5.4 -23q-.3-6.4 5.6-6.5q4.6.2 5.3 4.3l3.4.4q.8.6-.2 1.2h-3.2q-2.2-1.4-5.3-1q-3.6.5-5.6 3.2z" fill="${cap}"/><path d="M-5.4 -23q-.3-6.4 5.6-6.5q4.6.2 5.3 4.3l3.4.4q.8.6-.2 1.2h-3.2q-2.2-1.4-5.3-1q-3.6.5-5.6 3.2z" fill="${hg}"/><path d="M-4.8 -23.2q1.2-4.6 5.2-5.1" stroke="#000" stroke-width=".3" opacity=".2" fill="none"/>`,
-    short+`<path d="M-5.2 -24.4h10.6l3.4.6q.7.6-.2 1.2h-13.8z" fill="#fff"/><path d="M-5.2 -23.2h10.2v-1.2h-10.2z" fill="#000" opacity=".08"/>`,
-    short+`<rect x="-5.3" y="-24.9" width="10.6" height="1.5" rx=".7" fill="#e63946"/><path d="M-5.3 -24.2h10.6" stroke="#fff" stroke-width=".3" opacity=".5"/>`,
-    `<ellipse cx="-.8" cy="-26.4" rx="2.2" ry="1.1" fill="url(#${u}-shine)"/>`
+  const grayT=((h>>>16)%3)===0 && hi<4; // graying temples on some
+  // Hair sits on a real skull: top at y≈-28, back of head at x≈-5, hairline at the forehead, down to the nape behind the ear.
+  const short =two("M-5.1 -22.4C-5.9 -26.2 -3 -28.6 .6 -28.3C3.6 -28.1 5.2 -26.4 5.4 -24.4C3.8 -25.9 1.4 -26.3 -1 -25.6C-3.2 -25 -4.5 -23.8 -5.1 -22.4Z");
+  const swept =two("M-5.1 -22.4C-5.9 -26.2 -3 -28.6 .6 -28.3C3.8 -28.1 5.6 -26.2 6.1 -24.2C5.3 -24.8 4.6 -24.9 4 -24.6C3.4 -25.9 1.4 -26.3 -1 -25.6C-3.2 -25 -4.5 -23.8 -5.1 -22.4Z");
+  const spiky =two("M-5.1 -22.4C-5.6 -25.2 -4.4 -27 -3 -27.6L-2.4 -26.2L-1.2 -28.4L-.4 -26.8L1 -28.8L1.8 -27L3.2 -28.2L3.6 -26.4L5 -26.8C5.4 -26 5.5 -25.2 5.4 -24.4C3.8 -25.9 1.4 -26.3 -1 -25.6C-3.2 -25 -4.5 -23.8 -5.1 -22.4Z");
+  const wavy  =two("M-5.3 -22.2C-6.2 -25.8 -4.4 -27.8 -2.6 -27.6C-2 -28.9 .4 -29 1.4 -27.9C3 -28.6 4.8 -27.4 5 -26C5.8 -25.6 5.8 -24.8 5.4 -24.2C3.8 -25.8 1.4 -26.2 -1 -25.6C-3.2 -25 -4.5 -23.8 -5.3 -22.2Z");
+  const sideburn=`<path d="M-4.2 -22.8q-.4 1.6 0 3.2l1 .2q-.3-1.7 0-3.3z" fill="${hc}" opacity=".85"/>`;
+  const temples=grayT?`<ellipse cx="-3.4" cy="-24.6" rx="1.3" ry="1.1" fill="#c9ccd0" opacity=".55"/>`:'';
+  const sheen=`<path d="M-3.6 -26.2C-2 -27.6 1 -27.9 3.2 -26.9" stroke="#fff" stroke-width=".55" opacity=".35" fill="none" stroke-linecap="round"/>`;
+  const capShape=`M-5.4 -23C-6 -26.8 -3 -29.2 .6 -28.9C3.8 -28.7 5.5 -26.8 5.6 -24.6L9.2 -24.1q.8.7-.2 1.3H5.4C3.8 -24.9 1.4 -25.3 -1 -24.6C-3.2 -24 -4.6 -23.4 -5.4 -23Z`;
+  const styles=[short+sheen+sideburn+temples, swept+sheen+sideburn+temples, spiky+sideburn+temples, wavy+sheen+sideburn+temples, short+sheen+sideburn+temples, swept+sheen+sideburn+temples,
+    sideburn+`<path d="${capShape}" fill="${cap}"/><path d="${capShape}" fill="${hg}"/><path d="M-4.6 -23.6C-4 -27 -1 -28.6 2.2 -28.2" stroke="#000" stroke-width=".3" opacity=".22" fill="none"/><circle cx=".6" cy="-28.6" r=".5" fill="${cap}"/>`,
+    short+sideburn+temples+`<path d="M-5.2 -24.6h10.6l3.6.7q.7.6-.2 1.2H-5.2z" fill="#fff"/><path d="M-5.2 -23.4h10.4v-1.2H-5.2z" fill="#000" opacity=".08"/>`,
+    short+sheen+sideburn+temples+`<rect x="-5.4" y="-25.1" width="10.8" height="1.5" rx=".7" fill="#e63946"/><path d="M-5.4 -24.4h10.8" stroke="#fff" stroke-width=".3" opacity=".5"/>`,
+    sideburn+`<ellipse cx="-.6" cy="-27" rx="2.4" ry="1.2" fill="url(#${u}-shine)"/>`+two("M-5.1 -22.4q-.3 1.2.4 1.9l.8-.4q-.5-.7-.3-1.7z")
   ];
-  // head: a slightly oval skull with a jaw, ear with an inner fold, real eye (white, iris, pupil, catchlight), brow, nose with a nostril
-  const face=`<path d="M-4.6 -20.4q-.9 1.9.6 2.2q1.2-.2 1.1-1.9q-.3-1.4-1.7-.3z" fill="${skin}"/><path d="M-4 -20.2q.5.9 0 1.5" stroke="#000" stroke-width=".3" opacity=".25" fill="none"/>
-    <path d="M-4.8 -22.4q0-5.8 5.4-5.8q5.2 0 5.2 5.4q.1 2.6-1.3 4.1q-1.3 1.3-3.3 1.2q-2.6-.2-4.2-1.8q-1.8-1.6-1.8-3.1z" fill="${skin}"/>
-    <path d="M-1.2 -17.9q2.6 1.2 5.2-.6q-1.5 1.8-3.4 1.8q-1.4 0-1.8-1.2z" fill="#000" opacity=".12"/>
-    <ellipse cx="-1.4" cy="-25.6" rx="2" ry="1.1" fill="url(#${u}-shine)"/>
-    <path d="M5.4 -21.4q1.6.4 1.4 1.8q-.5.8-1.6.4q-.5-.3-.3-.8" fill="${skin}"/><path d="M5.8 -19.5q-.7.4-1.3-.1" stroke="#c98e6c" stroke-width=".45" fill="none" stroke-linecap="round"/>
-    <ellipse cx="3.4" cy="-19.9" rx="1.2" ry=".7" fill="#ff8f8f" opacity=".3"/>
-    <path d="M2.2 -24.2q1.4-.9 2.8-.2" stroke="${hc}" stroke-width=".7" fill="none" stroke-linecap="round"/>
-    <ellipse cx="3.5" cy="-22.6" rx=".95" ry=".8" fill="#fff"/><circle cx="3.75" cy="-22.6" r=".55" fill="#4a3728"/><circle cx="3.85" cy="-22.6" r=".3" fill="#111"/><circle cx="4" cy="-22.85" r=".15" fill="#fff"/>
-    <path d="M2.4 -23.4q1.3-.3 2.4.1" stroke="#000" stroke-width=".3" opacity=".35" fill="none"/>
-    <path d="M3 -19.3q1 .9 2.2-.1" stroke="#b5654a" stroke-width=".55" fill="none" stroke-linecap="round"/>`;
-  const extra=(beard?`<path d="M-2.4 -20.4q.3 4.9 3.7 5q3.4 0 4.9-3.7q-1.1 1.9-4.4 1.7q-2.7-.2-4.2-3z" fill="${hc}" opacity=".9"/>`:`<path d="M-.4 -17.6q2 .8 4-.6" stroke="${hc}" stroke-width=".6" opacity=".12" fill="none"/>`)
-    +(glasses?`<rect x="1.9" y="-23.8" width="3.5" height="2.5" rx="1.1" fill="#fff" fill-opacity=".14" stroke="#222" stroke-width=".45"/><path d="M1.9 -22.9h-5.8" stroke="#222" stroke-width=".45"/>`:'');
+  // Head in profile: cranium, brow ridge, bridge of the nose, lips, chin and jaw. Then ear, eye with lids and lashes, nose with a nostril, mouth with lips.
+  const skull="M.4 -28.3C-3 -28.3 -5.2 -26.1 -5.2 -23.2C-5.2 -21.4 -4.7 -19.9 -3.4 -18.8C-2.4 -17.9 -.3 -17.2 2.3 -17.2C3.8 -17.2 4.8 -17.8 5.1 -18.6C5.3 -19.2 5.1 -19.7 4.7 -20.1L5.3 -20.4C5.1 -21.2 5 -22.1 5.1 -22.9C5.2 -23.8 5.6 -24.4 5.2 -25.1C4.2 -27.2 2.6 -28.3 .4 -28.3Z";
+  const face=`<path d="${skull}" fill="${skin}"/>
+    <path d="M-5.2 -23.2C-5.2 -21.4 -4.7 -19.9 -3.4 -18.8C-2.4 -17.9 -.3 -17.2 2.3 -17.2C3.8 -17.2 4.8 -17.8 5.1 -18.6L5.1 -17.4L-5.4 -18Z" fill="#000" opacity=".1"/>
+    <path d="M-1 -18.1q2.8 1.1 5.6-.6q-1.8 1.9-4 1.6q-1.3-.2-1.6-1z" fill="#000" opacity=".12"/>
+    <ellipse cx="-.6" cy="-26" rx="2.4" ry="1.2" fill="url(#${u}-shine)"/><ellipse cx="4.2" cy="-24.4" rx=".9" ry="1.6" fill="url(#${u}-shine)"/>
+    <path d="M-3.4 -22.9C-5 -23.3 -5.5 -21.2 -4.4 -20.1C-3.8 -19.5 -3.1 -19.9 -3.2 -20.6C-3.3 -21.3 -3.1 -22.3 -3.4 -22.9Z" fill="${skin}"/><path d="M-3.9 -22.3q-.9.5-.6 1.6q.2.6.7.6" stroke="#b87e5f" stroke-width=".35" fill="none"/>
+    <path d="M5.1 -22.9C6.1 -22.3 6.8 -21.4 6.5 -20.7C6.3 -20.2 5.7 -20.1 5.2 -20.3" fill="${skin}"/><path d="M5.9 -20.6q.5-.2.5.2" stroke="#b87e5f" stroke-width=".4" fill="none" stroke-linecap="round"/><path d="M5.3 -22.6q.9.6 1.1 1.4" stroke="#fff" stroke-width=".35" opacity=".35" fill="none"/>
+    <ellipse cx="3.3" cy="-20.3" rx="1.3" ry=".8" fill="#ff8f8f" opacity=".26"/>
+    <path d="M2.1 -24.3C3 -25 4.2 -25 5 -24.4" stroke="${hc}" stroke-width=".8" fill="none" stroke-linecap="round"/><path d="M2.1 -24.3C3 -25 4.2 -25 5 -24.4" stroke="#000" stroke-width=".3" opacity=".2" fill="none"/>
+    <path d="M2.2 -22.8C2.9 -23.7 4.1 -23.8 4.9 -22.9C4.1 -22.1 2.9 -22.1 2.2 -22.8Z" fill="#fff"/>
+    <circle cx="3.9" cy="-22.85" r=".58" fill="#5b3b24"/><circle cx="3.95" cy="-22.85" r=".3" fill="#111"/><circle cx="4.15" cy="-23.1" r=".15" fill="#fff"/>
+    <path d="M2.2 -22.8C2.9 -23.7 4.1 -23.8 4.9 -22.9" stroke="#3b2a1e" stroke-width=".38" fill="none" stroke-linecap="round"/><path d="M4.7 -23.1l.4-.3" stroke="#3b2a1e" stroke-width=".3"/><path d="M2.4 -23.6C3.1 -24.1 4 -24.1 4.6 -23.6" stroke="#000" stroke-width=".25" opacity=".25" fill="none"/>
+    <path d="M2 -22.9l-.6.1M2 -22.6l-.5.3" stroke="#000" stroke-width=".22" opacity=".22"/>
+    <path d="M2.9 -19.3C3.6 -18.6 4.5 -18.6 5.1 -19.3" stroke="#9c4f3a" stroke-width=".5" fill="none" stroke-linecap="round"/><path d="M3.2 -18.9C3.8 -18.5 4.4 -18.5 4.8 -18.9" stroke="#e8a090" stroke-width=".35" opacity=".7" fill="none" stroke-linecap="round"/>
+`;
+  const extra=(beard?`<path d="M-3.3 -20.2C-3.2 -17.9 -1.6 -16.9 1.6 -16.9C3.9 -16.9 5.1 -17.8 5.3 -19.2C4.6 -18.3 3.6 -18 2.2 -18C-.2 -18 -2.2 -18.6 -3.3 -20.2Z" fill="${hc}" opacity=".92"/><path d="M-3.3 -20.2C-3.2 -17.9 -1.6 -16.9 1.6 -16.9C3.9 -16.9 5.1 -17.8 5.3 -19.2" fill="url(#${u}-hair${hi})"/>`:`<path d="M-2.4 -19.4C-1.4 -18 .8 -17.6 3.2 -18" stroke="${hc}" stroke-width=".9" opacity=".1" fill="none"/>`)
+    +(glasses?`<path d="M2.1 -22.6C2.4 -23.9 4.6 -24 5.1 -22.8C5 -21.6 2.4 -21.5 2.1 -22.6Z" fill="#fff" fill-opacity=".14" stroke="#222" stroke-width=".45"/><path d="M2.1 -23.2L-4.2 -23.6" stroke="#222" stroke-width=".45"/><path d="M5.1 -22.8l.4-.3" stroke="#222" stroke-width=".45"/>`:'');
   // legs: thigh from the hip, shin from the knee, sock with a stripe, sneaker with a sole, toe and lace
   const leg=(x,cls)=>`<rect x="${x-1.25}" y="-8.8" width="2.5" height="5.3" rx="1.2" fill="${skin}"/>
     <g class="${cls}"><rect x="${x-1.1}" y="-4.4" width="2.2" height="3.9" rx="1" fill="${skin}"/><rect x="${x-1.15}" y="-2.9" width="2.3" height="1.4" rx=".5" fill="#f6f6f6"/><path d="M${x-1.15} -2.2h2.3" stroke="#2f3f5a" stroke-width=".35"/>
@@ -613,7 +624,7 @@ function avatarSvg(name,team,u){
     <path d="M-3.8 -10.6q.2-1.4 1.2-1.6h5.6q1 .2 1.2 1.6l.2 4.6h-3l-1.3-1.5l-1.1 1.5h-3z" fill="url(#${u}-shorts)"/><path d="M-3.6 -6.4h2.8M1.2 -6.4h2.9" stroke="#000" stroke-width=".35" opacity=".25"/><path d="M-3.3 -10.2h7.2" stroke="#fff" stroke-width=".3" opacity=".25"/>
     <path d="M-4 -16.2q0-3 3-3.2h2.8q3.1.2 3.1 3.2l.4 6.2h-9.4z" fill="${shirt}"/><path d="M-4 -16.2q0-3 3-3.2h.7l-.3 9.4h-3.5z" fill="#000" opacity=".08"/><path d="M4.6 -16q.4 2.4.3 5.8" stroke="#fff" stroke-width=".5" opacity=".25" fill="none"/>
     <path d="M1.4 -19.1q2.6.2 3.2 2.6l-1.3.6q-.5-1.8-2-1.9z" fill="#000" opacity=".14"/>
-    <rect x="-.6" y="-20.3" width="2.5" height="2.4" rx=".9" fill="${skin}"/><path d="M-1.3 -19.6q1 .5 1.9.3q1.2-.2 1.9-.9q.3 1.3-.9 1.8q-1.3.5-2.9-.3z" fill="#fff"/><path d="M.6 -19.1l1.1 1.2" stroke="#fff" stroke-width=".4"/>
+    <path d="M-.7 -20.6h2.6l.4 3.4h-3.4z" fill="${skin}"/><path d="M1.4 -19.6q.5.6.3 1.4" stroke="#b87e5f" stroke-width=".3" opacity=".6" fill="none"/><path d="M-1.3 -19.6q1 .5 1.9.3q1.2-.2 1.9-.9q.3 1.3-.9 1.8q-1.3.5-2.9-.3z" fill="#fff"/><path d="M.6 -19.1l1.1 1.2" stroke="#fff" stroke-width=".4"/>
     <ellipse cx=".4" cy="-17.6" rx="4" ry="1" fill="#000" opacity=".12"/>
     <g class="arm"><path d="M1.3 -17.2q1.9-.5 3 .3l-.4 4.2h-2.4z" fill="${skin}"/><path d="M1.1 -17.5q2.1-.7 3.5.2l-.2 2.8h-3z" fill="${shirt}"/><path d="M1.3 -14.6h3" stroke="#000" stroke-width=".3" opacity=".2"/>
       <g class="fore"><path d="M1.6 -13.2q1.4-.4 2.4.2l-.3 3.6h-2.2z" fill="${skin}"/><rect x="1.4" y="-10.4" width="2.6" height="1" rx=".4" fill="#fff"/><circle cx="2.8" cy="-8.9" r="1.2" fill="${skin}"/><path d="M3.6 -9.4q.8-.2.6.6" stroke="#c98e6c" stroke-width=".4" fill="none"/>
@@ -706,8 +717,9 @@ class Rally{
       const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy); const step=p.speed*dt;
       if(p.mode==='play'){ if(d>step){ p.x+=dx/d*step; p.y+=dy/d*step; p.moving=true; p.phase+=step*.5; } else { p.x=p.tx; p.y=p.ty; p.moving=false; } this.clamp(p); }
       if(p.swing>0) p.swing=Math.max(0,p.swing-dt*4); if(p.hop>0) p.hop=Math.max(0,p.hop-dt*3); if(p.swing===0) p.over=0;
-      const toNet=p.side==='a'?1:-1; const want=(p.moving&&p.swing===0&&Math.abs(dx)>Math.abs(dy)*.7&&d>4)?Math.sign(dx):toNet;
-      p.faceCur+=(want-p.faceCur)*Math.min(1,dt*9);
+      // weight shift, not a turn: + toward the net, − backpedaling, 0 shuffling sideways (eased)
+      const toNet=p.side==='a'?1:-1; const want=p.moving&&d>2 ? (dx/d)*toNet : 0;
+      p.lean=(p.lean||0)+(want-(p.lean||0))*Math.min(1,dt*7);
     });
     this.draw();
     this.raf=requestAnimationFrame(t=>this.tick(t));
@@ -721,13 +733,13 @@ class Rally{
       if(p.hop>0) jump=Math.sin(Math.PI*p.hop)*5;
       if(p.mode==='win'){ jump=Math.abs(Math.sin(T*7+k))*6; arm=-150+Math.sin(T*12)*15; armB=-140+Math.sin(T*12+1)*15; fore=-20; }
       if(p.mode==='lose'){ sy=.93; headRot=22; arm=28; armB=18; fore=-4; }
-      if(p.moving) lean=8; else if(p.mode==='play') lean=4;
+      // forward lean when driving to the net, a backward lean on a backpedal, shuffle in between
+      if(p.mode==='play') lean=4+(p.lean||0)*9;
       const bob=p.moving?Math.abs(Math.sin(p.phase*2))*.8:Math.sin(T*2.2+k)*.35;
       e.el.setAttribute('transform',`translate(${p.x.toFixed(2)},${(p.y-jump-bob).toFixed(2)})`);
-      const fc=Math.abs(p.faceCur)<.08?(p.faceCur<0?-.08:.08):p.faceCur; // never fully edge-on
-      e.body.setAttribute('transform',`scale(${fc.toFixed(3)},${sy}) rotate(${lean} 0 0)`);
+      e.body.setAttribute('transform',`scale(${p.face},${sy}) rotate(${lean.toFixed(1)} 0 0)`);
       // legs: thighs scissor from the hip, the trailing shin folds back at the knee; standing is a slight ready crouch
-      const sw=p.moving?Math.sin(p.phase):0; const thighL=p.moving?sw*32:(p.mode==='win'?-12:6), thighR=p.moving?-sw*32:(p.mode==='win'?-12:-6);
+      const back=(p.lean||0)<-.3; const amp=back?22:32; const sw=p.moving?Math.sin(p.phase*(back?1.5:1)):0; const thighL=p.moving?sw*amp:(p.mode==='win'?-12:6), thighR=p.moving?-sw*amp:(p.mode==='win'?-12:-6);
       const kneeL=p.moving?Math.max(0,-sw)*50:-10, kneeR=p.moving?Math.max(0,sw)*50:-10;
       e.legL.setAttribute('transform',`rotate(${thighL} -1.3 -8.4)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -1.3 -4)`);
       e.legR.setAttribute('transform',`rotate(${thighR} 1.5 -8.4)`); e.shinR.setAttribute('transform',`rotate(${kneeR} 1.5 -4)`);
