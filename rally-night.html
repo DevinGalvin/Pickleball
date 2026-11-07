@@ -415,8 +415,9 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dat
 function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games));
   $('#hdrDate').textContent=dateShort(state.tonight.date);
-  $('#roster').innerHTML = PLAYERS.map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
-    return `<button class="chip ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?fmt(r1(s.pm/s.gp))+' avg · '+s.gp+' games':'New this season'}</span></span></button>`; }).join('')
+  // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
+  $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
+    return `<button class="chip ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
     + `<button class="chip add" id="addBtn">+ Add a new player</button>`;
   const T=state.tonight; const n=T.present.size;
   // Court 2 is an opt-in, never a default: it isn't always free. Only offered at 8+, where it means nobody (or far fewer) sits.
