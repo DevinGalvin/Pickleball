@@ -219,7 +219,8 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .scorebox.winner{animation:winPop .3s cubic-bezier(.34,1.56,.64,1)}
 @keyframes winPop{50%{transform:scale(1.04)}}
 /* the serve, the way it actually happens: Side A's lower box serves cross-court to Side B's upper box, the ball bounces in the box,
-   the return comes back cross-court to the server, and the third shot drops into Side B's kitchen. Whoever hits it bumps. */
+   the return comes back cross-court to the server, the third shot drops into Side B's kitchen, and Side B dinks it back.
+   The ball fades mid-air over the net on the way back, so the point is still live. Whoever hits it bumps. */
 .courtwrap::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
 #courts.serve .courtwrap::before{animation:sweep .7s ease-out .05s both}
 @keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:1}}
@@ -233,21 +234,22 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 #courts.serve .pname:nth-child(2){animation-delay:.08s}
 @keyframes runOnL{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
 @keyframes runOnR{from{opacity:0;transform:translateX(34px)}to{opacity:1;transform:none}}
-#courts.serve .ball{animation:rallyX 1.5s linear .45s both}
-#courts.serve .ball i{animation:rallyY 1.5s linear .45s both}
-#courts.serve .shadow{animation:rallyX 1.5s linear .45s both,shadowY 1.5s linear .45s both}
+#courts.serve .ball{animation:rallyX 1.9s linear .45s both}
+#courts.serve .ball i{animation:rallyY 1.9s linear .45s both}
+#courts.serve .shadow{animation:rallyX 1.9s linear .45s both,shadowY 1.9s linear .45s both}
 /* server is Side A's lower box; receiver is Side B's upper box. Their names bump when they hit. */
-#courts.serve .team.a .pname:nth-child(2){animation:runOnL .35s cubic-bezier(.2,.8,.2,1) .08s both,hitServer 1.5s linear .45s both}
-#courts.serve .team.b .pname:nth-child(1){animation:runOnR .35s cubic-bezier(.2,.8,.2,1) both,hitReceiver 1.5s linear .45s both}
+#courts.serve .team.a .pname:nth-child(2){animation:runOnL .35s cubic-bezier(.2,.8,.2,1) .08s both,hitServer 1.9s linear .45s both}
+#courts.serve .team.b .pname:nth-child(1){animation:runOnR .35s cubic-bezier(.2,.8,.2,1) both,hitReceiver 1.9s linear .45s both}
 #courts.serve .board:nth-child(2) .ball,#courts.serve .board:nth-child(2) .ball i,#courts.serve .board:nth-child(2) .shadow{animation-delay:.75s}
 #courts.serve .board:nth-child(2) .team.a .pname:nth-child(2){animation-delay:.08s,.75s}
 #courts.serve .board:nth-child(2) .team.b .pname:nth-child(1){animation-delay:0s,.75s}
-/* box centers in the court: A lower (22.4%,69%), B upper (77.6%,32.7%), B kitchen (56.7%,51%) */
-@keyframes rallyX{0%{left:22.4%;top:69%;opacity:0}4%{opacity:1}33%{left:77.6%;top:32.7%}66%{left:22.4%;top:69%}96%{opacity:1}100%{left:56.7%;top:51%;opacity:0}}
-@keyframes rallyY{0%{transform:translateY(0) scale(.85)}16%{transform:translateY(-38px) scale(1.2) rotate(180deg)}33%{transform:translateY(0) scale(.85) rotate(360deg)}38%{transform:translateY(-8px) scale(.9) rotate(400deg)}42%{transform:translateY(0) scale(.85) rotate(430deg)}54%{transform:translateY(-32px) scale(1.15) rotate(600deg)}66%{transform:translateY(0) scale(.85) rotate(720deg)}84%{transform:translateY(-18px) scale(1) rotate(900deg)}100%{transform:translateY(0) scale(.85) rotate(1000deg)}}
-@keyframes shadowY{0%,33%,42%,66%,100%{transform:scale(1);opacity:.6}16%,54%{transform:scale(.5);opacity:.2}38%{transform:scale(.85);opacity:.45}84%{transform:scale(.7);opacity:.35}4%{opacity:.6}}
-@keyframes hitServer{0%,2%{transform:scale(1.1)}9%{transform:none}60%{transform:none}66%{transform:scale(1.1)}73%{transform:none}}
-@keyframes hitReceiver{36%{transform:none}42%{transform:scale(1.1)}49%{transform:none}}
+/* box centers: A lower (22.4%,69%), B upper (77.6%,32.7%), B kitchen (57%,45%), net (50%,50%).
+   0-28 serve · 28-34 bounce · 34-56 return · 56-78 third-shot drop · 78-84 bounce · 84-100 B dinks it back, ball fades over the net */
+@keyframes rallyX{0%{left:22.4%;top:69%;opacity:0}3%{opacity:1}28%{left:77.6%;top:32.7%}34%{left:76%;top:35%}56%{left:22.4%;top:69%}78%{left:57%;top:45%}84%{left:58%;top:44%}92%{opacity:1}100%{left:46%;top:49%;opacity:0}}
+@keyframes rallyY{0%{transform:translateY(0) scale(.85)}14%{transform:translateY(-38px) scale(1.2) rotate(180deg)}28%{transform:translateY(0) scale(.85) rotate(360deg)}31%{transform:translateY(-8px) scale(.9) rotate(390deg)}34%{transform:translateY(0) scale(.85) rotate(420deg)}45%{transform:translateY(-32px) scale(1.15) rotate(600deg)}56%{transform:translateY(0) scale(.85) rotate(720deg)}67%{transform:translateY(-20px) scale(1) rotate(880deg)}78%{transform:translateY(0) scale(.85) rotate(1000deg)}81%{transform:translateY(-5px) scale(.88) rotate(1020deg)}84%{transform:translateY(0) scale(.85) rotate(1040deg)}100%{transform:translateY(-16px) scale(1) rotate(1180deg)}}
+@keyframes shadowY{0%,28%,34%,56%,78%,84%{transform:scale(1);opacity:.6}14%,45%{transform:scale(.5);opacity:.2}31%,81%{transform:scale(.85);opacity:.45}67%{transform:scale(.7);opacity:.35}100%{transform:scale(.6);opacity:.3}3%{opacity:.6}}
+@keyframes hitServer{0%,2%{transform:scale(1.1)}8%{transform:none}51%{transform:none}56%{transform:scale(1.1)}62%{transform:none}}
+@keyframes hitReceiver{29%{transform:none}34%{transform:scale(1.1)}40%{transform:none}79%{transform:none}84%{transform:scale(1.1)}90%{transform:none}}
 .gamebar .g.flip{animation:flipIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes flipIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* the result: score stamps over the net, winners pop with a burst of balls, losers sag */
