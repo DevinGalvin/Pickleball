@@ -574,42 +574,50 @@ function simDefs(u){
     ${hair}</defs>`;
 }
 function avatarSvg(name,team,u){
-  // Side view, facing right (Side B is mirrored). Soft 3D look: gradient skin with a highlight, big round head, rounded body.
+  // Side view, facing right (Side B is mirrored). Soft 3D look. Two-segment arms and legs so elbows and knees bend; feet at (0,0),
+  // about 28 units tall. Rig groups: .legL/.legR (hip) with .shin (knee), .arm (shoulder) with .fore (elbow), .armB, .head.
   const h=hashStr(name); const hi=(h>>>4)%6, hc=HAIRC[hi]; const style=(h>>>8)%10; const glasses=((h>>>12)%3)===0, beard=((h>>>14)%3)===0;
   const skin=`url(#${u}-skin)`, shirt=`url(#${u}-shirt${team.toUpperCase()})`, cap=team==='a'?'#9fb82a':'#d9532f'; const hg=`url(#${u}-hair${hi})`;
   const two=(d)=>`<path d="${d}" fill="${hc}"/><path d="${d}" fill="${hg}"/>`;
-  // hair in profile: a cap over the back and top of the head, the face stays clear. Bald is 1 in 10.
-  const short =two("M-5 -21.6q-.3-6.6 5.4-6.8q4.6 0 5.3 4.6q-2.2-1.8-5.3-1.4q-3.6.5-5.4 3.6z");
-  const swept =two("M-5 -21.4q-.5-7.2 5.8-7q4.4.2 5.2 4q-1.8-1.6-5.4-1.2q-2.6.4-3.4 2.8q-.8-1.2-2.2 1.4z");
-  const spiky =two("M-5 -21.6q-.4-3.2 1.2-5.4l.8 1.6l1.2-2.4l1 1.8l1.4-2.2l1 2l1.6-1.4l.4 2l1.8-1q1 1.6.9 3.3q-2.2-1.8-5.3-1.4q-3.6.5-6 3.1z");
-  const wavy  =two("M-5.2 -21.2q-1-7 5.6-7.2q4.8 0 5.4 4.4q-1.4-1.2-3.1-1q-1.3-1.6-3.3-.5q-2 .2-2.7 2.3q-1.2.4-1.9 2z");
+  const short =two("M-5 -22.6q-.3-6.6 5.4-6.8q4.6 0 5.3 4.6q-2.2-1.8-5.3-1.4q-3.6.5-5.4 3.6z");
+  const swept =two("M-5 -22.4q-.5-7.2 5.8-7q4.4.2 5.2 4q-1.8-1.6-5.4-1.2q-2.6.4-3.4 2.8q-.8-1.2-2.2 1.4z");
+  const spiky =two("M-5 -22.6q-.4-3.2 1.2-5.4l.8 1.6l1.2-2.4l1 1.8l1.4-2.2l1 2l1.6-1.4l.4 2l1.8-1q1 1.6.9 3.3q-2.2-1.8-5.3-1.4q-3.6.5-6 3.1z");
+  const wavy  =two("M-5.2 -22.2q-1-7 5.6-7.2q4.8 0 5.4 4.4q-1.4-1.2-3.1-1q-1.3-1.6-3.3-.5q-2 .2-2.7 2.3q-1.2.4-1.9 2z");
   const styles=[short,swept,spiky,wavy,short,swept,
-    short+`<path d="M-5.4 -22q-.3-6.4 5.6-6.5q4.6.2 5.3 4.3l3.4.4q.8.6-.2 1.2h-3.2q-2.2-1.4-5.3-1q-3.6.5-5.6 3.2z" fill="${cap}"/><path d="M-5.4 -22q-.3-6.4 5.6-6.5q4.6.2 5.3 4.3l3.4.4q.8.6-.2 1.2h-3.2q-2.2-1.4-5.3-1q-3.6.5-5.6 3.2z" fill="${hg}"/>`,
-    short+`<path d="M-5.2 -23.4h10.6l3.4.6q.7.6-.2 1.2h-13.8z" fill="#fff"/><path d="M-5.2 -22.2h10.2v-1.2h-10.2z" fill="#000" opacity=".08"/>`,
-    short+`<rect x="-5.3" y="-23.9" width="10.6" height="1.5" rx=".7" fill="#e63946"/>`,
-    `<ellipse cx="-.8" cy="-25.4" rx="2.2" ry="1.1" fill="url(#${u}-shine)"/>`
+    short+`<path d="M-5.4 -23q-.3-6.4 5.6-6.5q4.6.2 5.3 4.3l3.4.4q.8.6-.2 1.2h-3.2q-2.2-1.4-5.3-1q-3.6.5-5.6 3.2z" fill="${cap}"/><path d="M-5.4 -23q-.3-6.4 5.6-6.5q4.6.2 5.3 4.3l3.4.4q.8.6-.2 1.2h-3.2q-2.2-1.4-5.3-1q-3.6.5-5.6 3.2z" fill="${hg}"/><path d="M-4.8 -23.2q1.2-4.6 5.2-5.1" stroke="#000" stroke-width=".3" opacity=".2" fill="none"/>`,
+    short+`<path d="M-5.2 -24.4h10.6l3.4.6q.7.6-.2 1.2h-13.8z" fill="#fff"/><path d="M-5.2 -23.2h10.2v-1.2h-10.2z" fill="#000" opacity=".08"/>`,
+    short+`<rect x="-5.3" y="-24.9" width="10.6" height="1.5" rx=".7" fill="#e63946"/><path d="M-5.3 -24.2h10.6" stroke="#fff" stroke-width=".3" opacity=".5"/>`,
+    `<ellipse cx="-.8" cy="-26.4" rx="2.2" ry="1.1" fill="url(#${u}-shine)"/>`
   ];
-  const face=`<circle cx="-4.4" cy="-20.6" r="1" fill="${skin}"/>
-    <circle cx=".4" cy="-21" r="5.2" fill="${skin}"/><ellipse cx="-1.4" cy="-24.2" rx="2" ry="1.1" fill="url(#${u}-shine)"/>
-    <path d="M5 -20.6q1.5.6 1.2 1.9q-.6.7-1.5.2" fill="${skin}"/><path d="M5.2 -18.4q-1.2.4-1.9-.2" stroke="#d29a78" stroke-width=".4" fill="none" stroke-linecap="round"/>
-    <ellipse cx="3.1" cy="-18.9" rx="1.1" ry=".65" fill="#ff8f8f" opacity=".32"/>
-    <path d="M2.4 -23q1.1-.7 2.2-.1" stroke="${hc}" stroke-width=".5" fill="none" stroke-linecap="round"/>
-    <ellipse cx="3.4" cy="-21.6" rx=".55" ry=".8" fill="#2b2b2b"/><circle cx="3.55" cy="-21.9" r=".2" fill="#fff"/>
-    <path d="M2.9 -18.3q1 .9 2.1-.1" stroke="#b5654a" stroke-width=".55" fill="none" stroke-linecap="round"/>`;
-  const extra=(beard?`<path d="M-2.6 -19.4q.4 4.6 3.6 4.8q3.2 0 4.6-3.6q-1 1.8-4.2 1.6q-2.6-.2-4-2.8z" fill="${hc}" opacity=".92"/>`:'')
-    +(glasses?`<rect x="1.8" y="-22.7" width="3.4" height="2.5" rx="1.1" fill="#fff" fill-opacity=".14" stroke="#222" stroke-width=".45"/><path d="M1.8 -21.8h-5.6" stroke="#222" stroke-width=".45"/>`:'');
-  const leg=(x)=>`<rect x="${x-1.1}" y="-6.6" width="2.2" height="5.4" rx="1.1" fill="${skin}"/><rect x="${x-1.15}" y="-2.7" width="2.3" height="1.2" rx=".5" fill="#f6f6f6"/><path d="M${x-1.5} -1.7h2.8q1.6 0 1.9 1.1q0 .7-.7.7h-4.3q-.7 0-.7-.7q.1-1 1-1.1z" fill="#f4f4f4"/><path d="M${x-2.3} -.1h5.2" stroke="#9aa0a6" stroke-width=".5"/>`;
+  // head: a slightly oval skull with a jaw, ear with an inner fold, real eye (white, iris, pupil, catchlight), brow, nose with a nostril
+  const face=`<path d="M-4.6 -20.4q-.9 1.9.6 2.2q1.2-.2 1.1-1.9q-.3-1.4-1.7-.3z" fill="${skin}"/><path d="M-4 -20.2q.5.9 0 1.5" stroke="#000" stroke-width=".3" opacity=".25" fill="none"/>
+    <path d="M-4.8 -22.4q0-5.8 5.4-5.8q5.2 0 5.2 5.4q.1 2.6-1.3 4.1q-1.3 1.3-3.3 1.2q-2.6-.2-4.2-1.8q-1.8-1.6-1.8-3.1z" fill="${skin}"/>
+    <path d="M-1.2 -17.9q2.6 1.2 5.2-.6q-1.5 1.8-3.4 1.8q-1.4 0-1.8-1.2z" fill="#000" opacity=".12"/>
+    <ellipse cx="-1.4" cy="-25.6" rx="2" ry="1.1" fill="url(#${u}-shine)"/>
+    <path d="M5.4 -21.4q1.6.4 1.4 1.8q-.5.8-1.6.4q-.5-.3-.3-.8" fill="${skin}"/><path d="M5.8 -19.5q-.7.4-1.3-.1" stroke="#c98e6c" stroke-width=".45" fill="none" stroke-linecap="round"/>
+    <ellipse cx="3.4" cy="-19.9" rx="1.2" ry=".7" fill="#ff8f8f" opacity=".3"/>
+    <path d="M2.2 -24.2q1.4-.9 2.8-.2" stroke="${hc}" stroke-width=".7" fill="none" stroke-linecap="round"/>
+    <ellipse cx="3.5" cy="-22.6" rx=".95" ry=".8" fill="#fff"/><circle cx="3.75" cy="-22.6" r=".55" fill="#4a3728"/><circle cx="3.85" cy="-22.6" r=".3" fill="#111"/><circle cx="4" cy="-22.85" r=".15" fill="#fff"/>
+    <path d="M2.4 -23.4q1.3-.3 2.4.1" stroke="#000" stroke-width=".3" opacity=".35" fill="none"/>
+    <path d="M3 -19.3q1 .9 2.2-.1" stroke="#b5654a" stroke-width=".55" fill="none" stroke-linecap="round"/>`;
+  const extra=(beard?`<path d="M-2.4 -20.4q.3 4.9 3.7 5q3.4 0 4.9-3.7q-1.1 1.9-4.4 1.7q-2.7-.2-4.2-3z" fill="${hc}" opacity=".9"/>`:`<path d="M-.4 -17.6q2 .8 4-.6" stroke="${hc}" stroke-width=".6" opacity=".12" fill="none"/>`)
+    +(glasses?`<rect x="1.9" y="-23.8" width="3.5" height="2.5" rx="1.1" fill="#fff" fill-opacity=".14" stroke="#222" stroke-width=".45"/><path d="M1.9 -22.9h-5.8" stroke="#222" stroke-width=".45"/>`:'');
+  // legs: thigh from the hip, shin from the knee, sock with a stripe, sneaker with a sole, toe and lace
+  const leg=(x,cls)=>`<rect x="${x-1.25}" y="-8.8" width="2.5" height="5.3" rx="1.2" fill="${skin}"/>
+    <g class="${cls}"><rect x="${x-1.1}" y="-4.4" width="2.2" height="3.9" rx="1" fill="${skin}"/><rect x="${x-1.15}" y="-2.9" width="2.3" height="1.4" rx=".5" fill="#f6f6f6"/><path d="M${x-1.15} -2.2h2.3" stroke="#2f3f5a" stroke-width=".35"/>
+    <path d="M${x-1.6} -1.6h2.6q2 0 2.4 1.1q.1.8-.7.8h-4.6q-.8 0-.8-.8q.1-1 1.1-1.1z" fill="#f4f4f4"/><path d="M${x+.4} -1.3q1.4.1 1.9.8" stroke="#2f3f5a" stroke-width=".4" fill="none"/><path d="M${x-2.4} .1h5.6" stroke="#8d949b" stroke-width=".6"/></g>`;
   return `<g class="body">
-    <ellipse cx=".4" cy=".6" rx="5" ry="1.5" fill="#000" opacity=".26"/>
-    <g class="armB"><path d="M-2.6 -16.4q1.6-.4 2.6.2l-.6 6h-2.2z" fill="${skin}"/><circle cx="-2.2" cy="-10.2" r="1.15" fill="${skin}"/></g>
-    <g class="legL">${leg(-1.2)}</g><g class="legR">${leg(1.4)}</g>
-    <path d="M-3.6 -10q.2-1.2 1-1.4h5.4q.9.2 1 1.4l.2 3.8h-2.8l-1.2-1.4l-1 1.4h-2.8z" fill="url(#${u}-shorts)"/>
-    <path d="M-3.8 -15.4q0-2.8 2.8-3h2.6q2.9.2 2.9 3l.3 5.8h-8.8z" fill="${shirt}"/><path d="M-3.8 -15.4q0-2.8 2.8-3h.6l-.2 8.8h-3.4z" fill="#000" opacity=".08"/>
-    <path d="M1.6 -17.8q2.2.1 2.8 2.4l-1.2.5q-.4-1.6-1.8-1.7z" fill="#000" opacity=".12"/>
-    <rect x="-.6" y="-18.9" width="2.4" height="2" rx=".8" fill="${skin}"/><path d="M-1.6 -18.2q1.8 1.2 3.8 0q-.3 1.3-1.9 1.4t-1.9-1.4z" fill="#fff"/>
-    <ellipse cx=".4" cy="-16.6" rx="3.8" ry="1" fill="#000" opacity=".12"/>
-    <g class="arm"><path d="M1.4 -16.6q1.8-.4 2.8.4l-.4 6h-2.3z" fill="${skin}"/><path d="M1.2 -16.9q2-.6 3.4.2l-.2 2.6h-2.8z" fill="${shirt}"/><circle cx="2.6" cy="-10.1" r="1.2" fill="${skin}"/>
-      <g transform="translate(2.9,-9.9) rotate(-10)"><rect x="-.55" y=".5" width="1.1" height="2.6" rx=".55" fill="#2a2a2a"/><ellipse cx="0" cy="5.4" rx="2.2" ry="2.7" fill="url(#${u}-paddle)" stroke="#fff" stroke-width=".55"/><ellipse cx="-.6" cy="4.6" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g>
+    <ellipse cx=".6" cy=".7" rx="5.2" ry="1.5" fill="#000" opacity=".26"/>
+    <g class="armB"><path d="M-2.4 -17q1.5-.5 2.4.2l-.5 4h-2z" fill="#000" opacity=".2"/><path d="M-2.4 -17q1.5-.5 2.4.2l-.5 4h-2z" fill="${skin}"/><path d="M-2.3 -13q1.2-.3 1.9.2l-.3 3.4h-1.9z" fill="${skin}"/><circle cx="-1.7" cy="-9.2" r="1.1" fill="${skin}"/></g>
+    <g class="legL">${leg(-1.3,'shin')}</g><g class="legR">${leg(1.5,'shin')}</g>
+    <path d="M-3.8 -10.6q.2-1.4 1.2-1.6h5.6q1 .2 1.2 1.6l.2 4.6h-3l-1.3-1.5l-1.1 1.5h-3z" fill="url(#${u}-shorts)"/><path d="M-3.6 -6.4h2.8M1.2 -6.4h2.9" stroke="#000" stroke-width=".35" opacity=".25"/><path d="M-3.3 -10.2h7.2" stroke="#fff" stroke-width=".3" opacity=".25"/>
+    <path d="M-4 -16.2q0-3 3-3.2h2.8q3.1.2 3.1 3.2l.4 6.2h-9.4z" fill="${shirt}"/><path d="M-4 -16.2q0-3 3-3.2h.7l-.3 9.4h-3.5z" fill="#000" opacity=".08"/><path d="M4.6 -16q.4 2.4.3 5.8" stroke="#fff" stroke-width=".5" opacity=".25" fill="none"/>
+    <path d="M1.4 -19.1q2.6.2 3.2 2.6l-1.3.6q-.5-1.8-2-1.9z" fill="#000" opacity=".14"/>
+    <rect x="-.6" y="-20.3" width="2.5" height="2.4" rx=".9" fill="${skin}"/><path d="M-1.3 -19.6q1 .5 1.9.3q1.2-.2 1.9-.9q.3 1.3-.9 1.8q-1.3.5-2.9-.3z" fill="#fff"/><path d="M.6 -19.1l1.1 1.2" stroke="#fff" stroke-width=".4"/>
+    <ellipse cx=".4" cy="-17.6" rx="4" ry="1" fill="#000" opacity=".12"/>
+    <g class="arm"><path d="M1.3 -17.2q1.9-.5 3 .3l-.4 4.2h-2.4z" fill="${skin}"/><path d="M1.1 -17.5q2.1-.7 3.5.2l-.2 2.8h-3z" fill="${shirt}"/><path d="M1.3 -14.6h3" stroke="#000" stroke-width=".3" opacity=".2"/>
+      <g class="fore"><path d="M1.6 -13.2q1.4-.4 2.4.2l-.3 3.6h-2.2z" fill="${skin}"/><rect x="1.4" y="-10.4" width="2.6" height="1" rx=".4" fill="#fff"/><circle cx="2.8" cy="-8.9" r="1.2" fill="${skin}"/><path d="M3.6 -9.4q.8-.2.6.6" stroke="#c98e6c" stroke-width=".4" fill="none"/>
+      <g transform="translate(3.1,-8.6) rotate(-10)"><rect x="-.6" y=".4" width="1.2" height="2.8" rx=".6" fill="#2a2a2a"/><path d="M-.6 1.2h1.2M-.6 2h1.2M-.6 2.8h1.2" stroke="#555" stroke-width=".25"/><ellipse cx="0" cy="5.6" rx="2.4" ry="2.9" fill="#1f1f1f"/><ellipse cx="0" cy="5.6" rx="2.05" ry="2.55" fill="url(#${u}-paddle)"/><ellipse cx="-.6" cy="4.7" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g></g>
     <g class="head">${face}${styles[style]}${extra}</g>
   </g>`;
 }
@@ -621,13 +629,13 @@ class Rally{
   constructor(svg,g,fresh){
     this.svg=svg; this.still=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
     const mk=(side,i,name)=>{ const home=BOX[side+i]; const face=side==='a'?1:-1;
-      return {side,i,name,home,face,x:side==='a'?-14:224,y:home.y,tx:home.x,ty:home.y,speed:115,phase:0,moving:false,swing:0,over:0,hop:0,mode:'play'}; };
+      return {side,i,name,home,face,faceCur:face,x:side==='a'?-14:224,y:home.y,tx:home.x,ty:home.y,speed:115,phase:0,moving:false,swing:0,over:0,hop:0,mode:'play'}; };
     this.players=[mk('a',0,g.a[0]),mk('a',1,g.a[1]),mk('b',0,g.b[0]),mk('b',1,g.b[1])];
     if(!fresh) this.players.forEach(p=>{ p.x=p.home.x; p.y=p.home.y; });
     this.uid='s'+Math.floor(Math.random()*1e6).toString(36); const u=this.uid;
     svg.innerHTML=simDefs(u)+this.players.map((p,k)=>`<g class="p" data-k="${k}">${avatarSvg(p.name,p.side,u)}<text y="5.6">${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text></g>`).join('')
       +`<ellipse class="bshadow" cx="0" cy="0" rx="2.2" ry=".9" fill="#000" opacity=".35"/><g class="ball"><circle r="2.3" fill="#d6f23a" stroke="#9fb52a" stroke-width=".3"/><circle r=".45" cx="-.7" cy=".5" fill="#5a6a12"/><circle r=".45" cx=".8" cy="-.6" fill="#5a6a12"/><circle r=".45" cx=".9" cy="1" fill="#5a6a12"/></g>`;
-    this.els=[...svg.querySelectorAll('g.p')].map(el=>({el,body:el.querySelector('.body'),legL:el.querySelector('.legL'),legR:el.querySelector('.legR'),arm:el.querySelector('.arm'),armB:el.querySelector('.armB'),head:el.querySelector('.head')}));
+    this.els=[...svg.querySelectorAll('g.p')].map(el=>({el,body:el.querySelector('.body'),legL:el.querySelector('.legL'),legR:el.querySelector('.legR'),shinL:el.querySelector('.legL .shin'),shinR:el.querySelector('.legR .shin'),arm:el.querySelector('.arm'),fore:el.querySelector('.fore'),armB:el.querySelector('.armB'),head:el.querySelector('.head')}));
     this.ballEl=svg.querySelector('.ball'); this.shadowEl=svg.querySelector('.bshadow');
     // a beat before the serve: everyone settles, then the server bounces the ball a couple of times and serves underhand
     this.ball={x:0,y:0,z:0,state:'wait',t:0}; this.wait=fresh?1.3:.8; this.shots=0; this.lastKitchen=false; this.result=null; this.time=0;
@@ -698,26 +706,34 @@ class Rally{
       const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy); const step=p.speed*dt;
       if(p.mode==='play'){ if(d>step){ p.x+=dx/d*step; p.y+=dy/d*step; p.moving=true; p.phase+=step*.5; } else { p.x=p.tx; p.y=p.ty; p.moving=false; } this.clamp(p); }
       if(p.swing>0) p.swing=Math.max(0,p.swing-dt*4); if(p.hop>0) p.hop=Math.max(0,p.hop-dt*3); if(p.swing===0) p.over=0;
+      const toNet=p.side==='a'?1:-1; const want=(p.moving&&p.swing===0&&Math.abs(dx)>Math.abs(dy)*.7&&d>4)?Math.sign(dx):toNet;
+      p.faceCur+=(want-p.faceCur)*Math.min(1,dt*9);
     });
     this.draw();
     this.raf=requestAnimationFrame(t=>this.tick(t));
   }
   draw(){
     const T=this.time;
-    this.players.forEach((p,k)=>{ const e=this.els[k]; let jump=0, lean=0, sy=1, headRot=0, armB=-6;
-      // front arm: ready at 10°, a groundstroke sweeps forward and up, a smash goes overhead
+    this.players.forEach((p,k)=>{ const e=this.els[k]; let jump=0, lean=0, sy=1, headRot=0, armB=-8, fore=-12;
+      // front arm: ready at 10° with the elbow bent; a groundstroke sweeps forward and up and the forearm whips; a smash goes overhead
       let arm = p.swing>0 ? (p.over ? -175+60*(1-Math.sin(Math.PI*p.swing)) : -125*Math.sin(Math.PI*p.swing)+10) : 10;
+      if(p.swing>0) fore=p.over?-10:-12-45*Math.sin(Math.PI*p.swing);
       if(p.hop>0) jump=Math.sin(Math.PI*p.hop)*5;
-      if(p.mode==='win'){ jump=Math.abs(Math.sin(T*7+k))*6; arm=-150+Math.sin(T*12)*15; armB=-140+Math.sin(T*12+1)*15; }
-      if(p.mode==='lose'){ sy=.93; headRot=22; arm=28; armB=18; }
-      if(p.moving) lean=7; else if(p.mode==='play') lean=3;
+      if(p.mode==='win'){ jump=Math.abs(Math.sin(T*7+k))*6; arm=-150+Math.sin(T*12)*15; armB=-140+Math.sin(T*12+1)*15; fore=-20; }
+      if(p.mode==='lose'){ sy=.93; headRot=22; arm=28; armB=18; fore=-4; }
+      if(p.moving) lean=8; else if(p.mode==='play') lean=4;
       const bob=p.moving?Math.abs(Math.sin(p.phase*2))*.8:Math.sin(T*2.2+k)*.35;
       e.el.setAttribute('transform',`translate(${p.x.toFixed(2)},${(p.y-jump-bob).toFixed(2)})`);
-      e.body.setAttribute('transform',`scale(${p.face},${sy}) rotate(${lean} 0 0)`);
-      const leg=p.moving?Math.sin(p.phase)*30:(p.mode==='win'?-12:0);
-      e.legL.setAttribute('transform',`rotate(${leg} -1.2 -6.6)`); e.legR.setAttribute('transform',`rotate(${-leg} 1.4 -6.6)`);
-      e.arm.setAttribute('transform',`rotate(${arm} 2 -16.4)`); e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*25:0)} -1.6 -16.2)`);
-      e.head.setAttribute('transform',`rotate(${headRot} .4 -18)`);
+      const fc=Math.abs(p.faceCur)<.08?(p.faceCur<0?-.08:.08):p.faceCur; // never fully edge-on
+      e.body.setAttribute('transform',`scale(${fc.toFixed(3)},${sy}) rotate(${lean} 0 0)`);
+      // legs: thighs scissor from the hip, the trailing shin folds back at the knee; standing is a slight ready crouch
+      const sw=p.moving?Math.sin(p.phase):0; const thighL=p.moving?sw*32:(p.mode==='win'?-12:6), thighR=p.moving?-sw*32:(p.mode==='win'?-12:-6);
+      const kneeL=p.moving?Math.max(0,-sw)*50:-10, kneeR=p.moving?Math.max(0,sw)*50:-10;
+      e.legL.setAttribute('transform',`rotate(${thighL} -1.3 -8.4)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -1.3 -4)`);
+      e.legR.setAttribute('transform',`rotate(${thighR} 1.5 -8.4)`); e.shinR.setAttribute('transform',`rotate(${kneeR} 1.5 -4)`);
+      e.arm.setAttribute('transform',`rotate(${arm} 2.2 -17)`); e.fore.setAttribute('transform',`rotate(${fore} 2.6 -13)`);
+      e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*28:0)} -1.4 -16.8)`);
+      e.head.setAttribute('transform',`rotate(${headRot} .4 -19)`);
     });
     [...this.els].sort((u,v)=>this.players[+u.el.dataset.k].y-this.players[+v.el.dataset.k].y).forEach(e=>this.svg.appendChild(e.el));
     const b=this.ball; const gone=b.state==='gone'||b.state==='wait';
