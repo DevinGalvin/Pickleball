@@ -569,10 +569,11 @@ function simDefs(u){ return `<defs><radialGradient id="${u}-shine" cx=".5" cy=".
 function avatarSvg(name,team,u){
   const h=hashStr(name); const hi=(h>>>4)%6, hc=HAIRC[hi]; const style=((h>>>21)%12)===0?9:(h>>>11)%10; const glasses=((h>>>12)%3)===0, beard=((h>>>14)%3)===0;
   const build=(h>>>17)%3; // 0 chunky, 1 regular, 2 lanky
-  const skin='#f7d0a8', skinS='#e2aa7a', ink='#1d1a17';
+  const skin='#f7d0a8', skinS='#e2aa7a', ink='#3a2a20';
   const shirt=team==='a'?'#d6f23a':'#ff7a59', shirtS=team==='a'?'#a9c41f':'#d9532f', cap=team==='a'?'#7fa01c':'#c8442a';
   const hcS=hi===3?'#b8933f':hi===4?'#7d8288':'#000';
-  const O=`stroke="${ink}" stroke-width=".55" stroke-linejoin="round" stroke-linecap="round"`;
+  const O=`stroke="${ink}" stroke-width=".32" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".55"`;
+  const N=``; // no outline: inner details
   const hairPath=(d)=>`<path d="${d}" fill="${hc}" ${O}/><path d="${d}" fill="${hcS}" opacity=".18" transform="translate(-.4,.6)"/>`;
   // hair shapes sit on a skull whose top is y≈-28.4 and back is x≈-5.3; hairline across the forehead at y≈-25.3
   const short=hairPath("M-5.4 -22.6C-6.4 -27 -3.8 -30.2 .6 -30.1C4 -30 6.2 -27.8 5.7 -25.3C3.6 -26.1 .8 -26.3 -1.4 -25.6C-3.5 -25 -4.7 -24 -5.4 -22.6Z");
@@ -581,7 +582,7 @@ function avatarSvg(name,team,u){
   const wavy=hairPath("M-5.6 -22.4C-7 -26.4 -5 -29.2 -3.2 -29.4C-2.6 -31 .2 -31.2 1.2 -29.8C3.2 -30.8 5.4 -29.2 5.6 -27.4C6.4 -26.8 6.4 -25.8 5.7 -25.2C3.6 -26.1 .8 -26.3 -1.4 -25.6C-3.5 -25 -4.7 -24 -5.6 -22.4Z");
   const sideburn=`<path d="M-4.4 -23.4q-.5 1.9 0 3.8l1.2.2q-.3-2 0-3.9z" fill="${hc}" ${O}/>`;
   const capDome="M-5.6 -23.8C-6.6 -27.4 -3.8 -30.6 .6 -30.5C4.2 -30.4 6.4 -28.2 6 -25.6C3.6 -26.4 .8 -26.6 -1.4 -25.9C-3.6 -25.3 -4.8 -24.6 -5.6 -23.8Z";
-  const bcap=`<path d="M-5.6 -24.6L-11.4 -23.6q-1 .8 0 1.6L-5.4 -23.2z" fill="${cap}" ${O}/><path d="${capDome}" fill="${cap}" ${O}/><path d="M-4.6 -24.4C-4 -28 -1 -29.8 2.4 -29.4" stroke="${ink}" stroke-width=".35" opacity=".5" fill="none"/>
+  const bcap=`<path d="M-5.6 -24.6L-11.4 -23.6q-1 .8 0 1.6L-5.4 -23.2z" fill="${cap}" ${O}/><path d="${capDome}" fill="${cap}" ${O}/><path d="M-4.6 -24.4C-4 -28 -1 -29.8 2.4 -29.4" stroke="#000" stroke-width=".35" opacity=".2" fill="none"/>
     <path d="M-5.6 -23.8C-3.6 -25.3 -1.4 -25.9 .8 -26.6L6 -25.6L5.9 -24.7C3.5 -25.4 .8 -25.6 -1.4 -25C-3.4 -24.6 -4.8 -24 -5.6 -23.2z" fill="#000" opacity=".2"/>
     <path d="M4.6 -25.6q.9-1.4 1.9-1q.3.7-.1 1.2z" fill="${hc}" ${O}/><circle cx=".6" cy="-30.6" r=".6" fill="${cap}" ${O}/>`;
   const visor=short+`<path d="M-5.8 -25.4h11.4l4.2.8q.8.7-.2 1.4H-5.8z" fill="#fff" ${O}/>`;
@@ -592,20 +593,18 @@ function avatarSvg(name,team,u){
   const skull="M.4 -28.4C-3.2 -28.4 -5.4 -26 -5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5C5.6 -19.3 5.3 -19.9 4.8 -20.3L5.4 -20.8C5.2 -21.6 5.1 -22.4 5.2 -23.2C5.3 -24 5.7 -24.6 5.3 -25.4C4.3 -27.5 2.6 -28.4 .4 -28.4Z";
   const face=`<path d="${skull}" fill="${skin}" ${O}/>
     <path d="M-5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5L5 -17.2L-5.6 -17.8Z" fill="${skinS}" opacity=".55"/>
-    <path d="M-3.6 -23.2C-5.4 -23.7 -5.9 -21.2 -4.6 -20C-3.9 -19.4 -3.1 -19.8 -3.2 -20.6C-3.4 -21.4 -3.2 -22.5 -3.6 -23.2Z" fill="${skin}" ${O}/><path d="M-4.2 -22.4q-.9.6-.5 1.7" stroke="${ink}" stroke-width=".35" fill="none" opacity=".7"/>
+    <path d="M-3.6 -23.2C-5.4 -23.7 -5.9 -21.2 -4.6 -20C-3.9 -19.4 -3.1 -19.8 -3.2 -20.6C-3.4 -21.4 -3.2 -22.5 -3.6 -23.2Z" fill="${skin}" ${O}/><path d="M-4.2 -22.4q-.9.6-.5 1.7" stroke="${skinS}" stroke-width=".4" fill="none"/>
     <path d="M5.1 -23.2C6.4 -22.9 7.4 -21.8 7.1 -20.7C6.9 -20 6.1 -19.8 5.3 -20.2" fill="${skin}" ${O}/><circle cx="6.1" cy="-21.6" r=".6" fill="#fff" opacity=".45"/>
-    <ellipse cx="3.1" cy="-22.6" rx="1.5" ry="1.8" fill="#fff" ${O}/><circle cx="3.6" cy="-22.5" r=".8" fill="${ink}"/><circle cx="3.9" cy="-22.9" r=".3" fill="#fff"/>
-    <path d="M1.4 -24.9C2.6 -25.9 4.2 -25.9 5.2 -25" stroke="${ink}" stroke-width="1" fill="none" stroke-linecap="round"/>
-    <path d="M2.3 -19.4C3.3 -18.1 4.7 -18.1 5.4 -19.3" fill="#fff" ${O}/><path d="M2.7 -19.3C3.4 -18.9 4.4 -18.9 5 -19.3" stroke="${ink}" stroke-width=".3" fill="none"/>
-    <path d="M2.3 -19.4q1.6 2.1 3.1.1" fill="none" stroke="${ink}" stroke-width=".55" stroke-linecap="round"/>
-    <ellipse cx="2.4" cy="-20.4" rx="1.3" ry=".8" fill="#ff8a8a" opacity=".35"/>`;
+    <ellipse cx="3.1" cy="-22.6" rx="1.5" ry="1.8" fill="#fff" stroke="${skinS}" stroke-width=".3"/><circle cx="3.6" cy="-22.5" r=".8" fill="#2a2320"/><circle cx="3.9" cy="-22.9" r=".3" fill="#fff"/>
+    <path d="M1.6 -24.8C2.7 -25.6 4.1 -25.6 5 -24.9" stroke="${hc}" stroke-width=".85" fill="none" stroke-linecap="round"/>
+    <path d="M3 -19.1q1.3.2 2.3-.2" fill="none" stroke="${ink}" stroke-width=".5" stroke-opacity=".75" stroke-linecap="round"/><path d="M3.2 -18.6q1 .3 1.9 0" fill="none" stroke="#c98a7a" stroke-width=".35" stroke-linecap="round"/>`;
   const extra=(beard?`<path d="M-3.3 -20.4C-3.2 -17.6 -1.5 -16.4 1.8 -16.4C4.1 -16.4 5.3 -17.4 5.5 -19.1C4.8 -18.2 3.7 -17.9 2.4 -17.9C0 -17.9 -2.1 -18.6 -3.3 -20.4Z" fill="${hc}" ${O}/>`:'')
-    +(glasses?`<ellipse cx="3.1" cy="-22.6" rx="2.2" ry="2.3" fill="#fff" fill-opacity=".15" stroke="${ink}" stroke-width=".6"/><path d="M.9 -23.2L-4.4 -23.9" stroke="${ink}" stroke-width=".6"/>`:'');
+    +(glasses?`<ellipse cx="3.1" cy="-22.6" rx="2.2" ry="2.3" fill="#fff" fill-opacity=".15" stroke="${ink}" stroke-width=".42"/><path d="M.9 -23.2L-4.4 -23.9" stroke="${ink}" stroke-width=".42"/>`:'');
   // body build
   const bw=[1.25,1,.85][build], bh=[.94,1,1.1][build];
   const leg=(x,cls,far)=>`<rect x="${x-1.7}" y="-10" width="3.4" height="6.2" rx="1.6" fill="${skin}" ${O}/>${far?`<rect x="${x-1.7}" y="-10" width="3.4" height="6.2" rx="1.6" fill="#000" opacity=".2"/>`:''}
     <g class="${cls}"><rect x="${x-1.5}" y="-4.6" width="3" height="4.1" rx="1.4" fill="${skin}" ${O}/><rect x="${x-1.55}" y="-2.9" width="3.1" height="1.5" rx=".5" fill="#f6f6f6" ${O}/>
-    <path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#f4f4f4" ${O}/><path d="M${x+.2} -1.5q2.4.1 3.3 1" stroke="${ink}" stroke-width=".35" fill="none" opacity=".5"/>
+    <path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#f4f4f4" ${O}/><path d="M${x+.2} -1.5q2.4.1 3.3 1" stroke="#9aa0a6" stroke-width=".35" fill="none"/>
     ${far?`<rect x="${x-1.5}" y="-4.6" width="3" height="4.1" rx="1.4" fill="#000" opacity=".2"/><path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#000" opacity=".14"/>`:''}</g>`;
   return `<g class="body">
     <ellipse cx="1" cy=".7" rx="5.8" ry="1.7" fill="#000" opacity=".25"/>
