@@ -86,7 +86,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
 .winbtn:hover{background:var(--ball);color:var(--ball-ink);border-color:var(--ball)}
 .queue{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.queue .panel{padding:12px}
+.queue .panel{padding:12px;display:flex;flex-direction:column;justify-content:center}
 .queue .names{font-weight:600;font-size:15px;margin-top:4px}
 .queue .vs{color:var(--mute);font-weight:500;font-size:13px;margin:0 4px}
 .log{display:flex;flex-direction:column;gap:6px}
@@ -103,7 +103,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .sheet[hidden]{display:none}
 .sheet .card{width:100%;max-width:430px;margin-top:auto;background:var(--panel);border-radius:20px 20px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
 .scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.scorebox{border-radius:14px;background:var(--panel-2);border:2px solid var(--line);padding:10px;text-align:center;min-width:0}
+.scorebox{border-radius:14px;background:var(--panel-2);border:2px solid var(--line);padding:10px;text-align:center;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center}
 .scorebox.active{border-color:var(--ball)}
 .scorebox.winner{background:#22382a;border-color:var(--good)}
 .scorebox .side{display:none}
@@ -138,7 +138,8 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .stat{grid-column:span 2}
 .stat.half{grid-column:span 3}
-.stat{background:var(--panel);border-radius:14px;padding:12px;min-width:0}
+/* rule: any card whose height is set by its neighbors or by the screen centers its content vertically, never top-aligns with dead space below */
+.stat{background:var(--panel);border-radius:14px;padding:12px;min-width:0;display:flex;flex-direction:column;justify-content:center}
 .stat.big{grid-column:1/-1;background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}
 .stat.big.down{background:linear-gradient(135deg,#3b2426,#16242e);border-color:#5a2f33}
 .stat .v{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
