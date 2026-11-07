@@ -185,7 +185,52 @@ nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-
 nav.tabs button.on{color:var(--ball)}
 .toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ball);color:var(--ball-ink);font-weight:600;padding:10px 16px;border-radius:999px;font-size:14px;z-index:30}
 .toast[hidden]{display:none}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- motion ----------
+   Views fade up on tab change and slide on drill-in/back. Sheets rise from the bottom. Everything short (under 300ms) and eased out,
+   so it reads as native, not decorative. The one flourish: a serve when a new matchup is drawn. */
+.view{animation:viewIn .22s cubic-bezier(.2,.8,.2,1) both}
+.view.fromRight{animation-name:viewFromRight}.view.fromLeft{animation-name:viewFromLeft}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes viewFromRight{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes viewFromLeft{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.sheet{animation:fadeIn .2s ease-out both}
+.sheet .card{animation:sheetUp .3s cubic-bezier(.2,.8,.2,1) both}
+.sheet.out{animation:fadeOut .2s ease-in forwards}
+.sheet.out .card{animation:sheetDown .2s ease-in forwards}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes fadeOut{to{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(40px)}to{transform:none}}@keyframes sheetDown{to{transform:translateY(40px)}}
+.toast{animation:toastIn .25s cubic-bezier(.34,1.4,.64,1) both}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px) scale(.95)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+button{transition:transform .08s ease,background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease}
+.cta:active,.ghost:active,.chip:active,.trow:active,.night:active,.pad button:active,.scorebox:active,.rchip:active{transform:scale(.97)}
+.chip .dot{transition:transform .25s cubic-bezier(.34,1.56,.64,1),background-color .15s,border-color .15s}
+.chip.on .dot{transform:scale(1.2)}
+nav.tabs button svg{transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
+.courtwrap{transition:opacity .3s ease}
+.board .saved{animation:viewIn .25s both}
+.log .item.new{animation:logIn .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes logIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.trow{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.trow.in{animation:viewIn .25s both;animation-delay:calc(var(--i,0)*35ms)}
+.scorebox.winner{animation:winPop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes winPop{50%{transform:scale(1.04)}}
+/* the serve: names run onto their sides, then the ball arcs over the net */
+.courtwrap .ball{position:absolute;left:14%;top:52%;width:16px;height:16px;margin:-8px;border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(circle at 35% 35%,#eeff7a,var(--ball) 55%,#b9d329);box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.courtwrap .ball i{display:block;width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(circle 1.5px at 30% 55%,#5a6a12 100%,transparent 0),radial-gradient(circle 1.5px at 62% 35%,#5a6a12 100%,transparent 0),radial-gradient(circle 1.5px at 68% 68%,#5a6a12 100%,transparent 0)}
+#courts.serve .team:first-child .pname{animation:runOnL .35s cubic-bezier(.2,.8,.2,1) both}
+#courts.serve .team:last-child .pname{animation:runOnR .35s cubic-bezier(.2,.8,.2,1) both}
+#courts.serve .pname:nth-child(2){animation-delay:.07s}
+@keyframes runOnL{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+@keyframes runOnR{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+#courts.serve .ball{animation:serveX .75s cubic-bezier(.35,.1,.65,.9) .3s both}
+#courts.serve .ball i{animation:serveY .75s cubic-bezier(.35,.1,.65,.9) .3s both}
+#courts.serve .board:nth-child(2) .ball,#courts.serve .board:nth-child(2) .ball i{animation-delay:.5s}
+@keyframes serveX{0%{left:14%;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:86%;opacity:0}}
+@keyframes serveY{0%{transform:translateY(0) scale(.85) rotate(0)}50%{transform:translateY(-34px) scale(1.15) rotate(180deg)}100%{transform:translateY(0) scale(.85) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <div class="app">
@@ -392,7 +437,11 @@ function flushScored(){
 // ---------- navigation ----------
 // tabs: tonight | season | history. Each tab remembers its drill-in page (sub).
 function show(tab, sub){
+  const prevTab=state.tab, prevSub=state.sub;
   state.tab=tab; if(sub!==undefined) state.sub=sub;
+  // drill-in slides from the right, back slides from the left, tab changes fade up
+  const dir = tab===prevTab && state.sub && state.sub!==prevSub ? 'fromRight' : tab===prevTab && prevSub && !state.sub ? 'fromLeft' : '';
+  document.querySelectorAll('.view').forEach(v=>{ v.classList.remove('fromRight','fromLeft'); if(dir) v.classList.add(dir); });
   const T=state.tonight;
   const pages={
     'v-checkin': tab==='tonight' && !T.started,
@@ -462,11 +511,12 @@ const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
 function boardHtml(g,i,multi){
   const done=scored(g);
   return `<div class="board"><div class="courtwrap ${done?'done':''}">${COURT_SVG}
-    <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
+    <span class="ball"><i></i></span><span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <div class="teams"><div class="team"><div class="pname">${nameHtml(g.a[0])}</div><div class="pname">${nameHtml(g.a[1])}</div></div>
     <div class="team"><div class="pname">${nameHtml(g.b[0])}</div><div class="pname">${nameHtml(g.b[1])}</div></div></div></div>
     ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">${multi?`Court ${i+1}: final score`:'Enter final score'}</button>`}</div>`;
 }
+let logCount=0;
 function renderCourt(){
   const T=state.tonight; T.current=normCur(T.current); let fresh=false;
   if(!T.current){ T.current=nextRound(T.present,T.games,T.courts||1); fresh=true; }
@@ -474,11 +524,12 @@ function renderCourt(){
   if(fresh) persist();
   const multi=cur.length>1;
   $('#gameNum').textContent= multi?`Round ${nextR(T.games)}`:`Game ${T.games.length+1}`;
-  $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
+  $('#courts').classList.toggle('serve',fresh); $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
   const sitting=[...T.present].filter(p=>!cur.some(g=>inGame(g,p))); $('#sitting').textContent=sitting.join(', '); $('#sitPanel').hidden=!sitting.length; $('#nextPanel').style.gridColumn=sitting.length?'':'1 / -1';
   const r=nextR(T.games); const nxt=nextRound(T.present,T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
   $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}${hasLine(g)?`<span class="line num">${lineText(g)}</span>`:''}`).join('<br>'):'';
   $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then tap which side won.</p>';
+  if(T.games.length>logCount){ const f=$('#log .item'); if(f) f.classList.add('new'); } logCount=T.games.length;
   $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').disabled=T.games.length===0;
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
@@ -502,6 +553,9 @@ $('#endNight').onclick=()=>{
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
 };
 
+// sheets animate out before they hide
+function hideSheet(sel){ const el=$(sel); if(el.hidden) return; el.classList.add('out'); clearTimeout(el._t); el._t=setTimeout(()=>{ if(el.classList.contains('out')){ el.hidden=true; el.classList.remove('out'); } },200); }
+function showSheet(sel){ const el=$(sel); clearTimeout(el._t); el.classList.remove('out'); el.hidden=false; }
 // ---------- score sheet ----------
 // Both scores, A and B, typed on one pad. Tap a box to edit it; A fills first, then B.
 function openSheet(i){
@@ -509,7 +563,7 @@ function openSheet(i){
   $('#sheetTitle').textContent=cur.length>1?`Court ${i+1} final`:'Final score';
   $('#whoA').textContent=g.a.join(' & '); $('#whoB').textContent=g.b.join(' & ');
   $('#pad').innerHTML=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(n=>`<button data-n="${n}" class="num">${n}</button>`).join('');
-  updateSheet(); $('#sheet').hidden=false;
+  updateSheet(); showSheet('#sheet');
 }
 function validate(sa,sb){
   if(sa===null||sb===null) return {ok:false,msg:''};
@@ -533,12 +587,12 @@ $('#pad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!
   p['s'+p.active]=+b.dataset.n; if(p.active==='a'&&p.sb===null) p.active='b'; updateSheet(); });
 $('#boxA').onclick=()=>{ state.pending.active='a'; updateSheet(); };
 $('#boxB').onclick=()=>{ state.pending.active='b'; updateSheet(); };
-$('#sheetClose').onclick=()=>{ $('#sheet').hidden=true; state.pending=null; };
+$('#sheetClose').onclick=()=>{ hideSheet('#sheet'); state.pending=null; };
 $('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
   g.sa=p.sa; g.sb=p.sb; g.at=Date.now();
   // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
   if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{})})); T.current=null; }
-  $('#sheet').hidden=true; renderCourt(); persist(); toast(`Saved ${p.sa}–${p.sb}`); };
+  hideSheet('#sheet'); renderCourt(); persist(); toast(`Saved ${p.sa}–${p.sb}`); };
 
 // ---------- standings ----------
 // Season rating = total +/- divided by (games + SHRINK): a hot 4-game night can't outrank 40 solid games, but nobody is excluded.
@@ -552,12 +606,19 @@ function renderStandings(){
   const tonight=state.scope==='tonight'; const games=tonight?state.tonight.games:allGames();
   const rows=ranking(tonight);
   let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
+  // FLIP: remember where each row was so rank changes slide instead of jump; first paint staggers in
+  const before={}; document.querySelectorAll('#standings .trow').forEach(el=>before[el.dataset.p]=el.getBoundingClientRect().top);
   $('#standings').innerHTML=rows.map(r=>{
     if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
     rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
     return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}</div>
       <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l} · ${r.s.gp} games${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>
       <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
+  const had=Object.keys(before).length;
+  document.querySelectorAll('#standings .trow').forEach((el,i)=>{
+    if(!had){ el.style.setProperty('--i',i); el.classList.add('in'); return; }
+    const dy=(before[el.dataset.p]??el.getBoundingClientRect().top)-el.getBoundingClientRect().top; if(!dy) return;
+    el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; el.getBoundingClientRect(); el.style.transition=''; el.style.transform=''; });
   $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games. Tap a name for details.`;
 }
 document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b)); renderStandings(); });
@@ -565,14 +626,14 @@ $('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow');
 $('#playerBack').onclick=()=>show('season',null);
 
 // ---------- season settings ----------
-$('#seasonBtn').onclick=()=>{ const s=season(); $('#seasonName').value=s.name; $('#seasonStart').value=s.start; $('#endSeason').textContent='End this season'; $('#endSeason').dataset.armed=''; $('#endHint').hidden=true; syncPairSeg(); $('#seasonSheet').hidden=false; };
-$('#seasonClose').onclick=()=>{ const s=season(); s.name=$('#seasonName').value.trim()||s.name; if($('#seasonStart').value) s.start=$('#seasonStart').value; $('#seasonSheet').hidden=true; renderStandings(); if(state.tab==='bracket') renderBracket(); persist(); };
+$('#seasonBtn').onclick=()=>{ const s=season(); $('#seasonName').value=s.name; $('#seasonStart').value=s.start; $('#endSeason').textContent='End this season'; $('#endSeason').dataset.armed=''; $('#endHint').hidden=true; syncPairSeg(); showSheet('#seasonSheet'); };
+$('#seasonClose').onclick=()=>{ const s=season(); s.name=$('#seasonName').value.trim()||s.name; if($('#seasonStart').value) s.start=$('#seasonStart').value; hideSheet('#seasonSheet'); renderStandings(); if(state.tab==='bracket') renderBracket(); persist(); };
 $('#endSeason').onclick=()=>{
   const b=$('#endSeason');
   if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent='Tap again to confirm'; $('#endHint').hidden=false; return; }
   const s=season(); s.name=$('#seasonName').value.trim()||s.name; s.end=state.tonight.date;
   state.seasons.push({id:s.id+1,name:`Season ${s.id+1}`,start:state.tonight.date,end:null});
-  $('#seasonSheet').hidden=true; renderStandings(); persist(); toast(`${s.name} ended. ${season().name} starts with the next night.`);
+  hideSheet('#seasonSheet'); renderStandings(); persist(); toast(`${s.name} ended. ${season().name} starts with the next night.`);
 };
 
 // ---------- bracket ----------

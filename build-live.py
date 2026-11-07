@@ -95,7 +95,7 @@ leagueRef.on('value', snap=>{
   const sheetOpen=!$('#sheet').hidden;
   applyRemote(d);
   const pg=state.pending && normCur(state.tonight.current)?.[state.pending.idx];
-  if(sheetOpen && (!pg || scored(pg))){ $('#sheet').hidden=true; state.pending=null; toast('Someone else just scored that game'); }
+  if(sheetOpen && (!pg || scored(pg))){ hideSheet('#sheet'); state.pending=null; toast('Someone else just scored that game'); }
 }, err=>{ $('#connHint').textContent='Could not reach the league database. Check your connection and reload.'; $('#sync').className='sync off'; });
 fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val()?'on':'off'); });
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
@@ -114,13 +114,13 @@ function openPin(){
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
   $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone.';
   $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
-  $('#pinInput').value=''; $('#pinErr').textContent=''; $('#pinSheet').hidden=false; setTimeout(()=>$('#pinInput').focus(),50);
+  $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
 }
-$('#pinClose').onclick=()=>{ $('#pinSheet').hidden=true; };
+$('#pinClose').onclick=()=>{ hideSheet('#pinSheet'); };
 function tryPin(){
   const v=$('#pinInput').value.trim();
   if(!/^\\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
-  const done=()=>{ unlocked=true; try{ localStorage.setItem('pickle-unlocked','1'); }catch(e){} $('#pinSheet').hidden=true; toast('Scoring unlocked on this phone'); };
+  const done=()=>{ unlocked=true; try{ localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone'); };
   if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
   else if(v===String(pinOnServer)) done();
   else $('#pinErr').textContent='Wrong PIN. Ask whoever runs the night.';
