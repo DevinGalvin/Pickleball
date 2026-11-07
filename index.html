@@ -621,25 +621,27 @@ function avatarSvg(name,team,u){
 `;
   const extra=(beard?`<path d="M-3.3 -20.2C-3.2 -17.9 -1.6 -16.9 1.6 -16.9C3.9 -16.9 5.1 -17.8 5.3 -19.2C4.6 -18.3 3.6 -18 2.2 -18C-.2 -18 -2.2 -18.6 -3.3 -20.2Z" fill="${hc}" opacity=".92"/><path d="M-3.3 -20.2C-3.2 -17.9 -1.6 -16.9 1.6 -16.9C3.9 -16.9 5.1 -17.8 5.3 -19.2" fill="url(#${u}-hair${hi})"/>`:`<path d="M-2.4 -19.4C-1.4 -18 .8 -17.6 3.2 -18" stroke="${hc}" stroke-width=".9" opacity=".1" fill="none"/>`)
     +(glasses?`<path d="M2.1 -22.6C2.4 -23.9 4.6 -24 5.1 -22.8C5 -21.6 2.4 -21.5 2.1 -22.6Z" fill="#fff" fill-opacity=".14" stroke="#222" stroke-width=".45"/><path d="M2.1 -23.2L-4.2 -23.6" stroke="#222" stroke-width=".45"/><path d="M5.1 -22.8l.4-.3" stroke="#222" stroke-width=".45"/>`:'');
-  // Adult proportions: torso deeper than the head is wide, head about 1/5 of the height, thick arms and legs. ~31 units tall.
-  // legs: thigh from the hip (y -9.8), shin from the knee (y -4.5), sock with a stripe, sneaker with a sole, toe and lace
-  const leg=(x,cls)=>`<rect x="${x-1.5}" y="-10.4" width="3" height="6.4" rx="1.4" fill="${skin}"/><path d="M${x-1.5} -10.4h3" stroke="#000" stroke-width=".3" opacity=".15"/>
-    <g class="${cls}"><rect x="${x-1.3}" y="-4.9" width="2.6" height="4.3" rx="1.2" fill="${skin}"/><rect x="${x-1.35}" y="-3" width="2.7" height="1.5" rx=".5" fill="#f6f6f6"/><path d="M${x-1.35} -2.3h2.7" stroke="#2f3f5a" stroke-width=".35"/>
-    <path d="M${x-1.9} -1.7h3q2.4 0 2.8 1.2q.1.8-.8.8h-5.2q-.9 0-.9-.8q.1-1.1 1.1-1.2z" fill="#f4f4f4"/><path d="M${x+.5} -1.4q1.6.1 2.2.9" stroke="#2f3f5a" stroke-width=".4" fill="none"/><path d="M${x-2.8} .1h6.6" stroke="#8d949b" stroke-width=".6"/></g>`;
+  // True profile. Chest bulges forward, back is rounded, the near arm hangs across the middle of the torso with the paddle in front,
+  // the far arm is behind the torso (only seen when raised), the far leg sits behind the near one and a shade darker. Feet point forward.
+  // Hips y -9.8, knees y -4.5, shoulder (1.6,-19.6), elbow (2.2,-14.6). About 31 units tall.
+  const leg=(x,cls,far)=>`<rect x="${x-1.6}" y="-10.4" width="3.2" height="6.4" rx="1.5" fill="${skin}"/>${far?`<rect x="${x-1.6}" y="-10.4" width="3.2" height="6.4" rx="1.5" fill="#000" opacity=".18"/>`:''}
+    <g class="${cls}"><rect x="${x-1.4}" y="-4.9" width="2.8" height="4.3" rx="1.3" fill="${skin}"/><rect x="${x-1.45}" y="-3" width="2.9" height="1.5" rx=".5" fill="#f6f6f6"/><path d="M${x-1.45} -2.3h2.9" stroke="#2f3f5a" stroke-width=".35"/>
+    <path d="M${x-2.2} -1.7h2.6q3.2 0 3.6 1.2q.1.8-.8.8h-5.6q-.9 0-.9-.8q.1-1.1 1.1-1.2z" fill="#f4f4f4"/><path d="M${x+.2} -1.4q2 .1 2.8.9" stroke="#2f3f5a" stroke-width=".4" fill="none"/><path d="M${x-3.1} .1h7.4" stroke="#8d949b" stroke-width=".6"/>
+    ${far?`<rect x="${x-1.4}" y="-4.9" width="2.8" height="4.3" rx="1.3" fill="#000" opacity=".18"/><path d="M${x-2.2} -1.7h2.6q3.2 0 3.6 1.2q.1.8-.8.8h-5.6q-.9 0-.9-.8q.1-1.1 1.1-1.2z" fill="#000" opacity=".12"/>`:''}</g>`;
   return `<g class="body">
-    <ellipse cx=".8" cy=".7" rx="6" ry="1.6" fill="#000" opacity=".26"/>
-    <g class="armB"><path d="M-3.4 -19.2q2-.7 3.2.3l-.6 4.8h-2.6z" fill="#000" opacity=".2"/><path d="M-3.4 -19.2q2-.7 3.2.3l-.6 4.8h-2.6z" fill="${skin}"/><path d="M-3.2 -14.4q1.5-.4 2.4.2l-.4 4h-2.3z" fill="${skin}"/><circle cx="-2.4" cy="-9.9" r="1.3" fill="${skin}"/></g>
-    <g class="legL">${leg(-1.7,'shin')}</g><g class="legR">${leg(1.9,'shin')}</g>
-    <path d="M-4.8 -12.2q.2-1.6 1.4-1.8h7q1.2.2 1.4 1.8l.2 5.2h-3.6l-1.6-1.7l-1.4 1.7h-3.6z" fill="url(#${u}-shorts)"/><path d="M-4.5 -7.3h3.4M1.4 -7.3h3.5" stroke="#000" stroke-width=".35" opacity=".25"/><path d="M-4.2 -11.6h8.6" stroke="#fff" stroke-width=".3" opacity=".25"/>
-    <path d="M-5.6 -18.4q0-3.6 3.6-3.8h3.6q3.8.2 4.4 3.6q.6 1.6.6 3.2l.2 3.8h-11.8z" fill="${shirt}"/><path d="M-5.6 -18.4q0-3.6 3.6-3.8h.8l-.4 10.6h-4.4z" fill="#000" opacity=".08"/><path d="M5.8 -18.2q.6 2.8.4 6.4" stroke="#fff" stroke-width=".55" opacity=".25" fill="none"/><path d="M-4.8 -11.9h10.9" stroke="#000" stroke-width=".3" opacity=".15"/>
-    <path d="M1 -21.8q3.2.2 4 3l-1.5.6q-.6-2.1-2.5-2.3z" fill="#000" opacity=".14"/>
-    <path d="M-.8 -23.6h3l.5 3.6h-4z" fill="${skin}"/><path d="M1.6 -22.6q.5.6.3 1.4" stroke="#b87e5f" stroke-width=".3" opacity=".6" fill="none"/>
-    <path d="M-1.6 -22.4q1.3.6 2.4.4q1.4-.2 2.3-1q.3 1.5-1.1 2.1q-1.6.6-3.6-.4z" fill="#fff"/><path d="M.8 -21.8l1.3 1.4" stroke="#fff" stroke-width=".45"/>
-    <ellipse cx=".6" cy="-20.4" rx="4.8" ry="1.1" fill="#000" opacity=".12"/>
-    <g class="arm"><path d="M1.8 -19.5q2.4-.6 3.8.4l-.5 5.2h-3z" fill="${skin}"/><path d="M1.5 -19.9q2.7-.9 4.4.2l-.2 3.4h-3.8z" fill="${shirt}"/><path d="M1.7 -16.3h3.8" stroke="#000" stroke-width=".3" opacity=".2"/>
-      <g class="fore"><path d="M2.2 -14.6q1.8-.5 3 .2l-.4 4.4h-2.7z" fill="${skin}"/><rect x="2" y="-11.3" width="3.2" height="1.1" rx=".45" fill="#fff"/><circle cx="3.6" cy="-9.4" r="1.4" fill="${skin}"/><path d="M4.6 -10q.9-.2.7.7" stroke="#c98e6c" stroke-width=".4" fill="none"/>
-      <g transform="translate(3.9,-9) rotate(-10)"><rect x="-.6" y=".4" width="1.2" height="2.9" rx=".6" fill="#2a2a2a"/><path d="M-.6 1.2h1.2M-.6 2h1.2M-.6 2.8h1.2" stroke="#555" stroke-width=".25"/><ellipse cx="0" cy="5.8" rx="2.5" ry="3" fill="#1f1f1f"/><ellipse cx="0" cy="5.8" rx="2.15" ry="2.65" fill="url(#${u}-paddle)"/><ellipse cx="-.6" cy="4.8" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g></g>
-    <g class="head"><g transform="translate(.4,-3.6) scale(.9)">${face}${styles[style]}${extra}</g></g>
+    <ellipse cx="1" cy=".7" rx="5.4" ry="1.6" fill="#000" opacity=".26"/>
+    <g class="armB"><path d="M-2.4 -19.6q2-.7 3-.1l-.6 5h-2.6z" fill="${skin}"/><path d="M-2.4 -19.6q2-.7 3-.1l-.6 5h-2.6z" fill="#000" opacity=".22"/><path d="M-2.4 -14.8q1.5-.4 2.4.2l-.4 4.2h-2.3z" fill="${skin}"/><path d="M-2.4 -14.8q1.5-.4 2.4.2l-.4 4.2h-2.3z" fill="#000" opacity=".22"/><circle cx="-1.5" cy="-10.1" r="1.3" fill="${skin}"/><circle cx="-1.5" cy="-10.1" r="1.3" fill="#000" opacity=".22"/></g>
+    <g class="legL">${leg(-.7,'shin',true)}</g><g class="legR">${leg(.7,'shin',false)}</g>
+    <path d="M-3.8 -12.4q0-1.6 1.2-1.8h5.4q1.4.2 1.6 1.8l.2 5.2h-3l-1.1-1.4l-1 1.4h-3.1z" fill="url(#${u}-shorts)"/><path d="M1.6 -11.8l.2 4.2" stroke="#000" stroke-width=".35" opacity=".25"/><path d="M-3.5 -11.9h8.3" stroke="#fff" stroke-width=".3" opacity=".25"/>
+    <path d="M-3.6 -12.2q-.8-3.6-.4-7.2q.4-2.8 3-3.4h2.2q2.8.4 3.6 3q.8 2.4.6 4.4l-.2 3.2z" fill="${shirt}"/><path d="M-3.6 -12.2q-.8-3.6-.4-7.2q.4-2.8 3-3.4h-.4l-.6 10.6z" fill="#000" opacity=".1"/><path d="M4.3 -19.2q.9 2.6.6 5.6" stroke="#fff" stroke-width=".55" opacity=".3" fill="none"/><path d="M-3.4 -12.3h8.2" stroke="#000" stroke-width=".3" opacity=".15"/>
+    <path d="M.6 -22.6q2.6.4 3.4 2.8l-1.4.6q-.5-1.9-2.2-2.2z" fill="#000" opacity=".14"/>
+    <path d="M-1 -23.6h2.9l.4 3.6h-3.8z" fill="${skin}"/><path d="M1.5 -22.6q.5.6.3 1.4" stroke="#b87e5f" stroke-width=".3" opacity=".6" fill="none"/>
+    <path d="M-1.8 -22.3q1.3.6 2.4.4q1.4-.2 2.3-1q.3 1.5-1.1 2.1q-1.6.6-3.6-.4z" fill="#fff"/>
+    <ellipse cx=".4" cy="-20.6" rx="3.2" ry="1" fill="#000" opacity=".12"/>
+    <g class="arm"><path d="M.2 -19.7q2.4-.6 3.6.4l-.5 5.2h-3z" fill="${skin}"/><path d="M-.1 -20.1q2.7-.9 4.2.2l-.2 3.4h-3.8z" fill="${shirt}"/><path d="M.1 -16.5h3.8" stroke="#000" stroke-width=".3" opacity=".2"/>
+      <g class="fore"><path d="M.7 -14.7q1.8-.5 3 .2l-.4 4.4h-2.7z" fill="${skin}"/><rect x=".6" y="-11.4" width="3.2" height="1.1" rx=".45" fill="#fff"/><circle cx="2.2" cy="-9.5" r="1.4" fill="${skin}"/><path d="M3.2 -10.1q.9-.2.7.7" stroke="#c98e6c" stroke-width=".4" fill="none"/>
+      <g transform="translate(2.5,-9.1) rotate(-10)"><rect x="-.6" y=".4" width="1.2" height="2.9" rx=".6" fill="#2a2a2a"/><path d="M-.6 1.2h1.2M-.6 2h1.2M-.6 2.8h1.2" stroke="#555" stroke-width=".25"/><ellipse cx="0" cy="5.8" rx="2.5" ry="3" fill="#1f1f1f"/><ellipse cx="0" cy="5.8" rx="2.15" ry="2.65" fill="url(#${u}-paddle)"/><ellipse cx="-.6" cy="4.8" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g></g>
+    <g class="head"><g transform="translate(.2,-3.6) scale(.9)">${face}${styles[style]}${extra}</g></g>
   </g>`;
 }
 const BOX={a0:{x:47,y:36},a1:{x:47,y:76},b0:{x:163,y:36},b1:{x:163,y:76}};
@@ -751,10 +753,10 @@ class Rally{
       // legs: thighs scissor from the hip, the trailing shin folds back at the knee; standing is a slight ready crouch
       const back=(p.lean||0)<-.3; const amp=back?22:32; const sw=p.moving?Math.sin(p.phase*(back?1.5:1)):0; const thighL=p.moving?sw*amp:(p.mode==='win'?-12:6), thighR=p.moving?-sw*amp:(p.mode==='win'?-12:-6);
       const kneeL=p.moving?Math.max(0,-sw)*50:-10, kneeR=p.moving?Math.max(0,sw)*50:-10;
-      e.legL.setAttribute('transform',`rotate(${thighL} -1.7 -9.8)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -1.7 -4.5)`);
-      e.legR.setAttribute('transform',`rotate(${thighR} 1.9 -9.8)`); e.shinR.setAttribute('transform',`rotate(${kneeR} 1.9 -4.5)`);
-      e.arm.setAttribute('transform',`rotate(${arm} 3 -19.4)`); e.fore.setAttribute('transform',`rotate(${fore} 3.5 -14.4)`);
-      e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*28:0)} -2 -19)`);
+      e.legL.setAttribute('transform',`rotate(${thighL} -.7 -9.8)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -.7 -4.5)`);
+      e.legR.setAttribute('transform',`rotate(${thighR} .7 -9.8)`); e.shinR.setAttribute('transform',`rotate(${kneeR} .7 -4.5)`);
+      e.arm.setAttribute('transform',`rotate(${arm} 1.6 -19.6)`); e.fore.setAttribute('transform',`rotate(${fore} 2.2 -14.6)`);
+      e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*28:0)} -1 -19.4)`);
       e.head.setAttribute('transform',`rotate(${headRot} .4 -21)`);
     });
     [...this.els].sort((u,v)=>this.players[+u.el.dataset.k].y-this.players[+v.el.dataset.k].y).forEach(e=>this.svg.appendChild(e.el));
