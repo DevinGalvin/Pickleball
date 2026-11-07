@@ -85,8 +85,6 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .courtwrap .team .pname{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 4px;min-width:0}
 .pname{font-family:var(--display);font-weight:800;font-size:clamp(16px,5.6vw,24px);overflow-wrap:anywhere;line-height:1;text-transform:uppercase;letter-spacing:.4px;text-shadow:0 2px 6px rgba(0,0,0,.45);text-align:center}
 .pname small{display:block;font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.8px;opacity:.85;text-transform:none;margin-top:2px}
-.sidelbl{position:absolute;z-index:3;top:4px;font-family:var(--display);font-weight:800;font-size:16px;color:var(--paint);opacity:.9;letter-spacing:1px}
-.sidelbl.a{left:10px}.sidelbl.b{right:10px}
 .courts{display:flex;flex-direction:column;gap:10px}
 .board{display:flex;flex-direction:column;gap:10px}
 /* the matchup bar is the answer to "who's playing, which side"; the court under it is the show */
@@ -97,7 +95,6 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .matchup .tm.a .lbl{color:var(--ball)}.matchup .tm.b .lbl{color:#ff7a59}
 .matchup b{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.05;text-transform:uppercase;letter-spacing:.3px;overflow-wrap:anywhere}
 .matchup .vsx{align-self:center;color:var(--mute);font-weight:600;font-size:13px}
-.sidelbl.a{color:var(--ball)}.sidelbl.b{color:#ff7a59}
 .courtlbl{position:absolute;z-index:3;top:4px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.4px;color:var(--ball-ink);background:var(--ball);padding:2px 10px;border-radius:999px}
 .courtwrap.done{opacity:.55}
 .linelbl{position:absolute;z-index:3;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ball);background:rgba(5,10,14,.6);padding:3px 10px;border-radius:999px}
@@ -555,7 +552,7 @@ function boardHtml(g,i,multi){
   return `<div class="board">
     <div class="matchup"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
     <div class="courtwrap ${done?'done':''}">${COURT_SVG}
-    <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
+    ${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
     ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">${multi?`Court ${i+1}: final score`:'Enter final score'}</button>`}</div>`;
 }
@@ -788,7 +785,7 @@ function renderCourt(){
   $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
   $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then enter the final score.</p>';
   if(T.games.length>logCount){ const f=$('#log .item'); if(f) f.classList.add('new'); } logCount=T.games.length;
-  $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').disabled=T.games.length===0;
+  $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').textContent=T.games.length||cur.some(scored)?'End night':'Cancel night';
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
@@ -804,7 +801,8 @@ $('#undoBtn').onclick=()=>{
   renderCourt(); persist(); toast(LR.length>1?'Last round reopened':'Last score removed');
 };
 $('#endNight').onclick=()=>{
-  const T=state.tonight; flushScored(); if(!T.games.length) return;
+  const T=state.tonight; flushScored();
+  if(!T.games.length){ T.started=false; T.current=null; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Night cancelled'); return; }
   state.nights.push({date:T.date,games:T.games,season:season().id});
   const d=new Date(T.date+'T12:00'); d.setDate(d.getDate()+7);
   state.tonight={date:d.toISOString().slice(0,10),present:new Set(T.present),started:false,games:[],current:null,courts:1};
