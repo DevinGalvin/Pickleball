@@ -218,15 +218,16 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .trow.in{animation:viewIn .25s both;animation-delay:calc(var(--i,0)*35ms)}
 .scorebox.winner{animation:winPop .3s cubic-bezier(.34,1.56,.64,1)}
 @keyframes winPop{50%{transform:scale(1.04)}}
-/* the serve: a light sweeps the court, names run onto their boxes, then a three-shot rally crosses the net. Each landing bumps the side that hits it. */
+/* the serve, the way it actually happens: Side A's lower box serves cross-court to Side B's upper box, the ball bounces in the box,
+   the return comes back cross-court to the server, and the third shot drops into Side B's kitchen. Whoever hits it bumps. */
 .courtwrap::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
 #courts.serve .courtwrap::before{animation:sweep .7s ease-out .05s both}
 @keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:1}}
-.courtwrap .ball{position:absolute;z-index:3;left:14%;top:50%;width:16px;height:16px;margin:-8px;border-radius:50%;opacity:0;pointer-events:none;
+.courtwrap .ball{position:absolute;z-index:3;left:22.4%;top:69%;width:16px;height:16px;margin:-8px;border-radius:50%;opacity:0;pointer-events:none;
   background:radial-gradient(circle at 35% 35%,#eeff7a,var(--ball) 55%,#b9d329);box-shadow:0 2px 4px rgba(0,0,0,.4)}
 .courtwrap .ball i{display:block;width:100%;height:100%;border-radius:50%;
   background:radial-gradient(circle 1.5px at 30% 55%,#5a6a12 100%,transparent 0),radial-gradient(circle 1.5px at 62% 35%,#5a6a12 100%,transparent 0),radial-gradient(circle 1.5px at 68% 68%,#5a6a12 100%,transparent 0)}
-.courtwrap .shadow{position:absolute;z-index:1;left:14%;top:50%;width:16px;height:6px;margin:4px -8px;border-radius:50%;background:rgba(0,0,0,.35);opacity:0;pointer-events:none}
+.courtwrap .shadow{position:absolute;z-index:1;left:22.4%;top:69%;width:16px;height:6px;margin:4px -8px;border-radius:50%;background:rgba(0,0,0,.35);opacity:0;pointer-events:none}
 #courts.serve .team.a .pname{animation:runOnL .35s cubic-bezier(.2,.8,.2,1) both}
 #courts.serve .team.b .pname{animation:runOnR .35s cubic-bezier(.2,.8,.2,1) both}
 #courts.serve .pname:nth-child(2){animation-delay:.08s}
@@ -235,14 +236,18 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 #courts.serve .ball{animation:rallyX 1.5s linear .45s both}
 #courts.serve .ball i{animation:rallyY 1.5s linear .45s both}
 #courts.serve .shadow{animation:rallyX 1.5s linear .45s both,shadowY 1.5s linear .45s both}
-#courts.serve .team.a{animation:hitA 1.5s linear .45s both}
-#courts.serve .team.b{animation:hitB 1.5s linear .45s both}
-#courts.serve .board:nth-child(2) .ball,#courts.serve .board:nth-child(2) .ball i,#courts.serve .board:nth-child(2) .shadow,#courts.serve .board:nth-child(2) .team{animation-delay:.75s}
-@keyframes rallyX{0%{left:14%;opacity:0}4%{opacity:1}33%{left:86%}66%{left:14%}96%{opacity:1}100%{left:86%;opacity:0}}
-@keyframes rallyY{0%,33%,66%,100%{transform:translateY(0) scale(.85)}16%{transform:translateY(-36px) scale(1.2) rotate(180deg)}50%{transform:translateY(-30px) scale(1.15) rotate(540deg)}83%{transform:translateY(-36px) scale(1.2) rotate(900deg)}}
-@keyframes shadowY{0%,33%,66%,100%{transform:scale(1);opacity:.6}16%,50%,83%{transform:scale(.5);opacity:.2}4%{opacity:.6}}
-@keyframes hitA{0%,2%{transform:scale(1.06)}8%{transform:none}60%{transform:none}66%{transform:scale(1.06)}72%{transform:none}}
-@keyframes hitB{27%{transform:none}33%{transform:scale(1.06)}39%{transform:none}94%{transform:none}100%{transform:scale(1.06)}}
+/* server is Side A's lower box; receiver is Side B's upper box. Their names bump when they hit. */
+#courts.serve .team.a .pname:nth-child(2){animation:runOnL .35s cubic-bezier(.2,.8,.2,1) .08s both,hitServer 1.5s linear .45s both}
+#courts.serve .team.b .pname:nth-child(1){animation:runOnR .35s cubic-bezier(.2,.8,.2,1) both,hitReceiver 1.5s linear .45s both}
+#courts.serve .board:nth-child(2) .ball,#courts.serve .board:nth-child(2) .ball i,#courts.serve .board:nth-child(2) .shadow{animation-delay:.75s}
+#courts.serve .board:nth-child(2) .team.a .pname:nth-child(2){animation-delay:.08s,.75s}
+#courts.serve .board:nth-child(2) .team.b .pname:nth-child(1){animation-delay:0s,.75s}
+/* box centers in the court: A lower (22.4%,69%), B upper (77.6%,32.7%), B kitchen (56.7%,51%) */
+@keyframes rallyX{0%{left:22.4%;top:69%;opacity:0}4%{opacity:1}33%{left:77.6%;top:32.7%}66%{left:22.4%;top:69%}96%{opacity:1}100%{left:56.7%;top:51%;opacity:0}}
+@keyframes rallyY{0%{transform:translateY(0) scale(.85)}16%{transform:translateY(-38px) scale(1.2) rotate(180deg)}33%{transform:translateY(0) scale(.85) rotate(360deg)}38%{transform:translateY(-8px) scale(.9) rotate(400deg)}42%{transform:translateY(0) scale(.85) rotate(430deg)}54%{transform:translateY(-32px) scale(1.15) rotate(600deg)}66%{transform:translateY(0) scale(.85) rotate(720deg)}84%{transform:translateY(-18px) scale(1) rotate(900deg)}100%{transform:translateY(0) scale(.85) rotate(1000deg)}}
+@keyframes shadowY{0%,33%,42%,66%,100%{transform:scale(1);opacity:.6}16%,54%{transform:scale(.5);opacity:.2}38%{transform:scale(.85);opacity:.45}84%{transform:scale(.7);opacity:.35}4%{opacity:.6}}
+@keyframes hitServer{0%,2%{transform:scale(1.1)}9%{transform:none}60%{transform:none}66%{transform:scale(1.1)}73%{transform:none}}
+@keyframes hitReceiver{36%{transform:none}42%{transform:scale(1.1)}49%{transform:none}}
 .gamebar .g.flip{animation:flipIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes flipIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* the result: score stamps over the net, winners pop with a burst of balls, losers sag */
