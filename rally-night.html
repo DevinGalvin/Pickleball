@@ -69,6 +69,9 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .board{display:flex;flex-direction:column;gap:10px}
 .courtlbl{position:absolute;top:6px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.4px;color:var(--ball-ink);background:var(--ball);padding:2px 10px;border-radius:999px}
 .courtwrap.done{opacity:.55}
+.linelbl{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ball);background:rgba(5,10,14,.6);padding:3px 10px;border-radius:999px}
+.linelbl.none{color:var(--mute);font-family:var(--body);font-weight:600;font-size:11px;text-transform:none;letter-spacing:.3px}
+.queue .line{display:block;font-size:12px;color:var(--ball);font-weight:600;margin-top:1px}
 .board .saved{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;border:1.5px solid var(--good);color:var(--good);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px;cursor:default}
 .winrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
@@ -80,7 +83,8 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .log{display:flex;flex-direction:column;gap:6px}
 .log .item{display:grid;grid-template-columns:22px 1fr auto 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--panel-2);font-size:14px}
 .log .item .n{color:var(--mute);font-size:12px}
-.log .item .sc{font-family:var(--display);font-weight:800;font-size:20px;white-space:nowrap}
+.log .item .sc{font-family:var(--display);font-weight:800;font-size:20px;white-space:nowrap;text-align:center}
+.log .item .sc small{display:block;font-family:var(--body);font-weight:500;font-size:10px;color:var(--mute);letter-spacing:.3px}
 .log .item .t{min-width:0;overflow-wrap:anywhere}
 .log .item .t.r{text-align:right}
 .log .w{color:var(--ball)}
@@ -354,8 +358,24 @@ function nextRound(present, played, courts){
   const g1=nextGame(present, played); if(!g1) return null;
   const out=[g1];
   if(courts>1){ const rest=[...present].filter(p=>!inGame(g1,p)); if(rest.length>=4){ const g2=nextGame(rest, played); if(g2) out.push(g2); } }
+  out.forEach(g=>{ const L=lineFor(g); if(L!==null) g.line=L; }); // set when drawn, frozen from then on
   return out;
 }
+// ---------- the line ----------
+// Team strength = average of the two players' season ratings; the spread is the gap, to the half point. Positive = Side A favored.
+// No line until every player in the game has MIN_LINE_GAMES season games, so one hot night can't set a number.
+const MIN_LINE_GAMES=5;
+function lineFor(g){
+  const t=tally(allGames()); const rt=p=>{ const x=t[p]; return x&&x.gp>=MIN_LINE_GAMES ? x.pm/(x.gp+SHRINK) : null; };
+  const ra=g.a.map(rt), rb=g.b.map(rt); if([...ra,...rb].some(v=>v===null)) return null;
+  const spread=(ra[0]+ra[1])/2-(rb[0]+rb[1])/2; return Math.round(spread*2)/2;
+}
+const hasLine=g=>typeof g.line==='number';
+function lineText(g){ if(!hasLine(g)) return 'No line yet'; const L=g.line; if(Math.abs(L)<1) return "Pick 'em"; return `${(L>0?g.a:g.b).join(' & ')} −${Math.abs(L)}`; }
+// how the favorite did against the line: + covered by that much, − fell short, 0 push
+function cover(g){ if(!hasLine(g)||!scored(g)) return null; return (g.sa-g.sb)-g.line; }
+// short tag for the game log: who beat the number and by how much
+function atsText(g){ const c=cover(g); if(c===null||Math.abs(g.line)<1) return ''; return c>0?`Fav +${c}`:c<0?`Dog +${-c}`:'Push'; }
 // tonight.current is the round in progress: an array of games, scored ones carry sa/sb. Older data stored a single game object.
 function normCur(c){ if(!c) return null; if(Array.isArray(c)){ const a=c.filter(g=>g&&g.a&&g.b); return a.length?a:null; } return c.a&&c.b?[c]:null; }
 const scored=g=>g.sa!=null&&g.sb!=null;
@@ -363,7 +383,7 @@ const scored=g=>g.sa!=null&&g.sb!=null;
 function flushScored(){
   const T=state.tonight; const cur=normCur(T.current); T.current=null; if(!cur) return;
   const done=cur.filter(scored); if(!done.length) return;
-  const r=nextR(T.games); done.forEach(g=>T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r}));
+  const r=nextR(T.games); done.forEach(g=>T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r,...(hasLine(g)?{line:g.line}:{})}));
 }
 
 // ---------- navigation ----------
@@ -438,7 +458,7 @@ const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
 function boardHtml(g,i,multi){
   const done=scored(g);
   return `<div class="board"><div class="courtwrap ${done?'done':''}">${COURT_SVG}
-    <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}
+    <span class="sidelbl a">SIDE A</span><span class="sidelbl b">SIDE B</span>${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <div class="teams"><div class="team"><div class="pname">${nameHtml(g.a[0])}</div><div class="pname">${nameHtml(g.a[1])}</div></div>
     <div class="team"><div class="pname">${nameHtml(g.b[0])}</div><div class="pname">${nameHtml(g.b[1])}</div></div></div></div>
     ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">${multi?`Court ${i+1}: final score`:'Enter final score'}</button>`}</div>`;
@@ -453,13 +473,13 @@ function renderCourt(){
   $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
   const sitting=[...T.present].filter(p=>!cur.some(g=>inGame(g,p))); $('#sitting').textContent=sitting.join(', '); $('#sitPanel').hidden=!sitting.length; $('#nextPanel').style.gridColumn=sitting.length?'':'1 / -1';
   const r=nextR(T.games); const nxt=nextRound(T.present,T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
-  $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
+  $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}${hasLine(g)?`<span class="line num">${lineText(g)}</span>`:''}`).join('<br>'):'';
   $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then tap which side won.</p>';
   $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').disabled=T.games.length===0;
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
-  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
+  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}${atsText(x)?`<small>${atsText(x)}</small>`:''}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
 $('#editPresent').onclick=()=>{ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>{
@@ -467,7 +487,7 @@ $('#undoBtn').onclick=()=>{
   const open=cur.filter(scored).sort((x,y)=>(y.at||0)-(x.at||0))[0];
   if(open){ delete open.sa; delete open.sb; delete open.at; renderCourt(); persist(); toast('Score removed'); return; }
   const LR=lastRound(T.games); if(!LR.length) return;
-  T.games=T.games.filter(g=>!LR.includes(g)); T.current=LR.map(g=>({a:g.a,b:g.b}));
+  T.games=T.games.filter(g=>!LR.includes(g)); T.current=LR.map(g=>({a:g.a,b:g.b,...(hasLine(g)?{line:g.line}:{})}));
   renderCourt(); persist(); toast(LR.length>1?'Last round reopened':'Last score removed');
 };
 $('#endNight').onclick=()=>{
@@ -513,7 +533,7 @@ $('#sheetClose').onclick=()=>{ $('#sheet').hidden=true; state.pending=null; };
 $('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
   g.sa=p.sa; g.sb=p.sb; g.at=Date.now();
   // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
-  if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r})); T.current=null; }
+  if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{})})); T.current=null; }
   $('#sheet').hidden=true; renderCourt(); persist(); toast(`Saved ${p.sa}–${p.sb}`); };
 
 // ---------- standings ----------
@@ -635,6 +655,8 @@ function wireBracket(){
 }
 
 // ---------- player detail + charts ----------
+// against-the-spread record: a player covers when their side beats the line (pick 'em games don't count)
+function atsRecord(games,p){ const r={w:0,l:0,p:0}; games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const side=g.a.includes(p)?1:-1; const v=c*side; v>0?r.w++:v<0?r.l++:r.p++; }); return r; }
 function renderPlayer(){
   const p=state.player; $('#plName').textContent=p;
   const nights=allNights(); const games=allGames().filter(g=>inGame(g,p)); const t=tally(games)[p];
@@ -642,11 +664,12 @@ function renderPlayer(){
   const partners={}; games.forEach(g=>{ const team=g.a.includes(p)?g.a:g.b; const mate=team.find(x=>x!==p); const d=diffs(g)[p]; partners[mate]=partners[mate]||{pm:0,n:0}; partners[mate].pm+=d; partners[mate].n++; });
   const pl=Object.entries(partners).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n);
   const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
+  const ats=atsRecord(games,p);
   $('#plStats').innerHTML=`
     <div class="stat big"><p class="eyebrow">Season avg +/−</p><div class="v num ${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(r1(t.pm/t.gp))}</div><div class="d num">${fmt(t.pm)} total · ${t.w}–${t.l} · ${t.gp} games over ${nightsPlayed(p)} night${nightsPlayed(p)===1?'':'s'}</div></div>
     <div class="stat"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
     <div class="stat"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
-    <div class="stat"><p class="eyebrow">Partners</p><div class="v num">${pl.length}</div></div>
+    <div class="stat"><p class="eyebrow">Vs the line</p><div class="v num">${ats.w}–${ats.l}${ats.p?'–'+ats.p:''}</div><div class="d">${ats.w+ats.l+ats.p?'against the spread':'no lines yet'}</div></div>
     <div class="stat"><p class="eyebrow">Best partner</p><div class="v">${pl[0][0]}</div><div class="d num">${fmt(r1(pl[0][1].pm/pl[0][1].n))} avg · ${pl[0][1].n} game${pl[0][1].n===1?'':'s'}</div></div>
     <div class="stat" style="grid-column:span 2"><p class="eyebrow">Worst partner</p><div class="v">${pl[pl.length-1][0]}</div><div class="d num">${fmt(r1(pl[pl.length-1][1].pm/pl[pl.length-1][1].n))} avg · ${pl[pl.length-1][1].n} game${pl[pl.length-1][1].n===1?'':'s'}</div></div>`;
   // cumulative +/- line, one point per game played
@@ -708,6 +731,8 @@ function renderNight(){
   const pairs={}; N.games.forEach(g=>{ const d=g.sa-g.sb; const add=(pr,v)=>{const k=pr.join(' & '); pairs[k]=pairs[k]||{pm:0,n:0}; pairs[k].pm+=v; pairs[k].n++;}; add(g.a,d); add(g.b,-d); });
   const bp=Object.entries(pairs).sort((a,b)=>b[1].pm-a[1].pm)[0]; const bagels=N.games.filter(g=>g.sa===0||g.sb===0).length;
   const wn=g=>(g.sa>g.sb?g.a:g.b).join(' & '), ln=g=>(g.sa>g.sb?g.b:g.a).join(' & ');
+  // biggest cover of the night, from either side of the line
+  let beat=null; N.games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const by=Math.abs(c); if(by>0&&(!beat||by>beat.by)) beat={g,by,team:(c>0?g.a:g.b).join(' & ')}; });
   $('#recap').innerHTML=`
     <div class="stat big"><p class="eyebrow">Night MVP</p><div class="v">${mvp}</div><div class="d num">${fmt(t[mvp].pm)} over ${t[mvp].gp} games · ${t[mvp].w}–${t[mvp].l}</div></div>
     <div class="stat"><p class="eyebrow">Games</p><div class="v num">${N.games.length}</div><div class="d">${ps.length} players</div></div>
@@ -715,6 +740,7 @@ function renderNight(){
     <div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} game${bp[1].n===1?'':'s'}</div></div>
     <div class="stat"><p class="eyebrow">Biggest blowout</p><div class="v num">${blow.sa}–${blow.sb}</div><div class="d">${wn(blow)} over ${ln(blow)}</div></div>
     <div class="stat"><p class="eyebrow">Tightest game</p><div class="v num">${close.sa}–${close.sb}</div><div class="d">${wn(close)} edged ${ln(close)}</div></div>
+    ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the line</p><div class="v">${beat.team}</div><div class="d num">Line was ${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · covered by ${beat.by}</div></div>`:''}
     <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Tonight's +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>`;
   $('#nightLog').innerHTML=logHtml(N.games,false);
   const del=$('#deleteNight'); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
