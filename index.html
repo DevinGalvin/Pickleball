@@ -87,6 +87,13 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .pname small{display:block;font-family:var(--body);font-weight:500;font-size:11px;letter-spacing:.8px;opacity:.85;text-transform:none;margin-top:2px}
 .courts{display:flex;flex-direction:column;gap:10px}
 .board{display:flex;flex-direction:column;gap:10px}
+/* with two courts, each one is its own card so the eye sees two units, not one long column */
+.courts.multi{gap:22px}.courts.multi .board{background:var(--panel);border-radius:18px;padding:12px;gap:10px}
+.courts.multi .board .matchup .tm{background:var(--panel-2)}
+.boardhdr{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
+.boardhdr .ct{font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.8px;color:var(--ball)}
+.boardhdr .st{font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.6px;text-transform:uppercase}
+.courts.multi .board.done{opacity:.6}
 /* the matchup bar is the answer to "who's playing, which side"; the court under it is the show */
 .matchup{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:8px}
 .matchup .tm{background:var(--panel);border-radius:12px;padding:8px 10px;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -554,12 +561,13 @@ const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
 function boardHtml(g,i,multi){
   const done=scored(g);
   const nm=p=>p.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  return `<div class="board">
+  return `<div class="board ${done?'done':''}">
+    ${multi?`<div class="boardhdr"><span class="ct">Court ${i+1}</span><span class="st">${done?'Scored':'Playing'}</span></div>`:''}
     <div class="matchup"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
     <div class="courtwrap ${done?'done':''}">${COURT_SVG}
-    ${multi?`<span class="courtlbl">COURT ${i+1}</span>`:''}<span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
+    <span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
-    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">${multi?`Court ${i+1}: final score`:'Enter final score'}</button>`}</div>`;
+    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">Enter final score</button>`}</div>`;
 }
 let logCount=0;
 // ---------- live rally ----------
@@ -783,7 +791,7 @@ function renderCourt(){
   if(fresh) persist();
   const multi=cur.length>1;
   const gl=multi?`Round ${nextR(T.games)}`:`Game ${T.games.length+1}`; const gn=$('#gameNum'); if(gn.textContent!==gl){ gn.textContent=gl; gn.classList.remove('flip'); void gn.offsetWidth; gn.classList.add('flip'); }
-  stopSims(); $('#courts').classList.toggle('serve',fresh); $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
+  stopSims(); $('#courts').classList.toggle('serve',fresh); $('#courts').classList.toggle('multi',multi); $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
   document.querySelectorAll('#courts .board').forEach((b,i)=>{ const g=cur[i]; sims[i]=scored(g)?null:new Rally(b.querySelector('svg.sim'),g,fresh); });
   const sitting=[...T.present].filter(p=>!cur.some(g=>inGame(g,p))); $('#sitting').textContent=sitting.join(', '); $('#sitPanel').hidden=!sitting.length; $('#nextPanel').style.gridColumn=sitting.length?'':'1 / -1';
   const r=nextR(T.games); const nxt=nextRound(T.present,T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
