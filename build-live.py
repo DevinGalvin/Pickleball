@@ -101,7 +101,7 @@ fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val(
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName';
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName,#log .item,#nightLog .item,#courts .matchup';
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
 document.addEventListener('click', e=>{
@@ -109,6 +109,7 @@ document.addEventListener('click', e=>{
   e.stopPropagation(); e.preventDefault(); openPin();
 }, true);
 document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
+document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#log .item,#nightLog .item,#courts .matchup')){ e.stopPropagation(); } }, true);
 function openPin(){
   const creating = pinOnServer===null;
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';

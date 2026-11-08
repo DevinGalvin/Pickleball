@@ -225,6 +225,13 @@ nav.tabs button{min-height:60px;display:flex;flex-direction:column;align-items:c
 nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs button.on{color:var(--ball)}
 /* toast drops in from the top, white on dark, so it never sits on or matches the yellow buttons at the bottom */
+/* long-press action sheet: title names the thing you pressed, then 2-3 big actions, Cancel last */
+.acts{display:flex;flex-direction:column;gap:8px}
+.acts button{min-height:54px;border-radius:14px;background:var(--panel-2);font-weight:600;font-size:16px;text-align:left;padding:0 16px}
+.acts button.danger{color:var(--bad)}
+.acts button.cancel{background:none;color:var(--mute);text-align:center}
+.pressable{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.pressable.pressing{transform:scale(.97);filter:brightness(1.15)}
 .toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:600;padding:11px 18px;border-radius:999px;font-size:15px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.55);white-space:nowrap}
 .toast[hidden]{display:none}
 /* ---------- motion ----------
@@ -376,6 +383,13 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <p class="hint" id="endHint" hidden>Standings reset and the next season starts with the next night. History keeps everything.</p>
   </div>
 </div>
+<div class="sheet" id="actSheet" hidden>
+  <div class="card">
+    <div><p class="eyebrow" id="actEyebrow"></p><h2 id="actTitle" style="font-size:20px"></h2></div>
+    <label class="field" id="actField" hidden><span class="eyebrow">Name</span><input id="actInput" maxlength="20" autocomplete="off"></label>
+    <div class="acts" id="acts"></div>
+  </div>
+</div>
 <div class="sheet" id="pinSheet" hidden>
   <div class="card">
     <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
@@ -519,7 +533,7 @@ function renderCheckin(){
   $('#hdrDate').textContent=dateShort(todayISO()); // check-in happens the day you play, whatever day that is
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
-    return `<button class="chip ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
+    return `<button class="chip pressable ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
     + `<button class="chip add" id="addBtn">+ Add a new player</button>`;
   const T=state.tonight; const n=T.present.size;
   // Court 2 is an opt-in, never a default: it isn't always free. Only offered at 8+, where it means nobody (or far fewer) sits.
@@ -563,7 +577,7 @@ function boardHtml(g,i,multi){
   const nm=p=>p.replace(/&/g,'&amp;').replace(/</g,'&lt;');
   return `<div class="board ${done?'done':''}">
     ${multi?`<div class="boardhdr"><span class="ct">Court ${i+1}</span><span class="st">${done?'Waiting on the other court':'Playing'}</span></div>`:''}
-    <div class="matchup"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
+    <div class="matchup pressable" data-i="${i}"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
     <div class="courtwrap ${done?'done':''}">${COURT_SVG}
     <span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
@@ -802,7 +816,7 @@ function renderCourt(){
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
-  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
+  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item pressable" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
 $('#editPresent').onclick=()=>{ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>{
@@ -838,9 +852,9 @@ function pendingScore(p){
   return p.win==='a'?{sa:w,sb:l}:{sa:l,sb:w};
 }
 function updateSheet(){
-  const p=state.pending; const cur=normCur(state.tonight.current)||[]; const g=cur[p.idx]; if(!g) return; const sc=pendingScore(p);
+  const p=state.pending; const cur=normCur(state.tonight.current)||[]; const g=p.edit?p.edit.games[p.edit.i]:cur[p.idx]; if(!g) return; const sc=pendingScore(p);
   const margin=sc?Math.abs(sc.sa-sc.sb):null; $('.scores').classList.toggle('pick',!p.win);
-  $('#sheetTitle').textContent=(cur.length>1?`Court ${p.idx+1}: `:'')+(p.win?'Final score':'Who won?');
+  $('#sheetTitle').textContent=p.edit?(p.win?`Game ${p.edit.i+1} score`:`Game ${p.edit.i+1}: who won?`):(cur.length>1?`Court ${p.idx+1}: `:'')+(p.win?'Final score':'Who won?');
   ['a','b'].forEach(s=>{ const won=p.win===s; const box=$('#box'+s.toUpperCase()), el=$('#val'+s.toUpperCase()), tag=$('#tag'+s.toUpperCase());
     const v=!p.win?null:won?(p.deuce?p.w:11):(p.deuce?(p.w===null?null:p.w-2):p.lo);
     el.textContent=!p.win?'':v===null?'–':v; el.classList.toggle('empty',v===null);
@@ -859,8 +873,10 @@ $('#pad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!
 const pickWin=s=>{ const p=state.pending; if(!p||p.win===s) return; Object.assign(p,{win:s,lo:null,deuce:false,w:null}); updateSheet(); };
 $('#boxA').onclick=()=>pickWin('a');
 $('#boxB').onclick=()=>pickWin('b');
-$('#sheetClose').onclick=()=>{ hideSheet('#sheet'); state.pending=null; };
-$('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const cur=normCur(T.current)||[]; const g=cur[p.idx]; const sc=pendingScore(p); if(!g||!sc) return;
+$('#sheetClose').onclick=()=>{ hideSheet('#sheet'); state.pending=null; $('#saveScore').textContent='Save & next game'; };
+$('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const sc=pendingScore(p); if(!sc) return;
+  if(p.edit){ const g=p.edit.games[p.edit.i]; g.sa=sc.sa; g.sb=sc.sb; hideSheet('#sheet'); state.pending=null; $('#saveScore').textContent='Save & next game'; p.edit.after(); persist(); toast('Score updated'); return; }
+  const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
   g.sa=sc.sa; g.sb=sc.sb; g.at=Date.now();
   // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
   if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{})})); T.current=null; }
@@ -1099,6 +1115,72 @@ function renderNight(){
     navigator.clipboard?.writeText(lines).then(()=>toast('Copied')).catch(()=>toast('Copy blocked here')); };
 }
 
+// ---------- long press ----------
+// 450ms hold, light haptic, then an action sheet. Every action here is also reachable another way or is a power-user fix;
+// long press is never the only path. Scrolling or lifting early cancels.
+function longPress(root, sel, fn){
+  let t=null, el=null, x0=0, y0=0;
+  const clear=()=>{ clearTimeout(t); t=null; if(el){ el.classList.remove('pressing'); el=null; } };
+  root.addEventListener('pointerdown', e=>{ const m=e.target.closest(sel); if(!m||e.button) return; el=m; x0=e.clientX; y0=e.clientY;
+    t=setTimeout(()=>{ t=null; el.classList.remove('pressing'); const target=el; el=null; try{ navigator.vibrate&&navigator.vibrate(10); }catch(_){} root._lpFired=Date.now(); fn(target); }, 450);
+    setTimeout(()=>{ if(t) m.classList.add('pressing'); }, 120); });
+  root.addEventListener('pointermove', e=>{ if(t&&Math.hypot(e.clientX-x0,e.clientY-y0)>10) clear(); });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>root.addEventListener(ev, clear));
+  // swallow the click that follows a fired press
+  root.addEventListener('click', e=>{ if(root._lpFired&&Date.now()-root._lpFired<600){ e.stopPropagation(); e.preventDefault(); } }, true);
+  root.addEventListener('contextmenu', e=>{ if(e.target.closest(sel)) e.preventDefault(); });
+}
+function actionSheet(eyebrow,title,actions,field){
+  $('#actEyebrow').textContent=eyebrow; $('#actTitle').textContent=title;
+  const f=$('#actField'); f.hidden=!field; if(field){ $('#actInput').value=field.value||''; $('#actInput').placeholder=field.placeholder||''; }
+  $('#acts').innerHTML=actions.map((a,i)=>`<button data-i="${i}" class="${a.danger?'danger':''}">${a.label}</button>`).join('')+`<button class="cancel" data-i="-1">Cancel</button>`;
+  $('#acts').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.i; hideSheet('#actSheet'); if(i>=0) actions[i].run($('#actInput').value.trim()); };
+  showSheet('#actSheet');
+}
+// a two-step confirm inside the sheet, for destructive actions
+function confirmSheet(eyebrow,title,label,run){ actionSheet(eyebrow,title,[{label,danger:true,run}]); }
+
+// 1. game log rows: fix or remove any game, not just the last one
+function editGame(games,i,after){
+  const g=games[i]; const sides=[g.a.join(' & '),g.b.join(' & ')];
+  actionSheet(`Game ${i+1}`,`${sides[0]} ${g.sa}–${g.sb} ${sides[1]}`,[
+    {label:'Edit score',run:()=>reScore(games,i,after)},
+    {label:'Delete this game',danger:true,run:()=>confirmSheet(`Game ${i+1}`,'Delete this game? Standings recalculate.','Yes, delete it',()=>{ games.splice(i,1); after(); persist(); toast('Game deleted'); })}
+  ]);
+}
+// reuse the score sheet against a saved game: pending.edit points at it instead of a court
+function reScore(games,i,after){
+  const g=games[i]; state.pending={idx:-1,edit:{games,i,after},win:null,lo:null,deuce:false,w:null};
+  const nm=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'); $('#whoA').innerHTML=g.a.map(nm).join('<br>'); $('#whoB').innerHTML=g.b.map(nm).join('<br>');
+  $('#saveScore').textContent='Save score'; updateSheet(); showSheet('#sheet');
+}
+longPress($('#log'),'.item',el=>editGame(state.tonight.games,+el.dataset.g,renderCourt));
+longPress($('#nightLog'),'.item',el=>{ const N=allNightsEver()[state.night]; if(!N) return; editGame(N.games,+el.dataset.g,()=>{ if(!N.games.length){ if(N.live){ state.tonight.started=false; state.tonight.current=null; } else state.nights.splice(state.nights.indexOf(N),1); show('history',null); } else renderNight(); }); });
+
+// 2. roster chips: rename or remove a player
+longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=allNightsEver().some(n=>n.games.some(g=>inGame(g,p)));
+  actionSheet('Player',p,[
+    {label:'Rename',run:()=>actionSheet('Rename',p,[{label:'Save name',run:v=>{ if(!v||v===p) return; if(PLAYERS.some(x=>x.toLowerCase()===v.toLowerCase())){ toast(`${v} is already on the roster`); return; }
+      PLAYERS[PLAYERS.indexOf(p)]=v; const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
+      state.nights.forEach(n=>n.games.forEach(fix)); state.tonight.games.forEach(fix); (normCur(state.tonight.current)||[]).forEach(fix);
+      if(state.tonight.present.delete(p)) state.tonight.present.add(v); renderCheckin(); persist(); toast(`${p} is now ${v}`); }}],{value:p,placeholder:'Name'})},
+    {label:played?'Remove from roster':'Remove',danger:true,run:()=>confirmSheet('Remove',played?`${p} has played this season. Past games stay in history; ${p} just leaves the check-in list.`:`Remove ${p} from the roster?`,'Yes, remove',()=>{
+      PLAYERS.splice(PLAYERS.indexOf(p),1); state.tonight.present.delete(p); flushScored(); renderCheckin(); persist(); toast(`${p} removed`); })}
+  ]); });
+
+// 4. the drawn matchup: swap partners or redraw, for when the algorithm's pick isn't what the court wants
+longPress($('#courts'),'.matchup',el=>{ const i=+el.dataset.i; const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return;
+  const [a1,a2]=g.a,[b1,b2]=g.b; const lineOf=x=>{ const L=lineFor(x); if(L!==null) x.line=L; else delete x.line; };
+  const apply=(a,b)=>{ g.a=a; g.b=b; lineOf(g); renderCourt(); persist(); };
+  actionSheet(cur.length>1?`Court ${i+1}`:'This game',`${g.a.join(' & ')} vs ${g.b.join(' & ')}`,[
+    {label:`${a1} & ${b1} vs ${a2} & ${b2}`,run:()=>apply([a1,b1],[a2,b2])},
+    {label:`${a1} & ${b2} vs ${a2} & ${b1}`,run:()=>apply([a1,b2],[a2,b1])},
+    {label:'Redraw with different players',run:()=>{ const others=cur.filter(x=>x!==g); const pool=[...state.tonight.present].filter(p=>!others.some(x=>inGame(x,p)));
+      // exclude this exact foursome so the redraw actually changes something
+      const taken=new Set([...g.a,...g.b]); let n=null; for(let k=0;k<12&&!n;k++){ const c=nextGame(pool,state.tonight.games); if(c&&[...c.a,...c.b].some(p=>!taken.has(p))) n=c; else if(c&&pool.length<=4) n=c; }
+      if(!n){ toast('Nobody else to draw from'); return; } apply(n.a,n.b); }}
+  ]); });
+
 // ---------- live sync (Firebase Realtime Database) ----------
 firebase.initializeApp({"apiKey": "AIzaSyBoLJ8B69UYz-eQ2FhmXg5-RxT9iDVAak4", "authDomain": "pickleball-4d0c4.firebaseapp.com", "databaseURL": "https://pickleball-4d0c4-default-rtdb.firebaseio.com", "projectId": "pickleball-4d0c4", "appId": "1:800379995116:web:9d7a435ae762cb1f5f36c9"});
 const fdb = firebase.database(); const leagueRef = fdb.ref('league'); const pinRef = fdb.ref('pin');
@@ -1144,7 +1226,7 @@ fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val(
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName';
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName,#log .item,#nightLog .item,#courts .matchup';
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
 document.addEventListener('click', e=>{
@@ -1152,6 +1234,7 @@ document.addEventListener('click', e=>{
   e.stopPropagation(); e.preventDefault(); openPin();
 }, true);
 document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
+document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#log .item,#nightLog .item,#courts .matchup')){ e.stopPropagation(); } }, true);
 function openPin(){
   const creating = pinOnServer===null;
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
