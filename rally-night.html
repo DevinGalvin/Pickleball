@@ -198,7 +198,8 @@ nav.tabs .in{max-width:430px;margin:0 auto;display:grid;grid-template-columns:re
 nav.tabs button{min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--mute);font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
 nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs button.on{color:var(--ball)}
-.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ball);color:var(--ball-ink);font-weight:600;padding:10px 16px;border-radius:999px;font-size:14px;z-index:30}
+/* toast drops in from the top, white on dark, so it never sits on or matches the yellow buttons at the bottom */
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:600;padding:11px 18px;border-radius:999px;font-size:15px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.55);white-space:nowrap}
 .toast[hidden]{display:none}
 /* ---------- motion ----------
    Views fade up on tab change and slide on drill-in/back. Sheets rise from the bottom. Everything short (under 300ms) and eased out,
@@ -215,7 +216,7 @@ nav.tabs button.on{color:var(--ball)}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes fadeOut{to{opacity:0}}
 @keyframes sheetUp{from{transform:translateY(40px)}to{transform:none}}@keyframes sheetDown{to{transform:translateY(40px)}}
 .toast{animation:toastIn .25s cubic-bezier(.34,1.4,.64,1) both}
-@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px) scale(.95)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-14px) scale(.95)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 button{transition:transform .08s ease,background-color .15s ease,border-color .15s ease,color .15s ease,opacity .15s ease}
 .cta:active,.ghost:active,.chip:active,.trow:active,.night:active,.pad button:active,.scorebox:active,.rchip:active{transform:scale(.97)}
 .chip .dot{transition:transform .25s cubic-bezier(.34,1.56,.64,1),background-color .15s,border-color .15s}
