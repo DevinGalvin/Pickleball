@@ -88,7 +88,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .linelbl{position:absolute;z-index:3;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ball);background:rgba(5,10,14,.6);padding:3px 10px;border-radius:999px}
 .linelbl.none{color:var(--mute);font-family:var(--body);font-weight:600;font-size:11px;text-transform:none;letter-spacing:.3px}
 .queue .line{display:block;font-size:12px;color:var(--ball);font-weight:600;margin-top:1px}
-.board .saved{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;border:1.5px solid var(--good);color:var(--good);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px;cursor:default}
+.board .saved{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;padding:0 16px;border-radius:14px;border:1.5px solid var(--good);color:var(--good);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px;cursor:default;text-align:center}
 .winrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
 .winbtn:hover{background:var(--ball);color:var(--ball-ink);border-color:var(--ball)}
@@ -533,12 +533,12 @@ function boardHtml(g,i,multi){
   const done=scored(g);
   const nm=p=>p.replace(/&/g,'&amp;').replace(/</g,'&lt;');
   return `<div class="board ${done?'done':''}">
-    ${multi?`<div class="boardhdr"><span class="ct">Court ${i+1}</span><span class="st">${done?'Scored':'Playing'}</span></div>`:''}
+    ${multi?`<div class="boardhdr"><span class="ct">Court ${i+1}</span><span class="st">${done?'Waiting on the other court':'Playing'}</span></div>`:''}
     <div class="matchup"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
     <div class="courtwrap ${done?'done':''}">${COURT_SVG}
     <span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
-    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}${multi?' · waiting on the other court':''}</div>`:`<button class="cta scorebtn" data-i="${i}">Enter final score</button>`}</div>`;
+    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}</div>`:`<button class="cta scorebtn" data-i="${i}">Enter final score</button>`}</div>`;
 }
 let logCount=0;
 // ---------- live rally ----------
