@@ -41,7 +41,7 @@ s = s.replace('<meta name="claude:viewport-fit-sides" content="cover">\n','')
 extra_markup = '''<div class="sheet" id="pinSheet" hidden>
   <div class="card">
     <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
-    <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone.</p>
+    <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don't have it? Ask Evan or Devin.</p>
     <label class="field"><span class="eyebrow">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits"></label>
     <p class="err" id="pinErr"></p>
     <button class="cta" id="pinGo">Unlock scoring</button>
@@ -98,10 +98,12 @@ leagueRef.on('value', snap=>{
   if(sheetOpen && (!pg || scored(pg))){ hideSheet('#sheet'); state.pending=null; toast('Someone else just scored that game'); }
 }, err=>{ $('#connHint').textContent='Could not reach the league database. Check your connection and reload.'; $('#sync').className='sync off'; });
 fdb.ref('.info/connected').on('value', s=>{ $('#sync').className='sync '+(s.val()?'on':'off'); });
+$('#sync').onclick=()=>{ const c=$('#sync').className; toast(c.includes('on')?'Live. Everyone sees the same thing.':c.includes('off')?'Offline. Changes save here and sync when you reconnect.':'Connecting…'); };
+$('#sync').style.cssText+='width:14px;height:14px;margin:-3px;cursor:pointer;background-clip:content-box;padding:3px;';
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#courtsSeg,#startBtn,#editPresent,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName,#log .item,#nightLog .item,#courts .matchup';
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#acts .gated,.changeBtn,.rowedit,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName,#log .item,#nightLog .item,#courts .matchup';
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
 document.addEventListener('click', e=>{
@@ -113,7 +115,7 @@ document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('
 function openPin(){
   const creating = pinOnServer===null;
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
-  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone.';
+  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\\'t have it? Ask Evan or Devin.';
   $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
   $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
 }
@@ -134,6 +136,24 @@ s = s.replace('// ---------- persistence hook (no-op in the demo; the live build
 startup = "const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null);\n"
 assert startup in s
 s = s.replace(startup, "// startup happens once the league loads (see live sync above)\n", 1)
+
+# ---------- build stamp + update bar ----------
+# version.json carries the stamp of the deployed build; the app polls it and offers a reload when it's behind,
+# so a home-screen install doesn't sit on last week's version until someone force-quits it.
+import hashlib
+BUILD = hashlib.sha1(s.encode()).hexdigest()[:8]
+update_markup = '''<button class="updatebar" id="updateBar" hidden>New version ready · Tap to update</button>'''
+update_css = '''.updatebar{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:60;min-height:44px;border-radius:12px;border:0;background:var(--ball);color:var(--ball-ink);font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toastIn .3s both}'''
+update_js = '''
+const BUILD='%s';
+async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD) $('#updateBar').hidden=false; }catch(_){} }
+$('#updateBar').onclick=async()=>{ $('#updateBar').textContent='Updating…'; try{ await fetch('index.html',{cache:'reload'}); }catch(_){} location.reload(); };
+setInterval(checkBuild, 5*60*1000); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkBuild(); }); setTimeout(checkBuild, 4000);
+''' % BUILD
+s = s.replace('<div class="toast" id="toast" hidden></div>', update_markup + '\n<div class="toast" id="toast" hidden></div>', 1)
+s = s.replace('</style>', update_css + '\n</style>', 1)
+s = s.replace('</script>', update_js + '</script>')  # last script block in the body
+open(os.path.join(HERE,'version.json'),'w').write('{"build":"%s"}\n' % BUILD)
 
 out = head + s + '\n</body>\n</html>\n'
 open(OUT,'w').write(out)

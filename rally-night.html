@@ -87,7 +87,8 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .matchup .lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
 .matchup .tm.a .lbl{color:var(--ball)}.matchup .tm.b .lbl{color:#ff7a59}
 .matchup b{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.05;text-transform:uppercase;letter-spacing:.3px;overflow-wrap:anywhere}
-.matchup .vsx{align-self:center;color:var(--mute);font-weight:600;font-size:13px}
+.matchup .vsx{align-self:center;color:var(--mute);font-weight:600;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.matchup .vsx svg{width:16px;height:16px;fill:none;stroke:var(--ball);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
 .courtlbl{position:absolute;z-index:3;top:4px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.4px;color:var(--ball-ink);background:var(--ball);padding:2px 10px;border-radius:999px}
 .courtwrap.done{opacity:.55}
 .linelbl{position:absolute;z-index:3;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ball);background:rgba(5,10,14,.6);padding:3px 10px;border-radius:999px}
@@ -102,7 +103,10 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .queue .names{font-weight:600;font-size:15px;margin-top:4px}
 .queue .vs{color:var(--mute);font-weight:500;font-size:13px;margin:0 4px}
 .log{display:flex;flex-direction:column;gap:6px}
-.log .item{display:grid;grid-template-columns:22px 1fr auto 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--panel-2);font-size:14px}
+.log .item{display:grid;grid-template-columns:22px 1fr auto 1fr auto;gap:8px;align-items:center;padding:8px 6px 8px 10px;border-radius:10px;background:var(--panel-2);font-size:14px}
+.log .item .rowedit{min-height:32px;padding:0 8px;border-radius:8px;border:0;background:none;color:var(--mute);font-size:12px;font-weight:600}
+.ghost.sm{min-height:32px;padding:0 10px;font-size:13px;border-radius:10px}
+
 .log .item .n{color:var(--mute);font-size:12px}
 .log .item .sc{font-family:var(--display);font-weight:800;font-size:20px;white-space:nowrap;text-align:center}
 .log .item .sc small{display:block;font-family:var(--body);font-weight:500;font-size:10px;color:var(--mute);letter-spacing:.3px}
@@ -296,13 +300,13 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
         <div class="panel" id="sitPanel"><p class="eyebrow">Sitting</p><div class="names" id="sitting"></div></div>
       </div>
       <div><p class="eyebrow" style="margin-bottom:8px">Tonight so far</p><div class="log" id="log"></div></div>
-      <button class="ghost" id="endNight" style="align-self:center">End night</button>
+      <button class="ghost" id="endNight" style="align-self:center;border:0;color:var(--mute)">End night</button>
     </section>
 
     <!-- SEASON: standings -->
     <section class="view" id="v-standings" hidden>
-      <div class="row"><div style="min-width:0"><p class="eyebrow" id="stEyebrow">Season 1</p><h2>Standings</h2></div><button class="ghost" id="seasonBtn">Settings</button></div>
-      <div class="seg"><button class="on" data-scope="season">Season</button><button data-scope="tonight">Tonight</button></div>
+      <div class="row"><div style="min-width:0"><p class="eyebrow" id="stEyebrow">Season 1</p><h2>Standings</h2></div><button class="ghost" id="seasonBtn">Season</button></div>
+      <div class="seg" id="scopeSeg"><button class="on" data-scope="season">Season</button><button data-scope="tonight">Tonight</button></div>
       <div class="table" id="standings"></div>
       <p class="hint" id="qualHint"></p>
     </section>
@@ -464,7 +468,7 @@ function lineFor(g){
   const spread=(ra[0]+ra[1])/2-(rb[0]+rb[1])/2; return Math.round(spread*2)/2;
 }
 const hasLine=g=>typeof g.line==='number';
-function lineText(g){ if(!hasLine(g)) return 'No line yet'; const L=g.line; if(Math.abs(L)<1) return "Pick 'em"; return `${(L>0?g.a:g.b).join(' & ')} −${Math.abs(L)}`; }
+function lineText(g){ if(!hasLine(g)) return ''; const L=g.line; if(Math.abs(L)<1) return "Even match"; return `${(L>0?g.a:g.b).join(' & ')} favored by ${Math.abs(L)}`; }
 // how the favorite did against the line: + covered by that much, − fell short, 0 push
 function cover(g){ if(!hasLine(g)||!scored(g)) return null; return (g.sa-g.sb)-g.line; }
 // tonight.current is the round in progress: an array of games, scored ones carry sa/sb. Older data stored a single game object.
@@ -588,9 +592,9 @@ function boardHtml(g,i,multi){
   const nm=p=>p.replace(/&/g,'&amp;').replace(/</g,'&lt;');
   return `<div class="board ${done?'done':''}">
     ${multi?`<div class="boardhdr"><span class="ct">Court ${i+1}</span><span class="st">${done?'Waiting on the other court':'Playing'}</span></div>`:''}
-    <div class="matchup pressable" data-i="${i}"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
+    <div class="matchup pressable ${done?'':'changeBtn'}" data-i="${i}" role="${done?'':'button'}" aria-label="${done?'':'Change matchup'}"><div class="tm a"><span class="lbl">Side A</span><b>${g.a.map(nm).join(' & ')}</b></div><span class="vsx">vs${done?'':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11M15 4l3 3-3 3M17 17H6M9 14l-3 3 3 3"/></svg>'}</span><div class="tm b"><span class="lbl">Side B</span><b>${g.b.map(nm).join(' & ')}</b></div></div>
     <div class="courtwrap ${done?'done':''}">${COURT_SVG}
-    <span class="linelbl ${hasLine(g)?'':'none'}">${hasLine(g)?'LINE · ':''}${lineText(g)}</span>
+    ${hasLine(g)?`<span class="linelbl">${lineText(g)}</span>`:''}
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
     ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}</div>`:`<button class="cta scorebtn" data-i="${i}">Enter final score</button>`}</div>`;
 }
@@ -827,8 +831,11 @@ function renderCourt(){
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
-  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item pressable" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div></div>`; }).join(''); }
-$('#editPresent').onclick=()=>{ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); };
+  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item pressable" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div><button class="rowedit" data-g="${i}" aria-label="Edit game ${i+1}">Edit</button></div>`; }).join(''); }
+// Who's here is read-only: the view is shared, so looking must never reset everyone's screen. Edit (inside) does the reset.
+function editPresent(){ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); }
+$('#editPresent').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)); const c=state.tonight.courts===2?' · two courts':'';
+  actionSheet(`${P.length} playing${c}`, P.join(', '), [{label:'Edit who\'s here',gated:true,run:editPresent}]); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>{
   const T=state.tonight; const cur=normCur(T.current)||[];
@@ -910,6 +917,9 @@ function ranking(tonight){
     .sort((x,y)=>(y.s?1:0)-(x.s?1:0)||(y.rating-x.rating)||((y.s?y.s.w/y.s.gp:0)-(x.s?x.s.w/x.s.gp:0)));
 }
 function renderStandings(){
+  // no Tonight scope to offer until something has been played tonight
+  const hasTonight=state.tonight.games.length>0; $('#scopeSeg').hidden=!hasTonight; if(!hasTonight) state.scope='season';
+  document.querySelectorAll('#scopeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.scope===state.scope));
   const tonight=state.scope==='tonight'; const games=tonight?state.tonight.games:allGames();
   const rows=ranking(tonight);
   let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
@@ -928,7 +938,7 @@ function renderStandings(){
     el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; el.getBoundingClientRect(); el.style.transition=''; el.style.transform=''; });
   $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games. Tap a name for details.`;
 }
-document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x===b)); renderStandings(); });
+document.querySelectorAll('#scopeSeg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; renderStandings(); });
 $('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow'); if(!b) return; state.player=b.dataset.p; show('season','player'); });
 $('#playerBack').onclick=()=>show('season',null);
 
@@ -1109,13 +1119,13 @@ function renderNight(){
   let beat=null; N.games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const by=Math.abs(c); if(by>0&&(!beat||by>beat.by)) beat={g,by,team:(c>0?g.a:g.b).join(' & ')}; });
   $('#recap').innerHTML=`
     <div class="stat big"><p class="eyebrow">Night MVP</p><div class="v">${mvp}</div><div class="d num">${fmt(t[mvp].pm)} over ${t[mvp].gp} games · ${t[mvp].w}–${t[mvp].l}</div></div>
-    <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Tonight's +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>
+    <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Night +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>
     <div class="stat"><p class="eyebrow">Games</p><div class="v num">${N.games.length}</div><div class="d">${ps.length} players</div></div>
     <div class="stat"><p class="eyebrow">Bagels</p><div class="v num">${bagels}</div><div class="d">11–0 games</div></div>
     <div class="stat"><p class="eyebrow">Biggest blowout</p><div class="v num">${blow.sa}–${blow.sb}</div><div class="d">${wn(blow)} over ${ln(blow)}</div></div>
     <div class="stat"><p class="eyebrow">Tightest game</p><div class="v num">${close.sa}–${close.sb}</div><div class="d">${wn(close)} edged ${ln(close)}</div></div>
     ${bp&&bp[1].n>=3?`<div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} games</div></div>`:''}
-    ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the line</p><div class="v">${beat.team}</div><div class="d num">Line was ${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · covered by ${beat.by}</div></div>`:''}`;
+    ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the spread</p><div class="v">${beat.team}</div><div class="d num">${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · beat it by ${beat.by}</div></div>`:''}`;
   $('#nightLog').innerHTML=logHtml(N.games,false);
   const del=$('#deleteNight'); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
   del.onclick=()=>{
@@ -1146,7 +1156,7 @@ function longPress(root, sel, fn){
 function actionSheet(eyebrow,title,actions,field){
   $('#actEyebrow').textContent=eyebrow; $('#actTitle').textContent=title;
   const f=$('#actField'); f.hidden=!field; if(field){ $('#actInput').value=field.value||''; $('#actInput').placeholder=field.placeholder||''; }
-  $('#acts').innerHTML=actions.map((a,i)=>`<button data-i="${i}" class="${a.danger?'danger':''}">${a.label}</button>`).join('')+`<button class="cancel" data-i="-1">Cancel</button>`;
+  $('#acts').innerHTML=actions.map((a,i)=>`<button data-i="${i}" class="${a.danger?'danger':''} ${a.gated?'gated':''}">${a.label}</button>`).join('')+`<button class="cancel" data-i="-1">Cancel</button>`;
   $('#acts').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.i; hideSheet('#actSheet'); if(i>=0) actions[i].run($('#actInput').value.trim()); };
   showSheet('#actSheet');
 }
@@ -1167,8 +1177,12 @@ function reScore(games,i,after){
   const nm=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'); $('#whoA').innerHTML=g.a.map(nm).join('<br>'); $('#whoB').innerHTML=g.b.map(nm).join('<br>');
   $('#saveScore').textContent='Save score'; updateSheet(); showSheet('#sheet');
 }
-longPress($('#log'),'.item',el=>editGame(state.tonight.games,+el.dataset.g,renderCourt));
-longPress($('#nightLog'),'.item',el=>{ const N=allNightsEver()[state.night]; if(!N) return; editGame(N.games,+el.dataset.g,()=>{ if(!N.games.length){ if(N.live){ state.tonight.started=false; state.tonight.current=null; } else state.nights.splice(state.nights.indexOf(N),1); show('history',null); } else renderNight(); }); });
+function editTonightGame(i){ editGame(state.tonight.games,i,renderCourt); }
+function editNightGame(i){ const N=allNightsEver()[state.night]; if(!N) return; editGame(N.games,i,()=>{ if(!N.games.length){ if(N.live){ state.tonight.started=false; state.tonight.current=null; } else state.nights.splice(state.nights.indexOf(N),1); show('history',null); } else renderNight(); }); }
+longPress($('#log'),'.item',el=>editTonightGame(+el.dataset.g));
+longPress($('#nightLog'),'.item',el=>editNightGame(+el.dataset.g));
+$('#log').addEventListener('click',e=>{ const b=e.target.closest('.rowedit'); if(b) editTonightGame(+b.dataset.g); });
+$('#nightLog').addEventListener('click',e=>{ const b=e.target.closest('.rowedit'); if(b) editNightGame(+b.dataset.g); });
 
 // 2. roster chips: rename or remove a player
 longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=allNightsEver().some(n=>n.games.some(g=>inGame(g,p)));
@@ -1182,7 +1196,7 @@ longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=
   ]); });
 
 // 4. the drawn matchup: swap partners or redraw, for when the algorithm's pick isn't what the court wants
-longPress($('#courts'),'.matchup',el=>{ const i=+el.dataset.i; const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return;
+function matchupActions(i){ const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return;
   const [a1,a2]=g.a,[b1,b2]=g.b; const lineOf=x=>{ const L=lineFor(x); if(L!==null) x.line=L; else delete x.line; };
   const apply=(a,b)=>{ g.a=a; g.b=b; lineOf(g); renderCourt(); persist(); };
   actionSheet(cur.length>1?`Court ${i+1}`:'This game',`${g.a.join(' & ')} vs ${g.b.join(' & ')}`,[
@@ -1192,7 +1206,9 @@ longPress($('#courts'),'.matchup',el=>{ const i=+el.dataset.i; const cur=normCur
       // exclude this exact foursome so the redraw actually changes something
       const taken=new Set([...g.a,...g.b]); let n=null; for(let k=0;k<12&&!n;k++){ const c=nextGame(pool,state.tonight.games); if(c&&[...c.a,...c.b].some(p=>!taken.has(p))) n=c; else if(c&&pool.length<=4) n=c; }
       if(!n){ toast('Nobody else to draw from'); return; } apply(n.a,n.b); }}
-  ]); });
+  ]); }
+longPress($('#courts'),'.matchup',el=>matchupActions(+el.dataset.i));
+$('#courts').addEventListener('click',e=>{ const b=e.target.closest('.matchup.changeBtn'); if(b) matchupActions(+b.dataset.i); });
 
 // ---------- persistence hook (no-op in the demo; the live build replaces it) ----------
 function persist(){}
