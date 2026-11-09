@@ -281,6 +281,9 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .courtwrap .burst{position:absolute;z-index:3;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--ball);pointer-events:none;opacity:0;animation:burst .8s cubic-bezier(.1,.7,.3,1) .15s both}
 .courtwrap .burst.a{left:22%}.courtwrap .burst.b{left:78%}
 @keyframes burst{0%{opacity:1;transform:rotate(var(--a)) translateX(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateX(70px) scale(.3)}}
+/* sign-up date: one quick pop the first time the sign-up opens, so the eye lands on the night. Never replays on re-render. */
+#ciTitle .day{display:inline-block;color:var(--ball)}#ciTitle .day.pop{animation:dayPop .3s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes dayPop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -549,11 +552,12 @@ function renderCheckin(){
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
-  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').innerHTML=early?`Who's playing <span style="color:var(--ball)">${dateShort(leagueDate())}</span>?`:"Who's here?";
+  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').innerHTML=early?`Who's playing <span class="day${dayPopped?'':' pop'}">${dateShort(leagueDate())}</span>?`:"Who's here?"; if(early) dayPopped=true;
   $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   $('#startBtn').classList.toggle('locked',early&&!back); const sh=$('#startHint'); sh.hidden=!(early&&!back); sh.textContent=`Starts ${dateLong(leagueDate()).replace(/,.*$/,'')}. Playing another day? Hold to start.`;
 }
 const isEarly=()=>todayISO()!==leagueDate();
+let dayPopped=false; // the date pops once per load, not on every roster tap
 // A night started on league day is stamped with that Tuesday; one forced open on another day (the hold override) is stamped with today.
 function startNight(date){ if(!state.tonight.games.length) state.tonight.date=date; state.tonight.started=true; show('tonight'); persist(); }
 $('#roster').addEventListener('click',e=>{
