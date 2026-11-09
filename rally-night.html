@@ -529,12 +529,14 @@ function renderCheckin(){
   $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   lastEarly=early; const locked=early&&!back; $('#startBtn').classList.toggle('locked',locked);
   $('#startBtn').textContent=locked?`Starts in ${countdownText()}`:back?'Back to the court':'Start the night'; $('#startBtn').classList.toggle('num',locked);
-  const sh=$('#startHint'); sh.hidden=!locked; sh.textContent=`Game time ${dateLong(leagueDate()).replace(/,.*$/,'')} 6:30. Playing another day? Hold to start.`;
+  const sh=$('#startHint'); sh.hidden=!locked; sh.textContent=`Game time ${dateLong(leagueDate()).replace(/,.*$/,'')} ${gameTimeText()}. Playing another day? Hold to start.`;
 }
-// Game time is 6:30pm on league night. The court unlocks at that moment; before it, the button counts down.
-const GAME_H=18, GAME_M=30;
+// Game time is 7:00pm on league night; the countdown runs to it. The court unlocks UNLOCK_MIN before, since some nights start at 6:50.
+const GAME_H=19, GAME_M=0, UNLOCK_MIN=30;
 const gameTime=()=>new Date(leagueDate()+'T'+String(GAME_H).padStart(2,'0')+':'+String(GAME_M).padStart(2,'0')+':00');
-const isEarly=()=>Date.now()<gameTime().getTime();
+const gameTimeText=()=>gameTime().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M$/i,'');
+const unlockText=()=>new Date(gameTime().getTime()-UNLOCK_MIN*60000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M$/i,'');
+const isEarly=()=>Date.now()<gameTime().getTime()-UNLOCK_MIN*60000;
 function countdownText(){ const t=Math.max(0,Math.ceil((gameTime().getTime()-Date.now())/1000)); const d=Math.floor(t/86400), h=Math.floor(t%86400/3600), m=Math.floor(t%3600/60), sec=t%60;
   const p=n=>String(n).padStart(2,'0'); return `${d?d+'d ':''}${p(h)}:${p(m)}:${p(sec)}`; }
 let dayPopped=false; // the date pops once per load, not on every roster tap
@@ -561,7 +563,7 @@ const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezo
 // the one after that once a night is saved. Open the app on Monday and it says Tuesday, not Monday.
 const LEAGUE_DAY=2; // 0=Sun … 2=Tue
 function leagueDate(from=todayISO(), after=false){ const d=new Date(from+'T12:00'); let n=(LEAGUE_DAY-d.getDay()+7)%7; if(after&&n===0) n=7; d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
-$('#startBtn').onclick=()=>{ if($('#startBtn').classList.contains('locked')){ toast(`Court opens ${dateLong(leagueDate()).replace(/,.*$/,'')} at 6:30. Hold to start anyway.`); return; } startNight(leagueDate()); };
+$('#startBtn').onclick=()=>{ if($('#startBtn').classList.contains('locked')){ toast(`Court opens ${dateLong(leagueDate()).replace(/,.*$/,'')} at ${unlockText()}. Hold to start anyway.`); return; } startNight(leagueDate()); };
 longPress($('#v-checkin'),'#startBtn',b=>{ if(b.disabled) return; if(!b.classList.contains('locked')){ startNight(leagueDate()); return; }
   confirmSheet('Not league night',`Start a night for today, ${dateLong(todayISO())}? It counts toward the season like any other.`,'Start it',()=>startNight(todayISO())); });
 
