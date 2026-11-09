@@ -142,13 +142,18 @@ s = s.replace(startup, "// startup happens once the league loads (see live sync 
 # so a home-screen install doesn't sit on last week's version until someone force-quits it.
 import hashlib
 BUILD = hashlib.sha1(s.encode()).hexdigest()[:8]
-update_markup = '''<button class="updatebar" id="updateBar" hidden>New version ready · Tap to update</button>'''
+update_markup = '''<div class="updatescrim" id="updateScrim" hidden></div><button class="updatebar" id="updateBar" hidden>New version ready · Tap to update</button>'''
 update_css = '''.updatebar{position:fixed;left:16px;width:calc(100% - 32px);bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:60;min-height:44px;border-radius:12px;border:0;background:var(--ball);color:var(--ball-ink);font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:updateIn .3s both}
-@keyframes updateIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'''
+@keyframes updateIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.updatescrim{position:fixed;inset:0;z-index:59;background:rgba(6,12,16,.72);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:fadeIn .25s both}'''
 update_js = '''
 const BUILD='%s';
-async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD) $('#updateBar').hidden=false; }catch(_){} }
+let dismissedBuild=null;
+function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
+async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
+let latestBuild=null;
 $('#updateBar').onclick=async()=>{ $('#updateBar').textContent='Updating…'; try{ await fetch('index.html',{cache:'reload'}); }catch(_){} location.reload(); };
+$('#updateScrim').onclick=()=>{ dismissedBuild=latestBuild; showUpdate(false); }; // tap outside to carry on with this version for now
 setInterval(checkBuild, 5*60*1000); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkBuild(); }); setTimeout(checkBuild, 4000);
 ''' % BUILD
 s = s.replace('<div class="toast" id="toast" hidden></div>', update_markup + '\n<div class="toast" id="toast" hidden></div>', 1)
