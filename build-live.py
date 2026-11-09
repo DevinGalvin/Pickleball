@@ -52,9 +52,9 @@ extra_markup = '''<div class="sheet" id="pinSheet" hidden>
 s = s.replace('<div class="toast" id="toast" hidden></div>', extra_markup, 1)
 
 # status dot in the header
-s = s.replace('<div class="date" id="hdrDate"></div>', '<div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span>', 1)
-s = s.replace('header.top{display:flex;align-items:baseline;justify-content:space-between;padding:14px 4px 10px}',
-  'header.top{display:flex;align-items:baseline;justify-content:space-between;padding:14px 4px 10px;gap:8px}\n.sync{width:8px;height:8px;border-radius:50%;background:var(--mute);flex:none;align-self:center}.sync.on{background:var(--good)}.sync.off{background:var(--bad)}\n#connecting.sheet{align-items:center}#connecting .card{padding:28px 20px;gap:8px;justify-content:center}')
+assert '<div class="date" id="hdrDate"></div></div>' in s, 'header slot missing'
+s = s.replace('<div class="date" id="hdrDate"></div></div>', '<div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span></div>', 1)
+# (.sync and #connecting styles live in rally-night.html so this file never depends on the header's CSS text)
 
 sync_js = '''// ---------- live sync (Firebase Realtime Database) ----------
 firebase.initializeApp(''' + cfg + ''');

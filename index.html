@@ -41,6 +41,9 @@ header.top{display:flex;align-items:center;justify-content:space-between;padding
 header.top h1{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.5px;margin:0;text-transform:uppercase}
 header.top h1 .ball{width:26px;height:26px;flex:none}
 header.top .date{color:var(--mute);font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+header.top .hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.sync{width:8px;height:8px;border-radius:50%;background:var(--mute);flex:none}.sync.on{background:var(--good)}.sync.off{background:var(--bad)}
+#connecting.sheet{align-items:center}#connecting .card{padding:28px 20px;gap:8px;justify-content:center}
 main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;padding-bottom:24px}
 .view{display:flex;flex-direction:column;gap:14px}
 .view[hidden]{display:none}
@@ -281,7 +284,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 </style>
 
 <div class="app">
-  <header class="top"><h1><svg class="ball" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="ballShine" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="var(--ball)"/><g fill="var(--bg)"><circle cx="36" cy="16" r="4.6"/><circle cx="49" cy="16" r="4.6"/><circle cx="62" cy="16" r="4.6"/><circle cx="16.5" cy="29" r="4.6"/><circle cx="29.5" cy="29" r="4.6"/><circle cx="42.5" cy="29" r="4.6"/><circle cx="55.5" cy="29" r="4.6"/><circle cx="68.5" cy="29" r="4.6"/><circle cx="81.5" cy="29" r="4.6"/><circle cx="10" cy="42" r="4.6"/><circle cx="23" cy="42" r="4.6"/><circle cx="36" cy="42" r="4.6"/><circle cx="49" cy="42" r="4.6"/><circle cx="62" cy="42" r="4.6"/><circle cx="75" cy="42" r="4.6"/><circle cx="88" cy="42" r="4.6"/><circle cx="16.5" cy="55" r="4.6"/><circle cx="29.5" cy="55" r="4.6"/><circle cx="42.5" cy="55" r="4.6"/><circle cx="55.5" cy="55" r="4.6"/><circle cx="68.5" cy="55" r="4.6"/><circle cx="81.5" cy="55" r="4.6"/><circle cx="23" cy="68" r="4.6"/><circle cx="36" cy="68" r="4.6"/><circle cx="49" cy="68" r="4.6"/><circle cx="62" cy="68" r="4.6"/><circle cx="75" cy="68" r="4.6"/><circle cx="29.5" cy="81" r="4.6"/><circle cx="42.5" cy="81" r="4.6"/><circle cx="55.5" cy="81" r="4.6"/><circle cx="68.5" cy="81" r="4.6"/></g><circle cx="50" cy="50" r="48" fill="url(#ballShine)"/></svg>Pickle</h1><div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span></header>
+  <header class="top"><h1><svg class="ball" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="ballShine" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="var(--ball)"/><g fill="var(--bg)"><circle cx="36" cy="16" r="4.6"/><circle cx="49" cy="16" r="4.6"/><circle cx="62" cy="16" r="4.6"/><circle cx="16.5" cy="29" r="4.6"/><circle cx="29.5" cy="29" r="4.6"/><circle cx="42.5" cy="29" r="4.6"/><circle cx="55.5" cy="29" r="4.6"/><circle cx="68.5" cy="29" r="4.6"/><circle cx="81.5" cy="29" r="4.6"/><circle cx="10" cy="42" r="4.6"/><circle cx="23" cy="42" r="4.6"/><circle cx="36" cy="42" r="4.6"/><circle cx="49" cy="42" r="4.6"/><circle cx="62" cy="42" r="4.6"/><circle cx="75" cy="42" r="4.6"/><circle cx="88" cy="42" r="4.6"/><circle cx="16.5" cy="55" r="4.6"/><circle cx="29.5" cy="55" r="4.6"/><circle cx="42.5" cy="55" r="4.6"/><circle cx="55.5" cy="55" r="4.6"/><circle cx="68.5" cy="55" r="4.6"/><circle cx="81.5" cy="55" r="4.6"/><circle cx="23" cy="68" r="4.6"/><circle cx="36" cy="68" r="4.6"/><circle cx="49" cy="68" r="4.6"/><circle cx="62" cy="68" r="4.6"/><circle cx="75" cy="68" r="4.6"/><circle cx="29.5" cy="81" r="4.6"/><circle cx="42.5" cy="81" r="4.6"/><circle cx="55.5" cy="81" r="4.6"/><circle cx="68.5" cy="81" r="4.6"/></g><circle cx="50" cy="50" r="48" fill="url(#ballShine)"/></svg>Pickle</h1><div class="hdr-right"><div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span></div></header>
   <main>
 
     <!-- TONIGHT: check-in -->
@@ -530,7 +533,6 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dat
 // ---------- check-in ----------
 function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games));
-  $('#hdrDate').textContent=dateShort(leagueDate()); // the coming Tuesday, even if you're checking people in early
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
     return `<button class="chip pressable ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
@@ -545,8 +547,8 @@ function renderCheckin(){
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
-  const day=dateLong(leagueDate()).replace(/,.*$/,'');
-  $('#ciEyebrow').textContent=early?'Sign-up':'Tonight'; $('#ciTitle').textContent=early?`Who's playing ${day}?`:"Who's here?";
+  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').textContent=early?`Who's playing ${dateShort(leagueDate())}?`:"Who's here?";
+  $('#hdrDate').textContent=early?'Sign-up':dateShort(leagueDate()); // the corner is the date on the night itself; before that it says what this screen is for
   $('#startBtn').classList.toggle('locked',early&&!back); const sh=$('#startHint'); sh.hidden=!(early&&!back); sh.textContent=`Starts ${dateLong(leagueDate()).replace(/,.*$/,'')}. Playing another day? Hold to start.`;
 }
 const isEarly=()=>todayISO()!==leagueDate();
