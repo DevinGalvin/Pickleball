@@ -523,7 +523,7 @@ function renderCheckin(){
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
   $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').textContent=early?`Who's playing ${dateShort(leagueDate())}?`:"Who's here?";
-  $('#hdrDate').textContent=early?'Sign-up':dateShort(leagueDate()); // the corner is the date on the night itself; before that it says what this screen is for
+  $('#hdrDate').textContent=early?'':dateShort(leagueDate()); // the corner shows the date on the night itself; before that it's empty (a word up there reads as a button: 'Sign-up' got tapped)
   $('#startBtn').classList.toggle('locked',early&&!back); const sh=$('#startHint'); sh.hidden=!(early&&!back); sh.textContent=`Starts ${dateLong(leagueDate()).replace(/,.*$/,'')}. Playing another day? Hold to start.`;
 }
 const isEarly=()=>todayISO()!==leagueDate();
