@@ -519,7 +519,7 @@ function show(tab, sub){
   pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
-  $('#hdrDate').textContent = tab==='tonight'? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : todayISO()) : season().name;
+  $('#hdrDate').textContent = tab==='tonight'? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : leagueDate()) : season().name;
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
@@ -530,7 +530,7 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dat
 // ---------- check-in ----------
 function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games));
-  $('#hdrDate').textContent=dateShort(todayISO()); // check-in happens the day you play, whatever day that is
+  $('#hdrDate').textContent=dateShort(leagueDate()); // the coming Tuesday, even if you're checking people in early
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
     return `<button class="chip pressable ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
@@ -554,7 +554,11 @@ function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
   PLAYERS.push(n); state.tonight.present.add(n); flushScored(); $('#newName').value=''; $('#addrow').hidden=true; renderCheckin(); persist(); toast(`${n} added and checked in`); }
 $('#addConfirm').onclick=addPlayer; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
 const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
-$('#startBtn').onclick=()=>{ if(!state.tonight.games.length) state.tonight.date=todayISO(); state.tonight.started=true; show('tonight'); persist(); };
+// League night is Tuesday. Every date the app shows or saves is a Tuesday: the coming one before a night starts,
+// the one after that once a night is saved. Open the app on Monday and it says Tuesday, not Monday.
+const LEAGUE_DAY=2; // 0=Sun … 2=Tue
+function leagueDate(from=todayISO(), after=false){ const d=new Date(from+'T12:00'); let n=(LEAGUE_DAY-d.getDay()+7)%7; if(after&&n===0) n=7; d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+$('#startBtn').onclick=()=>{ if(!state.tonight.games.length) state.tonight.date=leagueDate(); state.tonight.started=true; show('tonight'); persist(); };
 
 // ---------- court ----------
 function nameHtml(p){ const t=tally(state.tonight.games)[p]; return `${p}<small class="num">${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
@@ -831,8 +835,7 @@ $('#endNight').onclick=()=>{
   const T=state.tonight; flushScored();
   if(!T.games.length){ T.started=false; T.current=null; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Night cancelled'); return; }
   state.nights.push({date:T.date,games:T.games,season:season().id});
-  const d=new Date(T.date+'T12:00'); d.setDate(d.getDate()+7);
-  state.tonight={date:d.toISOString().slice(0,10),present:new Set(T.present),started:false,games:[],current:null,courts:1};
+  state.tonight={date:leagueDate(T.date,true),present:new Set(T.present),started:false,games:[],current:null,courts:1};
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
 };
 
