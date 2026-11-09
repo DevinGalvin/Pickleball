@@ -1018,9 +1018,12 @@ function renderPlayer(){
   // partner stats need a real sample: 3+ games together, else they're noise
   const pl=Object.entries(partners).filter(x=>x[1].n>=3).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n); const bp=pl[0];
   const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
-  const rating=t.pm/(t.gp+SHRINK); const np=nightsPlayed(p);
+  const rating=t.pm/(t.gp+SHRINK); const np=nightsPlayed(p); const avg=t.pm/t.gp;
+  // Lead with rank: that's what the rating is for. The rating itself is a formula (total ÷ games+SHRINK), so it gets one plain line.
+  const rows=ranking(false).filter(r=>r.s); const rank=rows.findIndex(r=>r.p===p)+1;
+  const ratingNote=Math.abs(rating-avg)<0.05?`Rating ${fmt(r1(rating))}`:`Rating ${fmt(r1(rating))} · nears your avg with more games`;
   $('#plStats').innerHTML=`
-    <div class="stat big ${rating<0?'down':''}"><p class="eyebrow">Season rating</p><div class="v num ${rating>0?'pos':rating<0?'neg':''}">${fmt(r1(rating))}</div><div class="d num">${fmt(r1(t.pm/t.gp))} avg per game · ${fmt(t.pm)} total · ${t.w}–${t.l} over ${np} night${np===1?'':'s'}</div></div>
+    <div class="stat big ${t.pm<0?'down':''}"><p class="eyebrow">Season</p><div class="v num">#${rank}<small style="font-size:16px;color:var(--mute);margin-left:6px">of ${rows.length}</small></div><div class="d num"><span class="${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(t.pm)} total</span> · ${fmt(r1(avg))} per game · ${t.w}–${t.l} · ${np} night${np===1?'':'s'}</div><div class="d num">${ratingNote}</div></div>
     <div class="stat half"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
     <div class="stat half"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
     ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}`;
