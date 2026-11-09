@@ -555,18 +555,19 @@ function renderCheckin(){
   $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').innerHTML=early?`Who's playing <span class="day${dayPopped?'':' pop'}">${dateShort(leagueDate())}</span>?`:"Who's here?"; if(early) dayPopped=true;
   $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   lastEarly=early; const locked=early&&!back; $('#startBtn').classList.toggle('locked',locked);
-  $('#startBtn').textContent=locked?`Starts in ${countdownText()}`:back?'Back to the court':'Start the night';
+  $('#startBtn').textContent=locked?`Starts in ${countdownText()}`:back?'Back to the court':'Start the night'; $('#startBtn').classList.toggle('num',locked);
   const sh=$('#startHint'); sh.hidden=!locked; sh.textContent=`Game time ${dateLong(leagueDate()).replace(/,.*$/,'')} 6:30. Playing another day? Hold to start.`;
 }
 // Game time is 6:30pm on league night. The court unlocks at that moment; before it, the button counts down.
 const GAME_H=18, GAME_M=30;
 const gameTime=()=>new Date(leagueDate()+'T'+String(GAME_H).padStart(2,'0')+':'+String(GAME_M).padStart(2,'0')+':00');
 const isEarly=()=>Date.now()<gameTime().getTime();
-function countdownText(){ const ms=gameTime().getTime()-Date.now(); if(ms<=0) return ''; const m=Math.ceil(ms/60000), h=Math.floor(m/60), d=Math.floor(h/24);
-  if(d>=1) return `${d}d ${h%24}h`; if(h>=1) return `${h}h ${m%60}m`; return `${m} min`; }
+function countdownText(){ const t=Math.max(0,Math.ceil((gameTime().getTime()-Date.now())/1000)); const d=Math.floor(t/86400), h=Math.floor(t%86400/3600), m=Math.floor(t%3600/60), sec=t%60;
+  const p=n=>String(n).padStart(2,'0'); return `${d?d+'d ':''}${p(h)}:${p(m)}:${p(sec)}`; }
 let dayPopped=false; // the date pops once per load, not on every roster tap
 let lastEarly=null;
-setInterval(()=>{ if($('#v-checkin').hidden) return; const e=isEarly(); if(lastEarly!==null&&e!==lastEarly){ show('tonight'); return; } else if(e&&$('#startBtn').classList.contains('locked')) $('#startBtn').textContent=`Starts in ${countdownText()}`; lastEarly=e; },30000);
+setInterval(()=>{ if($('#v-checkin').hidden||document.hidden) return; const e=isEarly(); if(lastEarly!==null&&e!==lastEarly){ show('tonight'); return; } else if(e&&$('#startBtn').classList.contains('locked')) $('#startBtn').textContent=`Starts in ${countdownText()}`; lastEarly=e; },1000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!$('#v-checkin').hidden) show('tonight'); }); // catch up the moment the app comes back
 // A night started on league day is stamped with that Tuesday; one forced open on another day (the hold override) is stamped with today.
 function startNight(date){ if(!state.tonight.games.length) state.tonight.date=date; state.tonight.started=true; show('tonight'); persist(); }
 $('#roster').addEventListener('click',e=>{
