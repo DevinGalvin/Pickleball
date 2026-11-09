@@ -143,7 +143,8 @@ s = s.replace(startup, "// startup happens once the league loads (see live sync 
 import hashlib
 BUILD = hashlib.sha1(s.encode()).hexdigest()[:8]
 update_markup = '''<button class="updatebar" id="updateBar" hidden>New version ready · Tap to update</button>'''
-update_css = '''.updatebar{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:60;min-height:44px;border-radius:12px;border:0;background:var(--ball);color:var(--ball-ink);font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:toastIn .3s both}'''
+update_css = '''.updatebar{position:fixed;left:16px;width:calc(100% - 32px);bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:60;min-height:44px;border-radius:12px;border:0;background:var(--ball);color:var(--ball-ink);font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:updateIn .3s both}
+@keyframes updateIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'''
 update_js = '''
 const BUILD='%s';
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD) $('#updateBar').hidden=false; }catch(_){} }
