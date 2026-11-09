@@ -57,6 +57,10 @@ s = s.replace('<div class="date" id="hdrDate"></div></div>', '<div class="date" 
 # (.sync and #connecting styles live in rally-night.html so this file never depends on the header's CSS text)
 
 sync_js = '''// ---------- live sync (Firebase Realtime Database) ----------
+// Safety: the live build only talks to the league database when served from the real site. Opened from disk or
+// anywhere else (a local test, a headless browser), it runs on the demo data and never writes. This exists because
+// a screenshot test once started a night for the whole group.
+if(location.hostname!=='devingalvin.github.io'){ $('#connecting').hidden=true; const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); console.warn('Pickle: not on the live host, running offline on demo data'); throw new Error('offline build'); }
 firebase.initializeApp(''' + cfg + ''');
 const fdb = firebase.database(); const leagueRef = fdb.ref('league'); const pinRef = fdb.ref('pin');
 let applying=false, loaded=false, lastWrite=null;
