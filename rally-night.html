@@ -518,7 +518,8 @@ function renderCheckin(){
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
-  $('#ciEyebrow').textContent=early?dateLong(leagueDate()).replace(/,.*$/,'')+' night':'Tonight'; $('#ciTitle').textContent=early?"Who's playing?":"Who's here?";
+  const day=dateLong(leagueDate()).replace(/,.*$/,'');
+  $('#ciEyebrow').textContent=early?'Sign-up':'Tonight'; $('#ciTitle').textContent=early?`Who's playing ${day}?`:"Who's here?";
   $('#startBtn').classList.toggle('locked',early&&!back); const sh=$('#startHint'); sh.hidden=!(early&&!back); sh.textContent=`Starts ${dateLong(leagueDate()).replace(/,.*$/,'')}. Playing another day? Hold to start.`;
 }
 const isEarly=()=>todayISO()!==leagueDate();
