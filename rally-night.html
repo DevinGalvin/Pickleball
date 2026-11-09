@@ -522,7 +522,7 @@ function renderCheckin(){
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
-  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').textContent=early?`Who's playing ${dateShort(leagueDate())}?`:"Who's here?";
+  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').innerHTML=early?`Who's playing <span style="color:var(--ball)">${dateShort(leagueDate())}</span>?`:"Who's here?";
   $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   $('#startBtn').classList.toggle('locked',early&&!back); const sh=$('#startHint'); sh.hidden=!(early&&!back); sh.textContent=`Starts ${dateLong(leagueDate()).replace(/,.*$/,'')}. Playing another day? Hold to start.`;
 }
