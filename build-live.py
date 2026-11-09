@@ -25,6 +25,13 @@ head = f'''<!doctype html>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pickle">
+<meta property="og:title" content="Pickle · Tuesday night sign-up">
+<meta property="og:description" content="Tap your name if you're in.">
+<meta property="og:image" content="https://devingalvin.github.io/Pickleball/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://devingalvin.github.io/Pickleball/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
 <link rel="icon" href="icon-192-v2.png">

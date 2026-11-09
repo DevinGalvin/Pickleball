@@ -8,6 +8,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pickle">
+<meta property="og:title" content="Pickle · Tuesday night sign-up">
+<meta property="og:description" content="Tap your name if you're in.">
+<meta property="og:image" content="https://devingalvin.github.io/Pickleball/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://devingalvin.github.io/Pickleball/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
 <link rel="icon" href="icon-192-v2.png">
@@ -307,6 +314,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
       <p class="hint" id="checkinHint"></p>
       <button class="cta" id="startBtn">Start the night</button>
       <p class="hint" id="startHint" hidden style="text-align:center;margin-top:8px"></p>
+      <button class="ghost" id="shareBtn" hidden style="align-self:center;margin-top:6px;display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>Share the sign-up</button>
     </section>
 
     <!-- TONIGHT: court -->
@@ -568,6 +576,7 @@ function renderCheckin(){
   $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   lastEarly=early; const locked=early&&!back; $('#startBtn').classList.toggle('locked',locked);
   $('#startBtn').textContent=locked?`Starts in ${countdownText()}`:back?'Back to the court':'Start the night'; $('#startBtn').classList.toggle('num',locked);
+  $('#shareBtn').hidden=!locked;
   const sh=$('#startHint'); sh.hidden=!locked; sh.textContent=`Game time ${dateLong(leagueDate()).replace(/,.*$/,'')} ${gameTimeText()}. Playing another day? Hold to start.`;
 }
 // Game time is 7:00pm on league night; the countdown runs to it. The court unlocks UNLOCK_MIN before, since some nights start at 6:50.
@@ -576,6 +585,15 @@ const gameTime=()=>new Date(leagueDate()+'T'+String(GAME_H).padStart(2,'0')+':'+
 const gameTimeText=()=>gameTime().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M$/i,'');
 const unlockText=()=>new Date(gameTime().getTime()-UNLOCK_MIN*60000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M$/i,'');
 const isEarly=()=>Date.now()<gameTime().getTime()-UNLOCK_MIN*60000;
+// Share the sign-up to the group chat: the phone's share sheet when it has one (iPhone → Messages), else the clipboard.
+// Names already in go in the message; a list of names gets answered faster than a bare question.
+const LIVE_URL='https://devingalvin.github.io/Pickleball/#tonight';
+function signupMessage(){ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)); const n=P.length;
+  const who=n?`${n} in so far: ${P.join(', ')}.`:'Nobody in yet.';
+  return `Who's playing ${dateShort(leagueDate())}? ${who} Tap your name if you're in:`; }
+$('#shareBtn').onclick=async()=>{ haptic(); const text=signupMessage();
+  if(navigator.share){ try{ await navigator.share({text, url:LIVE_URL}); }catch(_){} return; }
+  try{ await navigator.clipboard.writeText(text+'\n'+LIVE_URL); toast('Copied. Paste it in the group chat.'); }catch(_){ toast('Could not copy'); } };
 function countdownText(){ const t=Math.max(0,Math.ceil((gameTime().getTime()-Date.now())/1000)); const d=Math.floor(t/86400), h=Math.floor(t%86400/3600), m=Math.floor(t%3600/60), sec=t%60;
   const p=n=>String(n).padStart(2,'0'); return `${d?d+'d ':''}${p(h)}:${p(m)}:${p(sec)}`; }
 let dayPopped=false; // the date pops once per load, not on every roster tap
@@ -1330,7 +1348,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='1cf8d809';
+const BUILD='2c06de15';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
