@@ -41,7 +41,7 @@ s = s.replace('<meta name="claude:viewport-fit-sides" content="cover">\n','')
 extra_markup = '''<div class="sheet" id="pinSheet" hidden>
   <div class="card">
     <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
-    <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don't have it? Ask Evan or Devin.</p>
+    <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don't have it? Ask the group.</p>
     <label class="field"><span class="eyebrow">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits"></label>
     <p class="err" id="pinErr"></p>
     <button class="cta" id="pinGo">Unlock scoring</button>
@@ -115,7 +115,7 @@ document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('
 function openPin(){
   const creating = pinOnServer===null;
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
-  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\\'t have it? Ask Evan or Devin.';
+  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\\'t have it? Ask the group.';
   $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
   $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
 }
