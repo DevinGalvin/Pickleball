@@ -55,7 +55,8 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .chip .sub{font-size:12px;color:var(--mute)}
 .chip.add{border-style:dashed;color:var(--mute);justify-content:center}
 .addrow{display:flex;gap:8px}
-.addrow input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px}
+.addrow input{flex:1;min-width:0;box-sizing:border-box;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px;-webkit-appearance:none;appearance:none}
+.addrow input:focus,.addrow input:focus-visible{outline:none;border-color:var(--ball)} /* the ring version overflowed the left edge of the scroll area */
 .addrow[hidden]{display:none}
 
 /* court board */
@@ -274,7 +275,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <section class="view" id="v-checkin">
       <div><p class="eyebrow" id="ciEyebrow">Tonight</p><h2 id="ciTitle">Who's here?</h2></div>
       <div class="roster" id="roster"></div>
-      <div class="addrow" id="addrow" hidden><input id="newName" placeholder="New player's name" maxlength="20" autocomplete="off"><button class="ghost" id="addConfirm">Add</button></div>
+      <div class="addrow" id="addrow" hidden><input id="newName" placeholder="New player's name" maxlength="20" autocomplete="off" autocapitalize="words"><button class="ghost" id="addConfirm">Add</button><button class="ghost" id="addCancel">Cancel</button></div>
       <div class="seg" id="courtsSeg" hidden><button data-c="1" class="on">One court</button><button data-c="2">Two courts</button></div>
       <p class="hint" id="checkinHint"></p>
       <button class="cta" id="startBtn">Start the night</button>
@@ -509,7 +510,8 @@ function renderCheckin(){
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
     return `<button class="chip pressable ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
-    + `<button class="chip add" id="addBtn">+ Add a new player</button>`;
+    + (adding?'':`<button class="chip add" id="addBtn">+ Add a new player</button>`);
+  $('#addrow').hidden=!adding;
   const T=state.tonight; const n=T.present.size;
   // Court 2 is an opt-in, never a default: it isn't always free. Only offered at 8+, where it means nobody (or far fewer) sits.
   if(n<8) T.courts=1; const two=T.courts===2;
@@ -528,15 +530,18 @@ const isEarly=()=>todayISO()!==leagueDate();
 // A night started on league day is stamped with that Tuesday; one forced open on another day (the hold override) is stamped with today.
 function startNight(date){ if(!state.tonight.games.length) state.tonight.date=date; state.tonight.started=true; show('tonight'); persist(); }
 $('#roster').addEventListener('click',e=>{
-  if(e.target.closest('#addBtn')){ $('#addrow').hidden=false; $('#newName').focus(); return; }
+  if(e.target.closest('#addBtn')){ adding=true; renderCheckin(); $('#newName').focus(); return; }
   const b=e.target.closest('.chip'); if(!b||!b.dataset.p) return; const p=b.dataset.p;
   state.tonight.present.has(p)?state.tonight.present.delete(p):state.tonight.present.add(p); flushScored(); renderCheckin(); persist(); });
 $('#courtsSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const c=+b.dataset.c; if(c===state.tonight.courts) return;
   state.tonight.courts=c; flushScored(); renderCheckin(); persist(); });
 function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
   if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return; }
-  PLAYERS.push(n); state.tonight.present.add(n); flushScored(); $('#newName').value=''; $('#addrow').hidden=true; renderCheckin(); persist(); toast(`${n} added and checked in`); }
-$('#addConfirm').onclick=addPlayer; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+  PLAYERS.push(n); state.tonight.present.add(n); flushScored(); $('#newName').value=''; adding=false; renderCheckin(); persist(); toast(`${n} added and checked in`); }
+// the add row replaces the chip while it's open; Cancel or Escape brings the chip back
+let adding=false;
+function cancelAdd(){ $('#newName').value=''; adding=false; renderCheckin(); }
+$('#addConfirm').onclick=addPlayer; $('#addCancel').onclick=cancelAdd; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); if(e.key==='Escape') cancelAdd(); });
 const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
 // League night is Tuesday. Every date the app shows or saves is a Tuesday: the coming one before a night starts,
 // the one after that once a night is saved. Open the app on Monday and it says Tuesday, not Monday.
