@@ -523,7 +523,7 @@ function show(tab, sub){
   pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
-  $('#hdrDate').textContent = tab==='tonight'? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : leagueDate()) : season().name;
+  $('#hdrDate').textContent = tab==='tonight'&&(state.tonight.games.length||state.tonight.started||!isEarly())? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : leagueDate()) : season().name;
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
@@ -550,7 +550,7 @@ function renderCheckin(){
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
   $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').textContent=early?`Who's playing ${dateShort(leagueDate())}?`:"Who's here?";
-  $('#hdrDate').textContent=early?'':dateShort(leagueDate()); // the corner shows the date on the night itself; before that it's empty (a word up there reads as a button: 'Sign-up' got tapped)
+  $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   $('#startBtn').classList.toggle('locked',early&&!back); const sh=$('#startHint'); sh.hidden=!(early&&!back); sh.textContent=`Starts ${dateLong(leagueDate()).replace(/,.*$/,'')}. Playing another day? Hold to start.`;
 }
 const isEarly=()=>todayISO()!==leagueDate();
