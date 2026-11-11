@@ -880,7 +880,7 @@ $('#endNight').onclick=()=>asScorer(()=>{ haptic(15);
   const T=state.tonight; flushScored();
   if(!T.games.length){ T.started=false; T.current=null; delete T.scorer; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Night cancelled'); return; }
   state.nights.push({date:T.date,games:T.games,season:season().id});
-  state.tonight={date:leagueDate(T.date,true),present:new Set(T.present),started:false,games:[],current:null,courts:1};
+  state.tonight={date:leagueDate(T.date,true),present:new Set(),started:false,games:[],current:null,courts:1}; // fresh sign-up: nobody is in until they say so
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
 });
 
