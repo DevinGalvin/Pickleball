@@ -328,12 +328,12 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .trow.in{animation:viewIn .25s both;animation-delay:calc(var(--i,0)*35ms)}
 .scorebox.winner{animation:winPop .3s cubic-bezier(.34,1.56,.64,1)}
 @keyframes winPop{50%{transform:scale(1.04)}}
-/* a light sweeps the court when a new matchup is drawn; the players and the ball are a live simulation (see Rally below) */
+/* a light sweeps the court when a new matchup is drawn, and the ball is served once (see ServeCue below) */
 .courtwrap::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
 #courts.serve .courtwrap::before{animation:sweep .7s ease-out .05s both}
 @keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:1}}
 .courtwrap svg.sim{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none;overflow:visible}
-.courtwrap svg.sim text{font-family:var(--display);font-weight:800;font-size:6.2px;letter-spacing:.3px;text-transform:uppercase;fill:#fff;paint-order:stroke;stroke:#0b141a;stroke-width:1.6px;stroke-linejoin:round;text-anchor:middle}
+.courtwrap svg.sim text.cn{font-family:var(--display);font-weight:800;font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;fill:#fff;text-anchor:middle;paint-order:stroke;stroke:rgba(8,30,56,.55);stroke-width:1.4px;stroke-linejoin:round;transition:opacity .3s}
 .gamebar .g.flip{animation:flipIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes flipIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* the result: score stamps over the net, winners pop with a burst of balls, losers sag */
@@ -642,7 +642,6 @@ function show(tab, sub){
   };
   for(const id in pages) document.getElementById(id).hidden=!pages[id];
   $('#seasonBtn').hidden=!admin(); // season settings are organizer-only
-  pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
   $('#hdrDate').textContent = tab==='tonight'&&(state.tonight.games.length||state.tonight.started||!isEarly())? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : nightDate()) : season().name;
@@ -763,218 +762,46 @@ function boardHtml(g,i,multi){
     ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}</div>`:`<button class="cta scorebtn ${scorer()&&!iAmScorer()?'locked':''}" data-i="${i}">${scorer()&&!iAmScorer()?`${nm(scorer().name)} is scoring`:'Enter final score'}</button>`}</div>`;
 }
 let logCount=0;
-// ---------- live rally ----------
-// Four characters play a never-ending point on the court until the score goes in. Shots vary: drives, lobs, dinks, drops, the odd
-// bad bounce. The first shot is a real serve (Side A lower box, cross-court). Each player looks like themselves: the look is hashed
-// from the name, so Kevin is the same Kevin every night. Runs on requestAnimationFrame, pauses when the tab or view is hidden,
-// and holds a still frame when the phone asks for reduced motion.
+// ---------- serve cue ----------
+// The court is a still diagram: one name per service box, and the ball sits with the server. When a new matchup is drawn the ball
+// is served once, cross-court into the diagonal box, bounces, and comes back to rest with the server. Nothing loops.
 const sims=[];
 function stopSims(){ sims.forEach(s=>s&&s.stop()); sims.length=0; }
-function pauseSims(on){ sims.forEach(s=>s&&(on?s.pause():s.resume())); }
-document.addEventListener('visibilitychange',()=>pauseSims(document.hidden));
-// Front-facing character in the soft 3D-avatar style: big round head, glossy skin, rounded body, short legs. Feet at (0,0), about 26
-// units tall. Gradients live in a <defs> block per court (ids are prefixed with the court's uid). The paddle is in the +x hand; Side B
-// is mirrored so the paddle faces the net. Looks are hashed from the name so each guy is the same guy every week.
-const HAIRC=['#3b2a1e','#6b4a2e','#9a7248','#d9b66a','#a9adb3','#b9623a'];
-function hashStr(t){ let h=2166136261; for(const c of t){ h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h; }
-function simDefs(u){ return `<defs><radialGradient id="${u}-shine" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`; }
-// Backyard-sports cartoon, side view facing right (Side B is mirrored). Ink outlines, flat colors with one shadow tone, a huge round
-// head on a short chunky body, big eye, bulb nose, toothy grin. Three builds (chunky, regular, lanky) hashed from the name.
-// Rig: .legL/.legR at the hip (y -9.4) with .shin at the knee (y -4.2); .arm at the shoulder (1.4,-18.2) with .fore at the elbow (2,-13.4); .armB; .head.
-function avatarSvg(name,team,u){
-  const h=hashStr(name); const hi=(h>>>4)%6, hc=HAIRC[hi]; const style=((h>>>21)%12)===0?10:(h>>>11)%10; const glasses=((h>>>12)%3)===0, beard=((h>>>14)%3)===0;
-  const build=(h>>>17)%3; const nose=(h>>>24)%3, eye=(h>>>26)%2, brow=(h>>>28)%3, tone=(h>>>30)%3, ear=(h>>>19)%2, tank=((h>>>15)%3)===0, stubble=!beard&&((h>>>9)%3)===0;
-  const skin=['#f7d0a8','#f2c39a','#eab98f'][tone], skinS=['#e2aa7a','#d99d6e','#cf8f63'][tone], ink='#3a2a20';
-  const shirt=team==='a'?'#d6f23a':'#ff7a59', shirtS=team==='a'?'#a9c41f':'#d9532f', cap=team==='a'?'#7fa01c':'#c8442a';
-  const hcS=hi===3?'#b8933f':hi===4?'#7d8288':'#2a1a10';
-  const O=`stroke="${ink}" stroke-width=".32" stroke-linejoin="round" stroke-linecap="round" stroke-opacity=".55"`;
-  // Every hair outline ends with the same tail: temple, down the sideburn in front of the ear, back up over the ear top. One path, so
-  // there is no seam between hair and sideburn. Bearded guys' sideburns run down to meet the beard.
-  const tip=beard?-20.6:-22.3;
-  const tail=`L-3.2 -25.1L-2.6 -24.5L-2.4 ${tip}Q-3 ${tip+.8} -3.5 ${tip+.1}L-3.8 -23.5L-4.9 -23.6Z`;
-  const hp=(d)=>`<path d="${d}" fill="${hc}" ${O}/><path d="${d}" fill="${hcS}" opacity=".16" transform="translate(-.5,.7)"/>`;
-  // Hair. Skull top y≈-28.4, back x≈-5.3, hairline across the forehead y≈-25.3. Edges are deliberately irregular: tufts, a part, a fringe.
-  const short=hp("M-5.4 -22.6C-6.2 -25.4 -5.2 -27.8 -3.6 -29L-2.6 -28.6L-1.6 -29.9L-.6 -29.3L.6 -30.2L1.6 -29.4L2.8 -29.8L3.6 -28.9L4.8 -28.6C5.8 -27.4 6 -26.2 5.7 -25.3L4.6 -25.6L3.4 -25.2L1.8 -25.9L.2 -25.5L-1.4 -25.9"+tail)+`<path d="M-1.6 -27.2q1.4-.8 3-.4M-3.6 -26q1-.9 2.4-.9" stroke="${hcS}" stroke-width=".3" opacity=".35" fill="none"/>`;
-  const swept=hp("M-5.4 -22.6C-6.3 -26.2 -4.6 -29.4 -1.4 -30C1.2 -30.5 3.8 -29.6 5.4 -28.2C6.6 -27.2 7.2 -26 7 -24.8L6 -24.7L5.2 -25.4L4 -25.1L2.8 -25.9L1.4 -25.5L0 -26L-1.6 -25.6"+tail)+`<path d="M-2.8 -29.2C-.6 -29.8 2 -29.4 4.6 -27.6" stroke="${hcS}" stroke-width=".32" opacity=".45" fill="none"/><path d="M2.4 -28.6l1.4 2.6M.6 -28.9l.8 2.2" stroke="${hcS}" stroke-width=".28" opacity=".35"/>`;
-  const buzz=hp("M-5.3 -22.8C-5.9 -25.6 -4.6 -28.2 -1.8 -28.9C1.2 -29.6 4 -28.6 5.4 -26.8C5.9 -26.1 5.9 -25.6 5.6 -25.2L3.8 -25.4L1.6 -25.8L-.4 -25.5"+tail)+`<g fill="${hcS}" opacity=".3">${[-3.6,-2.4,-1.2,0,1.2,2.4,3.6].map(x=>`<circle cx="${x}" cy="${-27.6+Math.abs(x)*.25}" r=".22"/><circle cx="${x+.6}" cy="${-26.5+Math.abs(x)*.2}" r=".22"/>`).join('')}</g>`;
-  const curly=hp("M-5.6 -22.4C-6.6 -24 -6.4 -25.8 -5.4 -26.6C-6 -28 -4.6 -29.4 -3.2 -28.9C-2.8 -30.4 -.8 -31 .4 -29.9C1.8 -31 3.8 -30.4 4.2 -28.9C5.8 -28.9 6.6 -27.2 5.8 -26C6.6 -25.2 6.2 -24.6 5.6 -25.1L4 -25.5L2.6 -25.9L1 -25.5L-.6 -26L-2.2 -25.6"+tail)+`<g fill="none" stroke="${hcS}" stroke-width=".3" opacity=".4"><path d="M-4.6 -27.2a.9.9 0 1 0 1.4-.4M-2.2 -28.8a.9.9 0 1 0 1.4-.4M1 -29.2a.9.9 0 1 0 1.4-.4M3.6 -27.8a.9.9 0 1 0 1.4-.4"/></g>`;
-  const spiky=hp("M-5.4 -22.6C-6.2 -26 -4.8 -28.4 -3.4 -29.2L-2.6 -27.8L-1.4 -30.6L-.4 -28.8L1 -31L2 -28.9L3.4 -30.3L3.9 -28.3L5.4 -28.8C6.1 -27.6 6.1 -26.4 5.7 -25.3L4 -25.6L2.4 -25.9L.8 -25.4L-.8 -26L-2.4 -25.5"+tail);
-  const wavy=hp("M-5.6 -22.4C-7 -26.4 -5 -29.2 -3.2 -29.4C-2.6 -31 .2 -31.2 1.2 -29.8C3.2 -30.8 5.4 -29.2 5.6 -27.4C6.4 -26.8 6.4 -25.8 5.7 -25.2L4.2 -25.7L2.6 -26L1 -25.4L-.6 -26L-2.2 -25.5"+tail)+`<path d="M-3.4 -28.4q1.6-1 3.2 0M.2 -29.2q1.6-.8 3.2.4" stroke="${hcS}" stroke-width=".3" opacity=".4" fill="none"/>`;
-  const shaggy=hp("M-5.8 -21.4L-6.4 -23.6C-7 -26.6 -5 -29.6 -1.6 -30.2C1.6 -30.8 4.6 -29.6 5.8 -27.6C6.8 -26.2 7 -25 6.4 -24.2L5.6 -24.8L4.4 -24.3L3.2 -25.4L1.6 -25L.2 -25.8L-1.6 -25.2L-3.2 -25.8"+tail)+`<path d="M-4.8 -27.8q1.6-1.6 3.6-1.6M-1.2 -29.2q2.2-.6 4.2.8" stroke="${hcS}" stroke-width=".32" opacity=".4" fill="none"/>`;
-  const sideburn=`<path d="M-5 -24.2L-2.8 -25.2L-2.4 ${tip}Q-3 ${tip+.8} -3.5 ${tip+.1}L-3.8 -23.5Z" fill="${hc}" ${O}/>`;
-  const capDome="M-5.6 -23.8C-6.6 -27.4 -3.8 -30.6 .6 -30.5C4.2 -30.4 6.4 -28.2 6 -25.6C3.6 -26.4 .8 -26.6 -1.4 -25.9C-3.6 -25.3 -4.8 -24.6 -5.6 -23.8Z";
-  const bcap=`<path d="M-5.6 -24.6L-11.4 -23.6q-1 .8 0 1.6L-5.4 -23.2z" fill="${cap}" ${O}/><path d="${capDome}" fill="${cap}" ${O}/><path d="M-4.6 -24.4C-4 -28 -1 -29.8 2.4 -29.4" stroke="#000" stroke-width=".35" opacity=".2" fill="none"/>
-    <path d="M-5.6 -23.8C-3.6 -25.3 -1.4 -25.9 .8 -26.6L6 -25.6L5.9 -24.7C3.5 -25.4 .8 -25.6 -1.4 -25C-3.4 -24.6 -4.8 -24 -5.6 -23.2z" fill="#000" opacity=".2"/>
-    <path d="M4.6 -25.6q.9-1.4 1.9-1q.3.7-.1 1.2z" fill="${hc}" ${O}/><circle cx=".6" cy="-30.6" r=".6" fill="${cap}" ${O}/>`;
-  const bcapNavy=bcap.split(cap).join('#2f4063');
-  const band=short+`<rect x="-5.9" y="-25.9" width="11.8" height="1.7" rx=".8" fill="#e63946" ${O}/>`;
-  const styles=[short, swept, sideburn+bcap, wavy, buzz, curly, spiky, sideburn+bcapNavy, band, shaggy,
-    sideburn+`<ellipse cx="-.6" cy="-27.2" rx="2.6" ry="1.3" fill="url(#${u}-shine)"/>`];
-  // face parts with variants
-  const skull="M.4 -28.4C-3.2 -28.4 -5.4 -26 -5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5C5.6 -19.3 5.3 -19.9 4.8 -20.3L5.4 -20.8C5.2 -21.6 5.1 -22.4 5.2 -23.2C5.3 -24 5.7 -24.6 5.3 -25.4C4.3 -27.5 2.6 -28.4 .4 -28.4Z";
-  const noses=[`<path d="M5.1 -22.6C5.9 -22.3 6.4 -21.6 6.2 -21C6.1 -20.6 5.6 -20.5 5.2 -20.7" fill="${skin}" ${O}/>`,          // small
-    `<path d="M5.1 -22.8C6.1 -22.5 6.8 -21.6 6.5 -20.9C6.3 -20.4 5.7 -20.3 5.2 -20.6" fill="${skin}" ${O}/>`,                 // medium
-    `<path d="M5.1 -22.9C6.3 -22.7 7 -21.9 6.4 -21.1C6.1 -20.7 5.6 -20.5 5.2 -20.7" fill="${skin}" ${O}/>`][nose];            // pointed
-  const eyes=[`<ellipse cx="3.1" cy="-22.6" rx="1.4" ry="1.6" fill="#fff" stroke="${skinS}" stroke-width=".3"/><circle cx="3.5" cy="-22.5" r=".75" fill="#2a2320"/><circle cx="3.8" cy="-22.9" r=".28" fill="#fff"/>`,
-    `<path d="M1.7 -22.4C2.3 -23.6 4.1 -23.7 4.6 -22.5C4 -21.7 2.3 -21.7 1.7 -22.4Z" fill="#fff" stroke="${skinS}" stroke-width=".3"/><circle cx="3.4" cy="-22.5" r=".65" fill="#2a2320"/><circle cx="3.65" cy="-22.8" r=".22" fill="#fff"/><path d="M1.8 -22.5C2.4 -23.5 4 -23.6 4.6 -22.6" stroke="${ink}" stroke-width=".3" stroke-opacity=".6" fill="none"/>`][eye];
-  const brows=[`<path d="M1.6 -24.8C2.7 -25.6 4.1 -25.6 5 -24.9" stroke="${hc}" stroke-width=".85" fill="none" stroke-linecap="round"/>`,
-    `<path d="M1.7 -24.6C2.8 -25.1 4 -25.1 4.9 -24.7" stroke="${hc}" stroke-width=".55" fill="none" stroke-linecap="round"/>`,
-    `<path d="M1.6 -25.2C2.6 -25.2 4 -24.9 4.9 -24.4" stroke="${hc}" stroke-width=".9" fill="none" stroke-linecap="round"/>`][brow];
-  const earS=ear?1:.82;
-  const face=`<path d="${skull}" fill="${skin}" ${O}/>
-    <path d="M-5.4 -23C-5.4 -21 -4.8 -19.4 -3.4 -18.3C-2.2 -17.3 0 -16.8 2.4 -16.9C4 -17 5 -17.6 5.3 -18.5L5 -17.2L-5.6 -17.8Z" fill="${skinS}" opacity=".55"/>
-    <g transform="translate(-4.1,-21.4) scale(${earS}) translate(4.1,21.4)"><path d="M-3.6 -23.2C-5.4 -23.7 -5.9 -21.2 -4.6 -20C-3.9 -19.4 -3.1 -19.8 -3.2 -20.6C-3.4 -21.4 -3.2 -22.5 -3.6 -23.2Z" fill="${skin}" ${O}/><path d="M-4.2 -22.4q-.9.6-.5 1.7" stroke="${skinS}" stroke-width=".4" fill="none"/></g>
-    ${noses}${eyes}${brows}
-    <path d="M3.2 -19.1q1.1.15 2-.15" fill="none" stroke="${ink}" stroke-width=".42" stroke-opacity=".7" stroke-linecap="round"/>
-    ${stubble?`<path d="M-2.4 -19.6C-1.4 -18 .6 -17.5 3 -17.9" stroke="${hcS}" stroke-width="1.2" opacity=".12" fill="none" stroke-linecap="round"/>`:''}`;
-  // beard on the jaw plus a mustache on the upper lip, under the nose, drooping at the corner of the mouth
-  const extra=(beard?`<path d="M-3.3 -20.4C-3.2 -17.6 -1.5 -16.4 1.8 -16.4C4.1 -16.4 5.3 -17.4 5.5 -19.1C4.8 -18.2 3.7 -17.9 2.4 -17.9C0 -17.9 -2.1 -18.6 -3.3 -20.4Z" fill="${hc}" ${O}/><path d="M2.3 -19.8C3.1 -20.5 4.5 -20.7 5.5 -20.2C6 -19.9 6 -19.3 5.6 -19.1C5.3 -19.5 4.5 -19.6 3.9 -19.5C3.3 -19.4 2.8 -19.2 2.5 -19.3Z" fill="${hc}" ${O}/>`:'')
-    +(glasses?`<ellipse cx="3.1" cy="-22.6" rx="2.1" ry="2.2" fill="#fff" fill-opacity=".15" stroke="${ink}" stroke-width=".42"/><path d="M1 -23.2L-4.4 -23.9" stroke="${ink}" stroke-width=".42"/>`:'');
-  // body build: chunky / regular / lanky affects torso width and height and leg length
-  const bw=[1.22,1,.86][build], bh=[.94,1,1.08][build], lh=[.94,1,1.1][build];
-  const leg=(x,cls,far)=>`<g transform="scale(1,${lh})"><rect x="${x-1.7}" y="-10" width="3.4" height="6.2" rx="1.6" fill="${skin}" ${O}/>${far?`<rect x="${x-1.7}" y="-10" width="3.4" height="6.2" rx="1.6" fill="#000" opacity=".2"/>`:''}
-    <g class="${cls}"><circle cx="${x}" cy="-4.2" r="1.45" fill="${skin}"/><rect x="${x-1.5}" y="-4.6" width="3" height="4.1" rx="1.4" fill="${skin}" ${O}/><rect x="${x-1.55}" y="-2.9" width="3.1" height="1.5" rx=".5" fill="#f6f6f6" ${O}/>
-    <path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#f4f4f4" ${O}/><path d="M${x+.2} -1.5q2.4.1 3.3 1" stroke="#9aa0a6" stroke-width=".35" fill="none"/>
-    ${far?`<circle cx="${x}" cy="-4.2" r="1.45" fill="#000" opacity=".2"/><rect x="${x-1.5}" y="-4.6" width="3" height="4.1" rx="1.4" fill="#000" opacity=".2"/><path d="M${x-2.5} -1.8h2.9q3.8 0 4.2 1.3q.1.9-.9.9h-6.3q-1 0-1-.9q.1-1.2 1.1-1.3z" fill="#000" opacity=".14"/>`:''}</g></g>`;
-  return `<g class="body">
-    <ellipse cx="1" cy=".7" rx="5.8" ry="1.7" fill="#000" opacity=".25"/>
-    <g class="armB"><path d="M-2.6 -18.4q2.2-.8 3.4 0l-.7 5.2h-2.8z" fill="${skinS}" ${O}/><circle cx="-1.3" cy="-13.4" r="1.3" fill="${skinS}"/><path d="M-2.6 -13.4q1.6-.5 2.6.2l-.4 4.3h-2.5z" fill="${skinS}" ${O}/><circle cx="-1.6" cy="-8.6" r="1.6" fill="${skinS}" ${O}/></g>
-    <g class="legL">${leg(-.8,'shin',true)}</g><g class="legR">${leg(.8,'shin',false)}</g>
-    <g transform="scale(${bw},${bh})">
-      <path d="M-4 -11.8q0-1.8 1.4-2h5.6q1.6.2 1.8 2l.2 5.4h-3.2l-1.2-1.5l-1.1 1.5h-3.3z" fill="#2f4063" ${O}/><path d="M-3.8 -8h8.4v1.6h-8.2z" fill="#000" opacity=".2"/>
-      ${tank?`<path d="M-4 -11.6q-1-4 -.4-7.8q.3-2.2 1.6-3.2h1.4q.3 2.4 2.2 2.6q2 .2 2.6-2.6h.8q1.6 1.2 2 3.4q.9 2.6.6 4.8l-.2 3.4z" fill="${shirt}" ${O}/><path d="M-4 -11.6q-1-4 -.4-7.8q.3-2 1.2-3q-.6 2.2-.4 4.8q.2 3.4 1 6.4z" fill="${shirtS}" opacity=".5"/>`
-      :`<path d="M-4 -11.6q-1-4 -.4-7.8q.5-3.2 3.4-3.8h2.4q3.2.4 4 3.4q.9 2.6.6 4.8l-.2 3.4z" fill="${shirt}" ${O}/><path d="M-4 -11.6q-1-4 -.4-7.8q.4-2.4 2-3.2q-.8 2-.6 4.6q.2 3.4 1 6.4z" fill="${shirtS}" opacity=".5"/>`}<path d="M-3.9 -14h9.2l.2 2.4h-9.6z" fill="${shirtS}" opacity=".45"/>
-    </g>
-    <path d="M-1.6 -23.6h3.8l.5 3.6h-4.8z" fill="${skin}" ${O}/>
-    <g class="arm"><path d="M-.2 -18.6q2.8-.8 4.2.4l-.6 5.6h-3.4z" fill="${skin}" ${O}/>${tank?`<path d="M-.3 -18.8q2.9-.9 4.3.2l-.1 1.2q-2.1-.7-4.2 0z" fill="${shirt}" ${O}/>`:`<path d="M-.5 -19q3.1-1 4.9.2l-.2 3.6h-4.4z" fill="${shirt}" ${O}/>`}
-      <g class="fore"><circle cx="2" cy="-13.4" r="1.55" fill="${skin}"/><path d="M.4 -14.2q2-.6 3.4.2l-.5 5h-3z" fill="${skin}" ${O}/><circle cx="2" cy="-13.4" r="1.3" fill="${skin}"/><rect x=".3" y="-10.4" width="3.6" height="1.2" rx=".5" fill="#fff" ${O}/><circle cx="2.2" cy="-8.2" r="1.7" fill="${skin}" ${O}/>
-      <g transform="translate(2.6,-7.7) rotate(-10)"><rect x="-.7" y=".4" width="1.4" height="3" rx=".7" fill="#2a2a2a" ${O}/><ellipse cx="0" cy="6.2" rx="2.8" ry="3.3" fill="#7c3aed" ${O}/><ellipse cx="0" cy="6.2" rx="2.1" ry="2.6" fill="#9a6cf5"/><ellipse cx="-.6" cy="5.2" rx="1" ry="1.4" fill="url(#${u}-shine)"/></g></g></g>
-    <g class="head"><g transform="translate(-.4,3.2) scale(${[1.46,1.4,1.34][build]})">${face}${styles[style]}${extra}</g></g>
-  </g>`;
-}
 const BOX={a0:{x:47,y:36},a1:{x:47,y:76},b0:{x:163,y:36},b1:{x:163,y:76}};
-const rnd=(a,b)=>a+Math.random()*(b-a);
-const PACE={serve:140,drive:190,lob:90,dink:65,drop:105,wild:170,smash:260};
-const ARC={serve:12,drive:7,lob:28,dink:6,drop:13,wild:9,smash:4};
-class Rally{
+class ServeCue{
   constructor(svg,g,fresh){
-    this.svg=svg; this.still=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
-    const mk=(side,i,name)=>{ const home=BOX[side+i]; const face=side==='a'?1:-1;
-      return {side,i,name,home,face,faceCur:face,x:side==='a'?-14:224,y:home.y,tx:home.x,ty:home.y,speed:115,phase:0,moving:false,swing:0,over:0,hop:0,mode:'play'}; };
-    this.players=[mk('a',0,g.a[0]),mk('a',1,g.a[1]),mk('b',0,g.b[0]),mk('b',1,g.b[1])];
-    if(!fresh) this.players.forEach(p=>{ p.x=p.home.x; p.y=p.home.y; });
-    this.uid='s'+Math.floor(Math.random()*1e6).toString(36); const u=this.uid;
-    svg.innerHTML=simDefs(u)+this.players.map((p,k)=>`<g class="p" data-k="${k}">${avatarSvg(p.name,p.side,u)}<text y="5.2">${p.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</text></g>`).join('')
-      +`<ellipse class="bshadow" cx="0" cy="0" rx="2.2" ry=".9" fill="#000" opacity=".35"/><g class="ball"><circle r="2.3" fill="#d6f23a" stroke="#9fb52a" stroke-width=".3"/><circle r=".45" cx="-.7" cy=".5" fill="#5a6a12"/><circle r=".45" cx=".8" cy="-.6" fill="#5a6a12"/><circle r=".45" cx=".9" cy="1" fill="#5a6a12"/></g>`;
-    this.els=[...svg.querySelectorAll('g.p')].map(el=>({el,body:el.querySelector('.body'),legL:el.querySelector('.legL'),legR:el.querySelector('.legR'),shinL:el.querySelector('.legL .shin'),shinR:el.querySelector('.legR .shin'),arm:el.querySelector('.arm'),fore:el.querySelector('.fore'),armB:el.querySelector('.armB'),head:el.querySelector('.head')}));
-    this.ballEl=svg.querySelector('.ball'); this.shadowEl=svg.querySelector('.bshadow');
-    // a beat before the serve: everyone settles, then the server bounces the ball a couple of times and serves underhand
-    this.ball={x:0,y:0,z:0,state:'wait',t:0}; this.wait=fresh?1.3:.8; this.shots=0; this.lastKitchen=false; this.result=null; this.time=0;
-    this.last=performance.now(); this.paused=false; this.dead=false;
-    if(this.still){ this.players.forEach(p=>{ p.x=p.home.x; p.y=p.home.y; }); this.draw(); return; }
-    this.raf=requestAnimationFrame(t=>this.tick(t));
+    this.svg=svg; const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    const nm=(k,name,side)=>`<text class="cn ${side}" x="${BOX[k].x}" y="${BOX[k].y+3.6}">${esc(name)}</text>`;
+    this.home={x:10,y:85}; this.ctl={x:96,y:93}; this.to={x:160,y:31};
+    svg.innerHTML=nm('a0',g.a[0],'a')+nm('a1',g.a[1],'a')+nm('b0',g.b[0],'b')+nm('b1',g.b[1],'b')
+      +`<path class="trail" d="" fill="none" stroke="#d6f23a" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="1 3.2" opacity="0"/>`
+      +`<circle class="pop" r="0" fill="none" stroke="#fff" stroke-width="1" opacity="0"/><ellipse class="land" rx="0" ry="0" fill="none" stroke="#d6f23a" stroke-width=".9" opacity="0"/><ellipse class="bshadow" rx="2.6" ry="1" fill="#000" opacity=".3"/><g class="ball"><circle r="3" fill="#d6f23a" stroke="#9fb52a" stroke-width=".35"/><circle r=".55" cx="-.9" cy=".6" fill="#5a6a12"/><circle r=".55" cx="1" cy="-.8" fill="#5a6a12"/><circle r=".55" cx="1.1" cy="1.3" fill="#5a6a12"/></g>`;
+    this.ballEl=svg.querySelector('.ball'); this.shadowEl=svg.querySelector('.bshadow'); this.trail=svg.querySelector('.trail'); this.pop=svg.querySelector('.pop'); this.land=svg.querySelector('.land');
+    this.dead=false; this.t=0; this.last=0;
+    const still=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.place(this.home.x,this.home.y,0);
+    if(fresh&&!still){ this.delay=.75; this.raf=requestAnimationFrame(t=>{ this.last=t; this.tick(t); }); }
   }
+  // height reads two ways: the ball lifts off its shadow and grows as it rises
+  place(x,y,z){ this.ballEl.setAttribute('transform',`translate(${x.toFixed(2)},${(y-z).toFixed(2)}) scale(${(1+z*.04).toFixed(3)})`); this.shadowEl.setAttribute('cx',(x+z*.25).toFixed(2)); this.shadowEl.setAttribute('cy',(y+2.4).toFixed(2)); this.shadowEl.setAttribute('rx',(2.6*Math.max(.55,1-z*.035)).toFixed(2)); }
   stop(){ this.dead=true; cancelAnimationFrame(this.raf); }
-  pause(){ this.paused=true; cancelAnimationFrame(this.raf); }
-  resume(){ if(this.dead||this.still||!this.paused) return; this.paused=false; this.last=performance.now(); this.raf=requestAnimationFrame(t=>this.tick(t)); }
-  // The server (Side A, lower box) steps back to the baseline, bounces the ball, then serves cross-court.
-  preserve(){ const srv=this.players[1]; srv.tx=9; srv.ty=srv.home.y+rnd(-4,4); this.ball={x:srv.x+5,y:srv.y,z:0,state:'bouncing',t:0,n:0}; }
-  serve(){ const srv=this.players[1]; this.ball.x=srv.x+4; this.ball.y=srv.y; this.ball.z=3; this.launch(srv,{x:163+rnd(-16,16),y:36+rnd(-13,13)},'serve'); }
-  // Launch a shot. Each shot has a plan for the other side: take it on the volley, or let it bounce (and how far the hop runs).
-  launch(hitter,to,kind){
-    const b=this.ball; const from={x:b.x,y:b.y}; const dist=Math.hypot(to.x-from.x,to.y-from.y);
-    b.from=from; b.to=to; b.dur=Math.max(.3,dist/PACE[kind]); b.h=ARC[kind]; b.t=0; b.state='flight'; b.kind=kind; this.shots++;
-    hitter.swing=1; hitter.over=kind==='smash'?1:0; if(kind==='smash') hitter.hop=1;
-    const rec=this.players.filter(p=>p.side!==hitter.side);
-    // two-bounce rule: the serve and the return must bounce. After that, volleys happen, especially at the kitchen.
-    const canVolley=this.shots>2 && kind!=='serve';
-    const volley=canVolley && Math.random()<(kind==='lob'?.6:kind==='dink'||kind==='drop'?.55:.3);
-    b.plan=volley?'volley':'ground'; b.hitT=volley?rnd(.66,.86):null;
-    const meet=volley?{x:from.x+(to.x-from.x)*b.hitT,y:from.y+(to.y-from.y)*b.hitT}:to;
-    const dA=Math.hypot(rec[0].x-meet.x,rec[0].y-meet.y), dB=Math.hypot(rec[1].x-meet.x,rec[1].y-meet.y);
-    let r=dA<=dB?rec[0]:rec[1]; if(Math.abs(dA-dB)<18&&Math.random()<.3) r=r===rec[0]?rec[1]:rec[0];
-    this.receiver=r; this.aim(r,meet,volley?2:5);
-    const mate=rec.find(p=>p!==r); mate.tx=mate.home.x+(mate.side==='a'?rnd(-6,14):rnd(-14,6)); mate.ty=meet.y<56?76:36; this.clamp(mate);
-    const hm=this.players.find(p=>p.side===hitter.side&&p!==hitter); hm.tx=hm.side==='a'?rnd(55,72):rnd(138,155); hm.ty=hm.home.y+rnd(-8,8); this.clamp(hm);
-  }
-  aim(p,pt,back){ p.tx=pt.x+(p.side==='a'?-back:back); p.ty=pt.y; this.clamp(p); }
-  // nobody ever crosses the net (or wanders far off the court): A stays left of 97, B right of 113
-  clamp(p){ const lo=p.side==='a'?6:113, hi=p.side==='a'?97:204; p.tx=Math.min(hi,Math.max(lo,p.tx)); p.ty=Math.min(100,Math.max(32,p.ty)); p.x=Math.min(hi,Math.max(lo,p.x)); p.y=Math.max(32,p.y); }
-  nextShot(){
-    const r=this.receiver; const opp=r.side==='a'?'b':'a'; const b=this.ball; const roll=Math.random(); let kind, to;
-    const high = b.kind==='lob' || (b.plan==='volley'&&b.z>7);
-    const B=opp==='b';
-    if(high && roll<.7){ kind='smash'; to=B?{x:rnd(140,186),y:rnd(22,90)}:{x:rnd(24,70),y:rnd(22,90)}; }
-    else if(this.lastKitchen&&roll<.6){ kind='dink'; to=B?{x:rnd(108,130),y:rnd(22,90)}:{x:rnd(80,102),y:rnd(22,90)}; }
-    else if(roll<.14){ kind='lob'; to=B?{x:rnd(165,188),y:rnd(22,90)}:{x:rnd(22,45),y:rnd(22,90)}; }
-    else if(roll<.36){ kind='drop'; to=B?{x:rnd(108,132),y:rnd(24,88)}:{x:rnd(78,102),y:rnd(24,88)}; }
-    else if(roll<.46){ kind='wild'; to=B?{x:rnd(140,190),y:rnd(18,94)}:{x:rnd(20,70),y:rnd(18,94)}; }
-    else { kind='drive'; to=B?{x:rnd(140,188),y:rnd(22,90)}:{x:rnd(22,70),y:rnd(22,90)}; }
-    this.lastKitchen = kind==='dink'||kind==='drop';
-    this.launch(r,to,kind);
-  }
-  finish(winner){ this.result=winner; this.players.forEach(p=>{ p.mode=p.side===winner?'win':'lose'; p.tx=p.x; p.ty=p.y; }); this.ball.state='gone'; }
+  finish(w){ this.stop(); this.ballEl.style.opacity=0; this.shadowEl.style.opacity=0; this.trail.style.opacity=0; this.svg.querySelectorAll('.cn').forEach(e=>{ if(!e.classList.contains(w)) e.style.opacity=.45; }); }
   tick(now){
-    if(this.dead||this.paused) return;
-    const dt=Math.min(.05,(now-this.last)/1000); this.last=now; this.time+=dt;
-    const b=this.ball;
-    if(b.state==='wait'){ if(this.players.every(p=>Math.hypot(p.x-p.tx,p.y-p.ty)<2)){ this.wait-=dt; if(this.wait<=0) this.preserve(); } }
-    else if(b.state==='bouncing'){ const srv=this.players[1]; b.x=srv.x+5; b.y=srv.y;
-      if(Math.hypot(srv.x-srv.tx,srv.y-srv.ty)<1.5){ b.t+=dt/.5; b.z=Math.abs(Math.sin(Math.PI*b.t))*5; if(b.t>=1){ b.t=0; b.n++; if(b.n>=2){ b.z=0; b.state='toss'; b.t=0; } } } }
-    else if(b.state==='toss'){ b.t+=dt/.35; b.z=Math.sin(Math.PI*Math.min(1,b.t))*4; if(b.t>=1) this.serve(); }
-    else if(b.state==='flight'){
-      b.t+=dt/b.dur; const t=Math.min(1,b.t); b.x=b.from.x+(b.to.x-b.from.x)*t; b.y=b.from.y+(b.to.y-b.from.y)*t; b.z=b.h*4*t*(1-t)+(1-t)*2.5;
-      if(b.plan==='volley'&&b.t>=b.hitT){ this.nextShot(); }
-      else if(b.t>=1){ // bounce: hop onward a random distance, then it gets hit somewhere along the hop
-        const dx=b.to.x-b.from.x, dy=b.to.y-b.from.y, L=Math.hypot(dx,dy)||1; const base=b.kind==='lob'?12:b.kind==='dink'?3:b.kind==='smash'?14:7; const hop=base*rnd(.6,2);
-        b.from={x:b.x,y:b.y}; b.to={x:b.x+dx/L*hop,y:b.y+dy/L*hop}; b.dur=Math.max(.2,hop/40); b.h=Math.min(9,hop*.5+1.5); b.t=0; b.state='hop'; b.hitT=rnd(.35,.85);
-        const r=this.receiver; this.aim(r,{x:b.from.x+(b.to.x-b.from.x)*b.hitT,y:b.from.y+(b.to.y-b.from.y)*b.hitT},3); }
-    } else if(b.state==='hop'){
-      b.t+=dt/b.dur; const t=Math.min(1,b.t); b.x=b.from.x+(b.to.x-b.from.x)*t; b.y=b.from.y+(b.to.y-b.from.y)*t; b.z=b.h*4*t*(1-t);
-      if(b.t>=b.hitT){ b.z=Math.max(b.z,2.5); this.nextShot(); }
-    }
-    this.players.forEach(p=>{
-      const dx=p.tx-p.x, dy=p.ty-p.y, d=Math.hypot(dx,dy); const step=p.speed*dt;
-      if(p.mode==='play'){ if(d>step){ p.x+=dx/d*step; p.y+=dy/d*step; p.moving=true; p.phase+=step*.5; } else { p.x=p.tx; p.y=p.ty; p.moving=false; } this.clamp(p); }
-      if(p.swing>0) p.swing=Math.max(0,p.swing-dt*4); if(p.hop>0) p.hop=Math.max(0,p.hop-dt*3); if(p.swing===0) p.over=0;
-      // weight shift, not a turn: + toward the net, − backpedaling, 0 shuffling sideways (eased)
-      const toNet=p.side==='a'?1:-1; const want=p.moving&&d>2 ? (dx/d)*toNet : 0;
-      p.lean=(p.lean||0)+(want-(p.lean||0))*Math.min(1,dt*7);
-    });
-    this.draw();
+    if(this.dead) return; const dt=Math.min(.05,(now-this.last)/1000); this.last=now;
+    if(this.delay>0){ this.delay-=dt; this.raf=requestAnimationFrame(t=>this.tick(t)); return; }
+    this.t+=dt; const F=.85, H=.38, H2=.22, HOLD=.75, BACK=.35; const h=this.home, to=this.to, c=this.ctl; const T=this.t;
+    // the hit: a white pop at the paddle, and the ball leaves fast and slows as it carries (ease-out)
+    const pu=Math.min(1,T/.28); this.pop.setAttribute('cx',h.x); this.pop.setAttribute('cy',h.y); this.pop.setAttribute('r',(2+pu*8).toFixed(1)); this.pop.style.opacity=T<.28?(.9*(1-pu)):0;
+    const end1={x:to.x+9,y:to.y-5}, end2={x:to.x+13,y:to.y-7};
+    if(T<F){ const u=1-Math.pow(1-T/F,1.7), q=(a,m,b,v)=>(1-v)*(1-v)*a+2*(1-v)*v*m+v*v*b; const x=q(h.x,c.x,to.x,u), y=q(h.y,c.y,to.y,u); this.place(x,y,Math.sin(Math.PI*u)*9);
+      const mx=h.x+(c.x-h.x)*u, my=h.y+(c.y-h.y)*u; this.trail.setAttribute('d',`M${h.x} ${h.y} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`); this.trail.style.opacity=.8; }
+    else if(T<F+H){ const u=(T-F)/H; this.place(to.x+(end1.x-to.x)*u,to.y+(end1.y-to.y)*u,Math.sin(Math.PI*u)*5);
+      this.land.setAttribute('cx',to.x); this.land.setAttribute('cy',to.y+2.4); this.land.setAttribute('rx',(2+u*6).toFixed(1)); this.land.setAttribute('ry',(1+u*2.6).toFixed(1)); this.land.style.opacity=.9*(1-u); }
+    else if(T<F+H+H2){ const u=(T-F-H)/H2; this.land.style.opacity=0; this.place(end1.x+(end2.x-end1.x)*u,end1.y+(end2.y-end1.y)*u,Math.sin(Math.PI*u)*1.8); }
+    else if(T<F+H+H2+HOLD){ const u=(T-F-H-H2)/HOLD; this.ballEl.style.opacity=1-u; this.shadowEl.style.opacity=.3*(1-u); this.trail.style.opacity=.8*(1-u); }
+    else if(T<F+H+H2+HOLD+BACK){ const u=(T-F-H-H2-HOLD)/BACK; this.place(h.x,h.y,0); this.ballEl.style.opacity=u; this.shadowEl.style.opacity=.3*u; this.trail.style.opacity=0; }
+    else { this.ballEl.style.opacity=1; this.shadowEl.style.opacity=.3; return; }
     this.raf=requestAnimationFrame(t=>this.tick(t));
-  }
-  draw(){
-    const T=this.time;
-    this.players.forEach((p,k)=>{ const e=this.els[k]; let jump=0, lean=0, sy=1, headRot=0, armB=-8, fore=-12;
-      // front arm: ready at 10° with the elbow bent; a groundstroke sweeps forward and up and the forearm whips; a smash goes overhead
-      let arm = p.swing>0 ? (p.over ? -175+60*(1-Math.sin(Math.PI*p.swing)) : -125*Math.sin(Math.PI*p.swing)+10) : 10;
-      if(p.swing>0) fore=p.over?-10:-12-45*Math.sin(Math.PI*p.swing);
-      if(p.hop>0) jump=Math.sin(Math.PI*p.hop)*5;
-      if(p.mode==='win'){ jump=Math.abs(Math.sin(T*7+k))*6; arm=-150+Math.sin(T*12)*15; armB=-140+Math.sin(T*12+1)*15; fore=-20; }
-      if(p.mode==='lose'){ sy=.93; headRot=22; arm=28; armB=18; fore=-4; }
-      // forward lean when driving to the net, a backward lean on a backpedal, shuffle in between
-      if(p.mode==='play') lean=4+(p.lean||0)*9;
-      const bob=p.moving?Math.abs(Math.sin(p.phase*2))*.8:Math.sin(T*2.2+k)*.35;
-      e.el.setAttribute('transform',`translate(${p.x.toFixed(2)},${(p.y-jump-bob).toFixed(2)})`);
-      e.body.setAttribute('transform',`scale(${p.face*.78},${sy*.78}) rotate(${lean.toFixed(1)} 0 0)`);
-      // legs: thighs scissor from the hip, the trailing shin folds back at the knee; standing is a slight ready crouch
-      const back=(p.lean||0)<-.3; const amp=back?22:32; const sw=p.moving?Math.sin(p.phase*(back?1.5:1)):0; const thighL=p.moving?sw*amp:(p.mode==='win'?-12:6), thighR=p.moving?-sw*amp:(p.mode==='win'?-12:-6);
-      const kneeL=p.moving?Math.max(0,-sw)*50:-10, kneeR=p.moving?Math.max(0,sw)*50:-10;
-      e.legL.setAttribute('transform',`rotate(${thighL} -.8 -9.4)`); e.shinL.setAttribute('transform',`rotate(${kneeL} -.8 -4.2)`);
-      e.legR.setAttribute('transform',`rotate(${thighR} .8 -9.4)`); e.shinR.setAttribute('transform',`rotate(${kneeR} .8 -4.2)`);
-      e.arm.setAttribute('transform',`rotate(${arm} 1.4 -18.2)`); e.fore.setAttribute('transform',`rotate(${fore} 2 -13.4)`);
-      e.armB.setAttribute('transform',`rotate(${armB+(p.moving?Math.sin(p.phase)*28:0)} -1 -18)`);
-      e.head.setAttribute('transform',`rotate(${headRot} .4 -20)`);
-    });
-    [...this.els].sort((u,v)=>this.players[+u.el.dataset.k].y-this.players[+v.el.dataset.k].y).forEach(e=>this.svg.appendChild(e.el));
-    // when two players stack, only the one in front keeps his name; the other's would print across a face
-    this.players.forEach((p,k)=>{ const hidden=this.players.some((q,j)=>j!==k&&q.y>p.y&&Math.abs(q.x-p.x)<14&&q.y-p.y<16); this.els[k].el.querySelector('text').style.opacity=hidden?0:1; });
-    const b=this.ball; const gone=b.state==='gone'||b.state==='wait';
-    this.ballEl.style.opacity=gone?0:1; this.shadowEl.style.opacity=gone?0:.35;
-    if(!gone){ this.ballEl.setAttribute('transform',`translate(${b.x.toFixed(2)},${(b.y-b.z*1.1).toFixed(2)}) rotate(${(T*720)%360}) scale(${(1+b.z*.025).toFixed(2)})`);
-      this.shadowEl.setAttribute('cx',b.x.toFixed(2)); this.shadowEl.setAttribute('cy',b.y.toFixed(2)); this.shadowEl.setAttribute('rx',(2.2*Math.max(.4,1-b.z*.03)).toFixed(2)); }
-    this.svg.appendChild(this.shadowEl); this.svg.appendChild(this.ballEl);
   }
 }
 function renderCourt(){
@@ -985,7 +812,7 @@ function renderCourt(){
   const multi=cur.length>1;
   const gl=multi?`Round ${nextR(T.games)}`:`Game ${T.games.length+1}`; const gn=$('#gameNum'); if(gn.textContent!==gl){ gn.textContent=gl; gn.classList.remove('flip'); void gn.offsetWidth; gn.classList.add('flip'); }
   stopSims(); $('#courts').classList.toggle('serve',fresh); $('#courts').classList.toggle('multi',multi); $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
-  document.querySelectorAll('#courts .board').forEach((b,i)=>{ const g=cur[i]; sims[i]=scored(g)?null:new Rally(b.querySelector('svg.sim'),g,fresh); });
+  document.querySelectorAll('#courts .board').forEach((b,i)=>{ const g=cur[i]; sims[i]=scored(g)?null:new ServeCue(b.querySelector('svg.sim'),g,fresh); });
   const sitting=active().filter(p=>!cur.some(g=>inGame(g,p))); const LATE=[...lateSet()].filter(p=>T.present.has(p));
   $('#sitEyebrow').textContent=sitting.length||!LATE.length?'Sitting':'Running late';
   $('#sitting').innerHTML=sitting.map(p=>`<button class="sitnm" data-p="${encodeURIComponent(p)}">${escH(p)}</button>`).join(', ')+LATE.map(p=>`<button class="latehere" data-p="${encodeURIComponent(p)}"><span>${escH(p)} · late</span><b>Here now</b></button>`).join('');
