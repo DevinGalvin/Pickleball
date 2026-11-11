@@ -214,13 +214,18 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .scroller{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:16px;padding:8px 16px 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .scroller::-webkit-scrollbar{display:none}
 .scroller svg.col{flex:none;display:block;scroll-snap-align:start}
-.match{background:var(--panel);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
-.match .slot{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:center;padding:8px 10px;font-size:13px;font-weight:600;min-height:40px}
-.match .slot+.slot{border-top:1px solid var(--line)}
-.match .slot .s{font-family:var(--display);font-weight:800;color:var(--ball);font-size:15px}
-.match .slot.tbd{color:var(--mute);font-weight:500}
-.match .slot.bye{color:var(--mute);font-style:italic;font-weight:500}
-.rr{display:flex;flex-direction:column;gap:8px}
+/* round robin (3 teams): triangle graphic + series cards. Same card the live playoff night will fill with scores. */
+.rr{display:flex;flex-direction:column;gap:10px}
+.rr .tri{background:var(--panel);border-radius:14px;padding:14px 12px 10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.rr .tri svg{width:100%;max-width:300px;height:auto;display:block}
+.rr .tri .cap{color:var(--mute);font-size:13px;text-align:center;line-height:1.4}
+.rr .sec{color:var(--mute);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin:4px 0 -2px}
+.series{background:var(--panel);border-radius:14px;padding:12px 14px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.series .tm{display:flex;align-items:center;gap:8px;min-width:0}.series .tm.r{justify-content:flex-end;text-align:right}
+.series .sd{width:22px;height:22px;border-radius:5px;background:var(--ball);color:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:14px;display:grid;place-items:center;flex:none}
+.series .nm{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.series .ser{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:1px;color:var(--mute);min-width:54px;text-align:center}
+.series .ser small{display:block;font:600 10px/1 var(--body);letter-spacing:1.2px;text-transform:uppercase;margin-top:3px}
 
 /* history */
 .nights{display:flex;flex-direction:column;gap:8px}
@@ -1040,7 +1045,20 @@ function renderBracket(){
   $('#teams').innerHTML = teams.map(t=>`<div class="teamrow"><div class="sd num">${t.seed}</div><div class="nm">${t.name}</div><div class="rt num">${fmt(r1(t.rating))}</div></div>`).join('')
     + (alt?`<div class="teamrow"><div class="sd">–</div><div class="nm">${alt.p}<div class="meta">Alternate · subs in if someone can't make it</div></div><div class="rt num">${fmt(r1(alt.rating))}</div></div>`:'');
   const T=teams.length; let html='', hint='';
-  {
+  if(T===3){
+    // Round robin: three teams, three series, everyone plays everyone. A bracket here would send one team home after one series.
+    const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;'); const short=t=>esc(t.name.length>18?t[0].p+' & '+t[1].p.split(' ')[0]:t.name);
+    const P=[[150,34],[46,142],[254,142]]; // seed 1 top, 2 bottom-left, 3 bottom-right
+    const chip=(t,[x,y])=>`<rect x="${x-14}" y="${y-14}" width="28" height="28" rx="7" fill="var(--ball)"/><text x="${x}" y="${y+6}" text-anchor="middle" style="fill:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:17px">${t.seed}</text><text x="${x}" y="${y+(y<100?-24:34)}" text-anchor="middle" style="fill:var(--ink);font-size:12px;font-weight:600">${short(t)}</text>`;
+    const tri=`<svg viewBox="0 0 300 190" role="img" aria-label="Round robin: every team plays every other team">
+      <path d="M150 34 L46 142 M150 34 L254 142 M46 142 L254 142" fill="none" stroke="var(--line)" stroke-width="2"/>
+      ${teams.map((t,i)=>chip(t,P[i])).join('')}</svg>`;
+    const pairs=[[0,2],[1,2],[0,1]]; // 1v3, 2v3, 1v2: the top two meet last
+    html=`<div class="rr"><div class="tri">${tri}<div class="cap">Three teams, three series. Everyone plays everyone.</div></div>
+      ${pairs.map(([i,j],k)=>`<p class="sec">Series ${k+1}</p><div class="series"><div class="tm"><span class="sd">${teams[i].seed}</span><span class="nm">${esc(teams[i].name)}</span></div><div class="ser">0–0<small>best of 3</small></div><div class="tm r"><span class="nm">${esc(teams[j].name)}</span><span class="sd">${teams[j].seed}</span></div></div>`).join('')}</div>`;
+    hint='Round robin, every series best of 3. Best series record takes the title; point differential breaks ties.';
+  }
+  else {
     const size=T<=2?2:T<=4?4:8; const order=size===2?[1,2]:size===4?[1,4,2,3]:[1,8,4,5,3,6,2,7];
     const byT=s=>teams.find(t=>t.seed===s)||null;
     let cur=[]; for(let i=0;i<order.length;i+=2) cur.push({a:byT(order[i]),b:byT(order[i+1]),n:i/2+1});
@@ -1381,7 +1399,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='b1739944';
+const BUILD='ecb3df31';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
