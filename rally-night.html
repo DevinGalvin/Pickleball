@@ -419,12 +419,19 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .prow .wl{width:30px;flex:none;text-align:right;color:var(--mute);font-size:13px}
 .prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:20px}
 .sharebox{display:flex;flex-direction:column;gap:8px}
-.recg{display:flex;flex-direction:column;justify-content:center;gap:10px;width:100%}
-.tug{display:flex;gap:3px;width:100%}.tug i{display:block;height:14px;border-radius:7px;min-width:8px}.tug .w{background:var(--ball)}.tug .l{background:#4d6270}
-.race{position:relative;display:flex;flex-direction:column;gap:5px;width:100%}
-.race .ln{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:3px}.race .ln i{display:block;height:10px;border-radius:3px;background:var(--panel-2)}
-.race .ln.w i.on{background:var(--ball)}.race .ln.l i.on{background:#6d8391}
-.race .fin{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--fg)}
+.bc{display:flex;flex-direction:column;justify-content:center;gap:12px;width:100%}
+.bct{display:flex;flex-direction:column;gap:7px}
+.bch{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
+.bct .nm{font-weight:600;font-size:15px;min-width:0;overflow-wrap:anywhere}.bct.l .nm{color:var(--mute);font-weight:500}
+.bct .sc{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;flex:none}.bct.l .sc{color:var(--mute)}
+.balls{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-height:22px}
+.balls svg{width:18px;height:18px;flex:none;fill:var(--ball)}.bct.l .balls svg{fill:#4d6270}
+.balls.many{gap:3px}.balls.many svg{width:14px;height:14px}
+.balls svg.ot{border-radius:50%;box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.balls.many svg.ot{box-shadow:0 0 0 1.5px var(--bg),0 0 0 3px var(--fg)}
+.bct .zero{font-size:13px;color:var(--mute);font-style:italic}
+.ebrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.otb{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:6px;background:var(--fg);color:var(--bg);font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:.6px}
 .igname.ic{display:flex;align-items:center;gap:6px}
 </style>
 
@@ -1334,7 +1341,7 @@ function records(){
   // single games
   const line=x=>{ const aw=x.g.sa>x.g.sb; return {win:aw?x.g.a:x.g.b,lose:aw?x.g.b:x.g.a,ws:Math.max(x.g.sa,x.g.sb),ls:Math.min(x.g.sa,x.g.sb),score:`${Math.max(x.g.sa,x.g.sb)}–${Math.min(x.g.sa,x.g.sb)}`,who:`${(aw?x.g.a:x.g.b).join(' & ')} over ${(aw?x.g.b:x.g.a).join(' & ')}`,date:x.date,i:x.i}; };
   const mar=x=>Math.abs(x.g.sa-x.g.sb), tot=x=>x.g.sa+x.g.sb;
-  R.blowout=line(games.slice().sort((a,b)=>mar(b)-mar(a))[0]); R.marathon=line(games.slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]);
+  R.blowout=line(games.slice().sort((a,b)=>mar(b)-mar(a))[0]); R.avgLose=games.reduce((t,x)=>t+Math.min(x.g.sa,x.g.sb),0)/games.length; R.marathon=line(games.slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]);
   // bagels and games played
   const gave={}, ate={}, gp={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d) gp[p]=(gp[p]||0)+1; if(Math.min(x.g.sa,x.g.sb)===0){ const aw=x.g.sa>x.g.sb; (aw?x.g.a:x.g.b).forEach(p=>gave[p]=(gave[p]||0)+1); (aw?x.g.b:x.g.a).forEach(p=>ate[p]=(ate[p]||0)+1); } });
   const gv=top(gave,v=>v), at=top(ate,v=>v), ir=top(gp,v=>v); R.gave=gv?{p:gv,n:gave[gv]}:null; R.ate=at?{p:at,n:ate[at]}:null; R.iron={p:ir,n:gp[ir]};
@@ -1357,12 +1364,15 @@ function renderRecords(){ const R=records(); const el=$('#records');
     <button class="rec swl" ${ni(Wn.i)}><span class="ignum neg num">${fmt(Wn.pm)}</span><span class="swtrack"><span class="swbar neg" style="width:${Math.round(-Wn.pm/sw*100)}%"></span></span><span class="igsub">${escH(Wn.p)} · ${R.day(Wn.date)}</span></button>
     <span class="swaxis"></span>
     <button class="rec swr" ${ni(B.i)}><span class="ignum pos num">${fmt(B.pm)}</span><span class="swtrack"><span class="swbar pos" style="width:${Math.round(B.pm/sw*100)}%"></span></span><span class="igsub">${escH(B.p)} · ${R.day(B.date)}</span></button></div></section>`;
-  // the two single-game records each get their own picture: a blowout is about the split of the points, a long game
-  // is about how far past the usual finish it ran
-  const recHead=x=>`<span class="igrow"><span class="igmain"><span class="igname sm">${x.win.map(escH).join(' & ')}</span><span class="igsub">beat ${x.lose.map(escH).join(' & ')} · ${R.day(x.date)}</span></span><span class="ignum num">${x.score}</span></span>`;
-  const blowout=x=>`<section class="ig"><p class="eyebrow">Biggest blowout</p><button class="rec recg" ${ni(x.i)}>${recHead(x)}<span class="tug" aria-hidden="true"><i class="w" style="flex:${x.ws}"></i>${x.ls?`<i class="l" style="flex:${x.ls}"></i>`:''}</span><span class="igsub">${x.ls?`Took ${x.ws} of the ${x.ws+x.ls} points`:`Took all ${x.ws} points`}</span></button></section>`;
-  const marathon=x=>{ const n=Math.max(x.ws,GAME_TO), over=x.ws-GAME_TO; const ln=(k,c)=>`<span class="ln ${c}" style="--n:${n}">${Array.from({length:n},(_,j)=>`<i class="${j<k?'on':''}"></i>`).join('')}</span>`;
-    return `<section class="ig"><p class="eyebrow">Longest game</p><button class="rec recg" ${ni(x.i)}>${recHead(x)}<span class="race" aria-hidden="true">${ln(x.ws,'w')}${ln(x.ls,'l')}${over>0?`<b class="fin" style="left:calc(${(GAME_TO/n*100).toFixed(2)}% - 2.5px)"></b>`:''}</span><span class="igsub">${x.ws+x.ls} points played${over>0?`, ${over} past the usual ${GAME_TO}`:''}</span></button></section>`; };
+  // the two single-game records count the points out as balls: a blowout is 11 lime balls next to 1 gray one, and a
+  // game that went past 10-10 circles every point after the tie, so you can see the overtime
+  const BALL='<circle cx="10" cy="10" r="9"/><g fill="rgba(0,0,0,.35)"><circle cx="6" cy="7" r="1.4"/><circle cx="11" cy="5" r="1.4"/><circle cx="14" cy="10" r="1.4"/><circle cx="8" cy="12" r="1.4"/><circle cx="12" cy="15" r="1.4"/></g>';
+  const balls=(n,ot,many)=>n?`<span class="balls${many?' many':''}" aria-hidden="true">${Array.from({length:n},(_,j)=>`<svg viewBox="0 0 20 20" class="${ot!=null&&j>=ot?'ot':''}">${BALL}</svg>`).join('')}</span>`:'<span class="zero">No points</span>';
+  const side=(names,n,cls,ot,many)=>`<span class="bct ${cls}"><span class="bch"><span class="nm">${names.map(escH).join(' &amp; ')}</span><span class="sc num">${n}</span></span>${balls(n,ot,many)}</span>`;
+  const blowout=x=>{ const many=x.ws>14, avg=Math.round(R.avgLose), who=x.lose.map(escH).join(' &amp; ');
+    return `<section class="ig"><p class="eyebrow">Biggest blowout · ${R.day(x.date)}</p><button class="rec bc" ${ni(x.i)}>${side(x.win,x.ws,'w',null,many)}${side(x.lose,x.ls,'l',null,many)}</button>${avg>x.ls?`<p class="igsub">Losing teams average ${avg}. ${who} ${x.ls?`got ${x.ls}`:'didn’t score'}.</p>`:''}</section>`; };
+  const marathon=x=>{ const ot=x.ls>=GAME_TO-1&&x.ws>GAME_TO, many=x.ws>14, extra=x.ws+x.ls-2*(GAME_TO-1);
+    return `<section class="ig"><p class="eyebrow ebrow">Longest game · ${R.day(x.date)}${ot?'<span class="otb">Overtime</span>':''}</p><button class="rec bc" ${ni(x.i)}>${side(x.win,x.ws,'w',ot?GAME_TO-1:null,many)}${side(x.lose,x.ls,'l',ot?GAME_TO-1:null,many)}</button><p class="igsub">${ot?`Tied at ${GAME_TO-1}, then ${extra} more point${extra===1?'':'s'} to settle it. Circled balls are overtime.`:`${x.ws+x.ls} points, the most in one game.`}</p></section>`; };
   const boards=blowout(R.blowout)+marathon(R.marathon);
   const pair=R.pair?(()=>{ const [a,b]=R.pair.k.split(' & '); return `<section class="ig"><p class="eyebrow">Best pair</p><div class="igrow"><span class="duo"><i>${escH(a[0])}</i><i>${escH(b[0])}</i></span><span class="igmain"><span class="igname sm">${escH(a)} &amp; ${escH(b)}</span><span class="igsub">${R.pair.n} games together</span></span><span class="ignum pos num">${fmt(r1(R.pair.avg))}<small>avg</small></span></div></section>`; })():'';
   const rings=(n,c)=>`<span class="rings ${c}">${'<i></i>'.repeat(Math.min(n,10))}${n>10?`<b>+${n-10}</b>`:''}</span>`;
