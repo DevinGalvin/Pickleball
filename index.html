@@ -408,7 +408,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
 /* night recap: The night / Your night, the share box and the first-open sheet. Every box centers its content. */
 .eyebrow.lime{color:var(--ball)}
-.igname.xl{font-size:44px;overflow-wrap:anywhere}.igname.xxl{font-size:60px}.ignum.xl{font-size:48px}
+.igname.lg{font-size:32px;overflow-wrap:anywhere}.igname.xxl{font-size:60px}.ignum.xl{font-size:48px}.ignum.lg{font-size:34px}
 .igside{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px;text-align:right}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ig.tile{justify-content:center;gap:6px;min-width:0}.ig.tile.alt{background:var(--panel-2);border-radius:14px;padding:12px;min-height:92px}
@@ -1440,7 +1440,7 @@ function nightFacts(idx){ const N=allNightsEver()[idx]; if(!N||!N.games.length) 
   const blow=N.games.slice().sort((a,b)=>mar(b)-mar(a)||tot(b)-tot(a))[0], close=N.games.slice().sort((a,b)=>mar(a)-mar(b)||tot(b)-tot(a))[0];
   const wn=g=>(g.sa>g.sb?g.a:g.b).join(' & '), ln=g=>(g.sa>g.sb?g.b:g.a).join(' & '), sc=g=>`${Math.max(g.sa,g.sb)}–${Math.min(g.sa,g.sb)}`;
   return {N,t,ps,mvp,blow,close,wn,ln,sc,moves:nightMoves(idx)}; }
-const heroHtml=(eyebrow,big,sub,num,numSub,xxl)=>`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">${eyebrow}</p><span class="igname ${xxl?'xxl num':'xl'}">${big}</span><span class="igsub">${sub}</span></span><span class="igside"><span class="ignum xl ${pmCls(num)}">${fmt(num)}</span><span class="igsub">${numSub}</span></span></div></section>`;
+const heroHtml=(eyebrow,big,sub,num,numSub,xxl)=>`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">${eyebrow}</p><span class="igname ${xxl?'xxl num':'lg'}">${big}</span><span class="igsub">${sub}</span></span><span class="igside"><span class="ignum ${xxl?'xl':'lg'} ${pmCls(num)}">${fmt(num)}</span><span class="igsub">${numSub}</span></span></div></section>`;
 const gameTile=(label,F,g,alt)=>`<section class="ig tile${alt?' alt':''}"><p class="eyebrow">${label}</p><div class="sc num">${F.sc(g)}</div><p class="who">${escH(F.wn(g))}</p><p class="igsub">over ${escH(F.ln(g))}</p></section>`;
 function standingLine(m){ if(!m) return null; const d=m.was?m.was-m.now:0;
   return {icon:!m.was?ARROW.flat:d>0?ARROW.up:d<0?ARROW.down:ARROW.flat, text:!m.was?'First night on the board':d>0?`Up ${d} spot${d===1?'':'s'}`:d<0?`Down ${-d} spot${d===-1?'':'s'}`:'Held your spot', cls:d>0?'pos':d<0?'neg':''}; }
@@ -1842,7 +1842,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='efc9d496';
+const BUILD='c5f086a9';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
