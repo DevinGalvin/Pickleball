@@ -53,6 +53,17 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .chip.on .dot{background:var(--ball);border-color:var(--ball)}
 .chip .nm{font-weight:600;font-size:15px}
 .chip .sub{font-size:12px;color:var(--mute)}
+.chip.late{border-color:#f5b942;border-style:dashed;background:var(--panel-2)}
+.chip.late .dot{background:none;border-color:#f5b942;transform:none}
+.chip.late .sub{color:#f5b942}
+.latelink{align-self:center;border:0;color:var(--mute);font-size:14px}
+.latehere{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 8px;width:100%;min-height:44px;margin-top:6px;padding:6px 10px;border-radius:10px;background:var(--panel-2);font-size:14px;font-weight:600;color:#f5b942;text-align:left}
+.latehere b{color:var(--ball);font-weight:700;white-space:nowrap}
+.pickgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pk{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:52px;padding:0 12px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);font-weight:600;font-size:15px;text-align:left}
+.pk .tg{font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;white-space:nowrap}
+.pk.a{border-color:var(--ball)}.pk.a .tg{color:var(--ball)}
+.pk.b{border-color:#ff7a59}.pk.b .tg{color:#ff7a59}
 .chip.add{border-style:dashed;color:var(--mute);justify-content:center}
 .addrow{display:flex;gap:8px}
 .addrow input{flex:1;min-width:0;box-sizing:border-box;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px;-webkit-appearance:none;appearance:none}
@@ -291,6 +302,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
       <div><p class="eyebrow" id="ciEyebrow">Tonight</p><h2 id="ciTitle">Who's here?</h2></div>
       <div class="roster" id="roster"></div>
       <div class="addrow" id="addrow" hidden><input id="newName" placeholder="New player's name" maxlength="20" autocomplete="off" autocapitalize="words"><button class="ghost" id="addConfirm">Add</button><button class="ghost" id="addCancel">Cancel</button></div>
+      <button class="ghost latelink" id="lateBtn" hidden></button>
       <div class="seg" id="courtsSeg" hidden><button data-c="1" class="on">One court</button><button data-c="2">Two courts</button></div>
       <p class="hint" id="checkinHint"></p>
       <button class="cta" id="startBtn">Start the night</button>
@@ -306,7 +318,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
       <div class="courts" id="courts"></div>
       <div class="queue">
         <div class="panel" id="nextPanel"><p class="eyebrow">Up next</p><div class="names" id="nextNames"></div></div>
-        <div class="panel" id="sitPanel"><p class="eyebrow">Sitting</p><div class="names" id="sitting"></div></div>
+        <div class="panel" id="sitPanel"><p class="eyebrow" id="sitEyebrow">Sitting</p><div class="names" id="sitting"></div></div>
       </div>
       <div><p class="eyebrow" style="margin-bottom:8px">Tonight so far</p><div class="log" id="log"></div></div>
       <button class="ghost" id="endNight" style="align-self:center;border:0;color:var(--mute)">End night</button>
@@ -387,6 +399,14 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <p class="hint" id="endHint" hidden>Standings reset and the next season starts with the next night. History keeps everything.</p>
   </div>
 </div>
+<div class="sheet" id="pickSheet" hidden>
+  <div class="card">
+    <div class="row"><h2 id="pickTitle">Pick the players</h2><button class="ghost" id="pickClose">Cancel</button></div>
+    <p class="hint" id="pickSub"></p>
+    <div class="pickgrid" id="pickGrid"></div>
+    <button class="cta" id="pickSave" disabled>Set this game</button>
+  </div>
+</div>
 <div class="sheet" id="actSheet" hidden>
   <div class="card">
     <div><p class="eyebrow" id="actEyebrow"></p><h2 id="actTitle" style="font-size:20px"></h2></div>
@@ -433,6 +453,15 @@ function asScorer(fn){ const sc=scorer();
   if(sc.id===deviceId()){ fn(); return; }
   confirmSheet('Scorekeeper',`${sc.name} is scoring tonight on another phone. Take over?`,'Take over',()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
     actionSheet('Scorekeeper','Who are you?',P.map(p=>({label:p,run:()=>{ state.tonight.scorer={id:deviceId(),name:p}; haptic(15); persist(); renderCourt(); toast(`${p} is scoring now`); }}))); }); }
+// ---- running late ----
+// Checked in but not at the court yet: counts as coming, never drawn into a game until someone marks them here.
+// credit = games a late arrival is treated as having played, so the draw doesn't run them every game to catch up.
+const lateSet=()=>{ const T=state.tonight; if(!(T.late instanceof Set)) T.late=new Set(T.late||[]); return T.late; };
+const active=()=>[...state.tonight.present].filter(p=>!lateSet().has(p));
+const credits=()=>state.tonight.credit||(state.tonight.credit=[]);
+function arrive(p){ const T=state.tonight; const A=active(); lateSet().delete(p);
+  const t=tally(T.games), cr={}; credits().forEach(c=>cr[c.p]=c.n); const gp=x=>t[x]?t[x].gp:0;
+  const min=A.length?Math.min(...A.map(x=>gp(x)+(cr[x]||0))):0; T.credit=credits().filter(c=>c.p!==p); if(min>gp(p)) T.credit.push({p,n:min-gp(p)}); }
 const fmt = n => (n>0?'+':'')+n;
 const r1 = n => Math.round(n*10)/10;
 const pairKey = (x,y)=>[x,y].sort().join('|');
@@ -452,7 +481,7 @@ function nightsPlayed(p){ return allNights().filter(n=>n.games.some(g=>inGame(g,
 // ---------- rotation engine ----------
 function nextGame(present, played){
   const P=[...present]; if(P.length<4) return null;
-  const gp={}, partner={}, opp={}; P.forEach(p=>gp[p]=0);
+  const gp={}, partner={}, opp={}; P.forEach(p=>gp[p]=0); credits().forEach(c=>{ if(c.p in gp) gp[c.p]=c.n; });
   played.forEach(g=>{ [...g.a,...g.b].forEach(p=>{ if(p in gp) gp[p]++; });
     partner[pairKey(...g.a)]=(partner[pairKey(...g.a)]||0)+1; partner[pairKey(...g.b)]=(partner[pairKey(...g.b)]||0)+1;
     g.a.forEach(x=>g.b.forEach(y=>{ opp[pairKey(x,y)]=(opp[pairKey(x,y)]||0)+1; })); });
@@ -543,16 +572,17 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dat
 function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games));
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
-  $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const s=t[p];
-    return `<button class="chip pressable ${on?'on':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
+  $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const s=t[p];
+    return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
     + (adding?'':`<button class="chip add" id="addBtn">+ Add a new player</button>`);
   $('#addrow').hidden=!adding;
-  const T=state.tonight; const n=T.present.size;
+  const T=state.tonight; const np=T.present.size; const LATE=[...lateSet()].filter(p=>T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const n=np-LATE.length; // n = at the court now
+  $('#lateBtn').hidden=np===0; $('#lateBtn').textContent=LATE.length?`Late: ${LATE.join(', ')} · Change`:'Anyone running late?';
   // Court 2 is an opt-in, never a default: it isn't always free. Only offered at 8+, where it means nobody (or far fewer) sits.
-  if(n<8) T.courts=1; const two=T.courts===2;
-  $('#courtsSeg').hidden=n<8; document.querySelectorAll('#courtsSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.c===(two?2:1)));
-  $('#checkinHint').textContent = n<4?`Need 4 to play (${n} checked in).`: n===4?'4 players: partners rotate every game.': n===5?'5 players: one sits each game.': n===6?'6 players: two sit each game.': n===7?'7 players: three sit each game.'
-    : two ? (n===8?'Two courts: everyone plays every round.':`Two courts: ${n-8} sit each round.`) : `${n} players: ${n-4} sit each game. Is court 2 open tonight?`;
+  if(np<8) T.courts=1; const two=T.courts===2;
+  $('#courtsSeg').hidden=np<8; document.querySelectorAll('#courtsSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.c===(two?2:1)));
+  $('#checkinHint').textContent = (LATE.length?`${LATE.join(', ')} ${LATE.length>1?'join':'joins'} the draw on arrival. `:'') + (n<4?`Need 4 to play (${n} ${LATE.length?'here now':'checked in'}).`: n===4?'4 players: partners rotate every game.': n===5?'5 players: one sits each game.': n===6?'6 players: two sit each game.': n===7?'7 players: three sit each game.'
+    : two ? (n===8?'Two courts: everyone plays every round.':`Two courts: ${n-8} sit each round.`) : `${n} players: ${n-4} sit each game.${np>=8&&!two?' Is court 2 open tonight?':''}`);
   $('#startBtn').disabled=n<4;
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
@@ -590,12 +620,15 @@ function startNight(date){ haptic(15); if(!state.tonight.games.length) state.ton
 $('#roster').addEventListener('click',e=>{
   if(e.target.closest('#addBtn')){ adding=true; renderCheckin(); $('#newName').focus(); return; }
   const b=e.target.closest('.chip'); if(!b||!b.dataset.p) return; const p=b.dataset.p;
-  state.tonight.present.has(p)?state.tonight.present.delete(p):state.tonight.present.add(p); haptic(); flushScored(); renderCheckin(); persist(); });
+  if(state.tonight.present.has(p)){ state.tonight.present.delete(p); lateSet().delete(p); } else state.tonight.present.add(p); haptic(); flushScored(); renderCheckin(); persist(); });
 $('#courtsSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const c=+b.dataset.c; if(c===state.tonight.courts) return;
   state.tonight.courts=c; flushScored(); renderCheckin(); persist(); });
 function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
   if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return; }
   PLAYERS.push(n); state.tonight.present.add(n); flushScored(); $('#newName').value=''; adding=false; renderCheckin(); persist(); toast(`${n} added and checked in`); }
+// Running late: one quiet link under the roster, so the chips stay a plain in/out tap
+$('#lateBtn').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
+  actionSheet('Running late',"Who isn't here yet?",P.map(p=>{ const late=lateSet().has(p); return {label:late?`${p} is here now`:p,run:()=>{ haptic(); if(late) arrive(p); else lateSet().add(p); flushScored(); renderCheckin(); persist(); toast(late?`${p} is in the draw`:`${p} sits out until he arrives`); }}; })); };
 // the add row replaces the chip while it's open; Cancel or Escape brings the chip back
 let adding=false;
 function cancelAdd(){ $('#newName').value=''; adding=false; renderCheckin(); }
@@ -856,21 +889,26 @@ class Rally{
 }
 function renderCourt(){
   const T=state.tonight; T.current=normCur(T.current); let fresh=false;
-  if(!T.current){ T.current=nextRound(T.present,T.games,T.courts||1); fresh=true; }
+  if(!T.current){ T.current=nextRound(active(),T.games,T.courts||1); fresh=true; }
   const cur=T.current; if(!cur){ T.started=false; show('tonight'); return; }
   if(fresh) persist();
   const multi=cur.length>1;
   const gl=multi?`Round ${nextR(T.games)}`:`Game ${T.games.length+1}`; const gn=$('#gameNum'); if(gn.textContent!==gl){ gn.textContent=gl; gn.classList.remove('flip'); void gn.offsetWidth; gn.classList.add('flip'); }
   stopSims(); $('#courts').classList.toggle('serve',fresh); $('#courts').classList.toggle('multi',multi); $('#courts').innerHTML=cur.map((g,i)=>boardHtml(g,i,multi)).join('');
   document.querySelectorAll('#courts .board').forEach((b,i)=>{ const g=cur[i]; sims[i]=scored(g)?null:new Rally(b.querySelector('svg.sim'),g,fresh); });
-  const sitting=[...T.present].filter(p=>!cur.some(g=>inGame(g,p))); $('#sitting').textContent=sitting.join(', '); $('#sitPanel').hidden=!sitting.length; $('#nextPanel').style.gridColumn=sitting.length?'':'1 / -1';
-  const r=nextR(T.games); const nxt=nextRound(T.present,T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
+  const sitting=active().filter(p=>!cur.some(g=>inGame(g,p))); const LATE=[...lateSet()].filter(p=>T.present.has(p));
+  $('#sitEyebrow').textContent=sitting.length||!LATE.length?'Sitting':'Running late';
+  $('#sitting').innerHTML=escH(sitting.join(', '))+LATE.map(p=>`<button class="latehere" data-p="${encodeURIComponent(p)}"><span>${escH(p)} · late</span><b>Here now</b></button>`).join('');
+  const side=sitting.length||LATE.length; $('#sitPanel').hidden=!side; $('#nextPanel').style.gridColumn=side?'':'1 / -1';
+  const r=nextR(T.games); const nxt=nextRound(active(),T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
   $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
   $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then enter the final score.</p>';
   if(T.games.length>logCount){ const f=$('#log .item'); if(f) f.classList.add('new'); } logCount=T.games.length;
   $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').textContent=T.games.length||cur.some(scored)?'End night':'Cancel night';
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) asScorer(()=>openSheet(+b.dataset.i)); });
+// a late player arrives: into the next draw, the game in progress is left alone
+$('#sitting').addEventListener('click',e=>{ const b=e.target.closest('.latehere'); if(!b) return; const p=decodeURIComponent(b.dataset.p); haptic(15); arrive(p); renderCourt(); persist(); toast(`${p} is in the next draw`); });
 // Saved games are read-only unless this phone is an admin: no Edit button, no long press. A corrected game says who fixed it and what it was.
 const escH=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function edText(e){ const w=new Date(e.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); return `Edited by ${escH(e.by)}, ${w}${e.was?` · was ${escH(e.was)}`:''}`; }
@@ -878,7 +916,7 @@ function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse
   return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item ${ad?'pressable':'ro'}" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div>${ad?`<button class="rowedit" data-g="${i}" aria-label="Edit game ${i+1}">Edit</button>`:''}${x.ed?`<div class="ed">${edText(x.ed)}</div>`:''}</div>`; }).join(''); }
 // Who's here is read-only: the view is shared, so looking must never reset everyone's screen. Edit (inside) does the reset.
 function editPresent(){ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); }
-$('#editPresent').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)); const c=state.tonight.courts===2?' · two courts':'';
+$('#editPresent').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)).map(p=>lateSet().has(p)?p+' (late)':p); const c=state.tonight.courts===2?' · two courts':'';
   actionSheet(`${P.length} playing${c}`, P.join(', '), [{label:'Edit who\'s here',gated:true,run:editPresent}]); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>asScorer(()=>{ haptic();
@@ -1252,9 +1290,9 @@ longPress($('#roster'),'.chip[data-p]',el=>{ if(!admin()) return; const p=el.dat
     {label:'Rename',run:()=>actionSheet('Rename',p,[{label:'Save name',run:v=>{ if(!v||v===p) return; if(PLAYERS.some(x=>x.toLowerCase()===v.toLowerCase())){ toast(`${v} is already on the roster`); return; }
       PLAYERS[PLAYERS.indexOf(p)]=v; const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
       state.nights.forEach(n=>n.games.forEach(fix)); state.tonight.games.forEach(fix); (normCur(state.tonight.current)||[]).forEach(fix);
-      if(state.tonight.present.delete(p)) state.tonight.present.add(v); renderCheckin(); persist(); toast(`${p} is now ${v}`); }}],{value:p,placeholder:'Name'})},
+      if(state.tonight.present.delete(p)) state.tonight.present.add(v); if(lateSet().delete(p)) lateSet().add(v); credits().forEach(c=>{ if(c.p===p) c.p=v; }); renderCheckin(); persist(); toast(`${p} is now ${v}`); }}],{value:p,placeholder:'Name'})},
     {label:played?'Remove from roster':'Remove',danger:true,run:()=>confirmSheet('Remove',played?`${p} has played this season. Past games stay in history; ${p} just leaves the check-in list.`:`Remove ${p} from the roster?`,'Yes, remove',()=>{
-      PLAYERS.splice(PLAYERS.indexOf(p),1); state.tonight.present.delete(p); flushScored(); renderCheckin(); persist(); toast(`${p} removed`); })}
+      PLAYERS.splice(PLAYERS.indexOf(p),1); state.tonight.present.delete(p); lateSet().delete(p); flushScored(); renderCheckin(); persist(); toast(`${p} removed`); })}
   ]); });
 
 // 4. the drawn matchup: swap partners or redraw, for when the algorithm's pick isn't what the court wants
@@ -1264,11 +1302,32 @@ function matchupActions(i){ const cur=normCur(state.tonight.current)||[]; const 
   actionSheet(cur.length>1?`Court ${i+1}`:'This game',`${g.a.join(' & ')} vs ${g.b.join(' & ')}`,[
     {label:`${a1} & ${b1} vs ${a2} & ${b2}`,run:()=>apply([a1,b1],[a2,b2])},
     {label:`${a1} & ${b2} vs ${a2} & ${b1}`,run:()=>apply([a1,b2],[a2,b1])},
-    {label:'Redraw with different players',run:()=>{ const others=cur.filter(x=>x!==g); const pool=[...state.tonight.present].filter(p=>!others.some(x=>inGame(x,p)));
+    {label:'Redraw with different players',run:()=>{ const others=cur.filter(x=>x!==g); const pool=active().filter(p=>!others.some(x=>inGame(x,p)));
       // exclude this exact foursome so the redraw actually changes something
       const taken=new Set([...g.a,...g.b]); let n=null; for(let k=0;k<12&&!n;k++){ const c=nextGame(pool,state.tonight.games); if(c&&[...c.a,...c.b].some(p=>!taken.has(p))) n=c; else if(c&&pool.length<=4) n=c; }
-      if(!n){ toast('Nobody else to draw from'); return; } apply(n.a,n.b); }}
+      if(!n){ toast('Nobody else to draw from'); return; } apply(n.a,n.b); }},
+    {label:'Pick the players',run:()=>openPick(i)},
+    // drawn into a game but not at the court: mark them late and redraw this game without them
+    {label:"Someone isn't here yet",run:()=>actionSheet('Not here yet','Who are we waiting on?',[...g.a,...g.b].map(p=>({label:p,run:()=>{ lateSet().add(p);
+      const others=cur.filter(x=>x!==g); const pool=active().filter(q=>!others.some(x=>inGame(x,q))); const n=nextGame(pool,state.tonight.games);
+      if(n){ apply(n.a,n.b); toast(`${p} marked late. Game redrawn.`); return; }
+      state.tonight.current=others.length?others:null; renderCourt(); persist(); toast(`${p} marked late. Need 4 to play.`); }})))}
   ]); }
+// ---- pick the players by hand: two taps for Side A, two for Side B. Counts in the rotation like any drawn game.
+let pick=null;
+function openPick(i){ const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return;
+  const others=cur.filter(x=>x!==g); const pool=active().filter(p=>!others.some(x=>inGame(x,p))).sort((x,y)=>x.localeCompare(y));
+  pick={i,pool,sel:[]}; $('#pickTitle').textContent=cur.length>1?`Court ${i+1}: pick the players`:'Pick the players'; renderPick(); showSheet('#pickSheet'); }
+function renderPick(){ const s=pick.sel;
+  $('#pickSub').textContent=s.length<2?'Tap two for Side A.':s.length<4?'Now two for Side B.':`${s[0]} & ${s[1]} vs ${s[2]} & ${s[3]}`;
+  $('#pickGrid').innerHTML=pick.pool.map((p,k)=>{ const at=s.indexOf(p); const side=at<0?'':at<2?'a':'b'; return `<button class="pk ${side}" data-k="${k}" aria-pressed="${at>=0}"><span>${escH(p)}</span><span class="tg">${side?'Side '+side.toUpperCase():''}</span></button>`; }).join('');
+  $('#pickSave').disabled=s.length!==4; }
+$('#pickGrid').addEventListener('click',e=>{ const b=e.target.closest('.pk'); if(!b||!pick) return; const p=pick.pool[+b.dataset.k]; const at=pick.sel.indexOf(p);
+  if(at>=0) pick.sel.splice(at,1); else if(pick.sel.length<4) pick.sel.push(p); else { toast('Four picked. Tap one to swap it out.'); return; } haptic(); renderPick(); });
+$('#pickClose').onclick=()=>{ hideSheet('#pickSheet'); pick=null; };
+$('#pickSave').onclick=()=>{ if(!pick||pick.sel.length!==4) return; const sel=pick.sel.slice(), i=pick.i; hideSheet('#pickSheet'); pick=null;
+  const g=(normCur(state.tonight.current)||[])[i]; if(!g||scored(g)) return; haptic(15);
+  g.a=[sel[0],sel[1]]; g.b=[sel[2],sel[3]]; const L=lineFor(g); if(L!==null) g.line=L; else delete g.line; renderCourt(); persist(); toast('Game set'); };
 longPress($('#courts'),'.matchup',el=>asScorer(()=>matchupActions(+el.dataset.i)));
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.matchup.changeBtn'); if(b) asScorer(()=>matchupActions(+b.dataset.i)); });
 
