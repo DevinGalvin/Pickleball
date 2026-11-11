@@ -56,6 +56,7 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .chip.late{border-color:#f5b942;border-style:dashed;background:var(--panel-2)}
 .chip.late .dot{background:none;border-color:#f5b942;transform:none}
 .chip.late .sub{color:#f5b942}
+.sitnm{font:inherit;color:inherit;padding:6px 0;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
 .latelink{align-self:center;border:0;color:var(--mute);font-size:14px}
 .latehere{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 8px;width:100%;min-height:44px;margin-top:6px;padding:6px 10px;border-radius:10px;background:var(--panel-2);font-size:14px;font-weight:600;color:#f5b942;text-align:left}
 .latehere b{color:var(--ball);font-weight:700;white-space:nowrap}
@@ -462,6 +463,14 @@ const credits=()=>state.tonight.credit||(state.tonight.credit=[]);
 function arrive(p){ const T=state.tonight; const A=active(); lateSet().delete(p);
   const t=tally(T.games), cr={}; credits().forEach(c=>cr[c.p]=c.n); const gp=x=>t[x]?t[x].gp:0;
   const min=A.length?Math.min(...A.map(x=>gp(x)+(cr[x]||0))):0; T.credit=credits().filter(c=>c.p!==p); if(min>gp(p)) T.credit.push({p,n:min-gp(p)}); }
+// Done for the night: out of the draw from here on; his games stay. If he's in a game that hasn't been scored, that game is redrawn.
+function leave(p){ const T=state.tonight; T.present.delete(p); lateSet().delete(p); T.credit=credits().filter(c=>c.p!==p);
+  const cur=normCur(T.current)||[]; const g=cur.find(x=>!scored(x)&&inGame(x,p));
+  if(g){ const others=cur.filter(x=>x!==g); const pool=active().filter(q=>!others.some(x=>inGame(x,q))); const n=nextGame(pool,T.games);
+    if(n){ g.a=n.a; g.b=n.b; const L=lineFor(g); if(L!==null) g.line=L; else delete g.line; } else { T.current=others.length?others:null; flushScored(); } }
+  renderCourt(); persist(); toast(`${p} is done for the night`); }
+// Walk-in or late arrival mid-night: into the next draw, level with whoever has played least.
+function join(p){ const T=state.tonight; T.present.add(p); lateSet().add(p); arrive(p); renderCourt(); persist(); toast(`${p} is in the next draw`); }
 const fmt = n => (n>0?'+':'')+n;
 const r1 = n => Math.round(n*10)/10;
 const pairKey = (x,y)=>[x,y].sort().join('|');
@@ -565,6 +574,7 @@ function show(tab, sub){
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
   document.querySelector('main').scrollTop=0;
+  if(tab==='tonight') staleCheck();
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
 
@@ -898,7 +908,7 @@ function renderCourt(){
   document.querySelectorAll('#courts .board').forEach((b,i)=>{ const g=cur[i]; sims[i]=scored(g)?null:new Rally(b.querySelector('svg.sim'),g,fresh); });
   const sitting=active().filter(p=>!cur.some(g=>inGame(g,p))); const LATE=[...lateSet()].filter(p=>T.present.has(p));
   $('#sitEyebrow').textContent=sitting.length||!LATE.length?'Sitting':'Running late';
-  $('#sitting').innerHTML=escH(sitting.join(', '))+LATE.map(p=>`<button class="latehere" data-p="${encodeURIComponent(p)}"><span>${escH(p)} · late</span><b>Here now</b></button>`).join('');
+  $('#sitting').innerHTML=sitting.map(p=>`<button class="sitnm" data-p="${encodeURIComponent(p)}">${escH(p)}</button>`).join(', ')+LATE.map(p=>`<button class="latehere" data-p="${encodeURIComponent(p)}"><span>${escH(p)} · late</span><b>Here now</b></button>`).join('');
   const side=sitting.length||LATE.length; $('#sitPanel').hidden=!side; $('#nextPanel').style.gridColumn=side?'':'1 / -1';
   const r=nextR(T.games); const nxt=nextRound(active(),T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
   $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
@@ -908,7 +918,8 @@ function renderCourt(){
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) asScorer(()=>openSheet(+b.dataset.i)); });
 // a late player arrives: into the next draw, the game in progress is left alone
-$('#sitting').addEventListener('click',e=>{ const b=e.target.closest('.latehere'); if(!b) return; const p=decodeURIComponent(b.dataset.p); haptic(15); arrive(p); renderCourt(); persist(); toast(`${p} is in the next draw`); });
+$('#sitting').addEventListener('click',e=>{ const sn=e.target.closest('.sitnm'); if(sn){ const p=decodeURIComponent(sn.dataset.p); actionSheet('Sitting',p,[{label:'Done for the night',gated:true,run:()=>{ haptic(); leave(p); }}]); return; }
+  const b=e.target.closest('.latehere'); if(!b) return; const p=decodeURIComponent(b.dataset.p); haptic(15); arrive(p); renderCourt(); persist(); toast(`${p} is in the next draw`); });
 // Saved games are read-only unless this phone is an admin: no Edit button, no long press. A corrected game says who fixed it and what it was.
 const escH=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function edText(e){ const w=new Date(e.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); return `Edited by ${escH(e.by)}, ${w}${e.was?` · was ${escH(e.was)}`:''}`; }
@@ -916,8 +927,13 @@ function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse
   return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item ${ad?'pressable':'ro'}" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div>${ad?`<button class="rowedit" data-g="${i}" aria-label="Edit game ${i+1}">Edit</button>`:''}${x.ed?`<div class="ed">${edText(x.ed)}</div>`:''}</div>`; }).join(''); }
 // Who's here is read-only: the view is shared, so looking must never reset everyone's screen. Edit (inside) does the reset.
 function editPresent(){ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); }
-$('#editPresent').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)).map(p=>lateSet().has(p)?p+' (late)':p); const c=state.tonight.courts===2?' · two courts':'';
-  actionSheet(`${P.length} playing${c}`, P.join(', '), [{label:'Edit who\'s here',gated:true,run:editPresent}]); };
+$('#editPresent').onclick=()=>{ const T=state.tonight; const here=[...T.present].sort((x,y)=>x.localeCompare(y)); const P=here.map(p=>lateSet().has(p)?p+' (late)':p); const c=T.courts===2?' · two courts':'';
+  const out=PLAYERS.filter(p=>!T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const lateNow=here.filter(p=>lateSet().has(p));
+  // leaving and arriving happen here, so the common mid-night changes never reset anyone's screen; the full check-in is the last resort
+  actionSheet(`${P.length} playing${c}`, P.join(', '), [
+    {label:"Someone's done for the night",gated:true,run:()=>actionSheet('Done for the night',"Who's leaving?",here.map(p=>({label:p,run:()=>{ haptic(); leave(p); }})))},
+    ...(out.length||lateNow.length?[{label:'Someone just got here',gated:true,run:()=>actionSheet('Just got here',"Who's joining?",lateNow.map(p=>({label:`${p} · was late`,run:()=>{ haptic(15); arrive(p); renderCourt(); persist(); toast(`${p} is in the next draw`); }})).concat(out.map(p=>({label:p,run:()=>{ haptic(15); join(p); }}))))}]:[]),
+    {label:'Edit everyone (back to check-in)',gated:true,run:editPresent}]); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>asScorer(()=>{ haptic();
   const T=state.tonight; const cur=normCur(T.current)||[];
@@ -927,13 +943,21 @@ $('#undoBtn').onclick=()=>asScorer(()=>{ haptic();
   T.games=T.games.filter(g=>!LR.includes(g)); T.current=LR.map(g=>({a:g.a,b:g.b,...(hasLine(g)?{line:g.line}:{})}));
   renderCourt(); persist(); toast(LR.length>1?'Last round reopened':'Last score removed');
 });
-$('#endNight').onclick=()=>asScorer(()=>{ haptic(15);
+function saveNight(){
   const T=state.tonight; flushScored();
   if(!T.games.length){ T.started=false; T.current=null; delete T.scorer; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Night cancelled'); return; }
   state.nights.push({date:T.date,games:T.games,season:season().id});
   state.tonight={date:leagueDate(T.date,true),present:new Set(),started:false,games:[],current:null,courts:1}; // fresh sign-up: nobody is in until they say so
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
-});
+}
+$('#endNight').onclick=()=>asScorer(()=>{ haptic(15); saveNight(); });
+// A night nobody ended: from 6am the morning after, the first phone to open the app is asked to save it, so next week
+// doesn't open onto last week's court. Asked once per load; Cancel leaves it as it is.
+let staleAsked=null;
+function staleNight(){ const T=state.tonight; if(!T.date||!(T.started||T.games.length||normCur(T.current))) return false; return Date.now()>new Date(T.date+'T12:00').getTime()+18*3600*1000; }
+function staleCheck(){ const T=state.tonight; if(!staleNight()||staleAsked===T.date) return; staleAsked=T.date;
+  const n=T.games.length+(normCur(T.current)||[]).filter(scored).length;
+  setTimeout(()=>{ if(!staleNight()) return; actionSheet('Still open',`${dateLong(T.date)} was never ended`,[n?{label:`Save it to History · ${n} game${n===1?'':'s'}`,gated:true,run:()=>{ haptic(15); saveNight(); }}:{label:'Clear it · no games were scored',gated:true,run:()=>{ haptic(); const X=state.tonight; X.started=false; X.current=null; delete X.scorer; X.present=new Set(); X.late=new Set(); X.credit=[]; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Cleared. Sign-up is open for the next night.'); }}]); },600); }
 
 // sheets animate out before they hide
 function hideSheet(sel){ const el=$(sel); if(el.hidden) return; el.classList.add('out'); clearTimeout(el._t); el._t=setTimeout(()=>{ if(el.classList.contains('out')){ el.hidden=true; el.classList.remove('out'); } },200); }
@@ -1315,7 +1339,7 @@ function matchupActions(i){ const cur=normCur(state.tonight.current)||[]; const 
     {label:"Someone isn't here yet",run:()=>actionSheet('Not here yet','Who are we waiting on?',[...g.a,...g.b].map(p=>({label:p,run:()=>{ lateSet().add(p);
       const others=cur.filter(x=>x!==g); const pool=active().filter(q=>!others.some(x=>inGame(x,q))); const n=nextGame(pool,state.tonight.games);
       if(n){ apply(n.a,n.b); toast(`${p} marked late. Game redrawn.`); return; }
-      state.tonight.current=others.length?others:null; renderCourt(); persist(); toast(`${p} marked late. Need 4 to play.`); }})))}
+      state.tonight.current=others.length?others:null; flushScored(); renderCourt(); persist(); toast(`${p} marked late. Need 4 to play.`); }})))}
   ]); }
 // ---- pick the players by hand: two taps for Side A, two for Side B. Counts in the rotation like any drawn game.
 let pick=null;
