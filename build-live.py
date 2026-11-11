@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build the live GitHub Pages version from the demo artifact (rally-night.html).
-Adds: full HTML head + PWA meta, Firebase Realtime Database sync, group PIN gate."""
+Adds: full HTML head + PWA meta, Firebase Realtime Database sync, group PIN gate, admin PIN gate."""
 import re, sys
 import os; HERE=os.path.dirname(os.path.abspath(__file__)); SRC=os.path.join(HERE,'rally-night.html'); OUT=os.path.join(HERE,'index.html')
 s=open(SRC).read()
@@ -68,16 +68,29 @@ sync_js = '''// ---------- live sync (Firebase Realtime Database) ----------
 // anywhere else (a local test, a headless browser), it runs on the demo data and never writes. This exists because
 // a screenshot test once started a night for the whole group.
 const LIVE = location.hostname==='devingalvin.github.io';
+// Two tiers (see RULES.md). Group PIN: check in, score tonight, end the night. Admin PIN: fix or delete saved games,
+// delete nights, rename/remove players, season settings. Off the live host, ?admin=0 previews the non-admin view.
+let ADMIN=null, ADMIN_NAME=null; try{ ADMIN=localStorage.getItem('pickle-admin'); ADMIN_NAME=localStorage.getItem('pickle-admin-name'); }catch(e){}
+if(!LIVE){ ADMIN=/[?&]admin=0/.test(location.search)?null:'demo'; ADMIN_NAME='Devin'; }
+function admin(){ return !!ADMIN; } function adminName(){ return ADMIN_NAME||'Admin'; }
+function adminUI(){ const b=$('#adminLink'); b.hidden=false; b.textContent=admin()?`Admin: ${adminName()}`:'Wrong score? Admin unlock'; }
 if(!LIVE){ $('#connecting').hidden=true; const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); console.warn('Pickle: not on the live host, running offline on demo data'); }
 else firebase.initializeApp(''' + cfg + ''');
-const stubRef={ on(){}, set(){ return Promise.resolve(); }, once(){ return Promise.resolve({val:()=>null}); } };
+const stubRef={ on(){}, set(){ return Promise.resolve(); }, update(){ return Promise.resolve(); }, child(){ return stubRef; }, once(){ return Promise.resolve({val:()=>null}); } };
 const fdb = LIVE ? firebase.database() : { ref:()=>stubRef }; const leagueRef = fdb.ref('league'); const dataRef = fdb.ref('league/data'); const pinRef = fdb.ref('pin');
-// Security model (see RULES.md): /league/data is readable by anyone with the link. Every write replaces /league with
-// {data, k} where k is "<PIN>:<nonce>". The rules accept the write only if k starts with the PIN kept at /pin (which
-// nobody can read) and differs from the last k, so a saved token can't be replayed and a write without the PIN fails.
+// Security model (see RULES.md): /league/data is readable by anyone with the link. Every write is one update that
+// carries a fresh /league/k: "<PIN>:<nonce>" for the group, "A<ADMIN PIN>:<nonce>" for an admin, plus only the parts
+// of the league that changed. The rules check k against /pin and /admin (which nobody can read) and decide per part:
+// tonight, the roster and a brand-new night take either PIN; changing or deleting a saved night, seasons and pairing
+// take the admin PIN. k must differ from the last one, so a saved token can't be replayed.
 let PIN=null; try{ PIN=localStorage.getItem('pickle-pin'); }catch(e){}
-const token=()=>PIN+':'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-let applying=false, loaded=false, lastWrite=null, needsMigrate=false, blocked=false; // blocked: rules are in but the data has not been moved yet; never write demo data over the league
+const nonce=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const token=adm=>adm? 'A'+ADMIN+':'+nonce() : PIN+':'+nonce();
+let applying=false, loaded=false, lastWrite=null, blocked=false; // blocked: nothing to sync against; never write demo data over the league
+let base=null; // what the server holds, part by part, as of the last sync
+const J=JSON.stringify;
+function parts(){ const s=snapshotState(); return { snap:s, players:J(s.players), tonight:J(s.tonight), seasons:J(s.seasons), pairing:J(s.pairing), nights:s.nights.map(n=>J(n)) }; }
+function resync(){ dataRef.once('value').then(s=>{ if(s.val()) applyRemote(s.val()); }).catch(()=>{}); }
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
     tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null },
@@ -85,10 +98,23 @@ function snapshotState(){
 }
 function persist(){
   if(applying||!loaded||blocked) return;
-  const snap=snapshotState(); lastWrite=snap.updatedAt;
-  if(!PIN){ unlocked=false; openPin('That change needs the group PIN.'); return; }
-  leagueRef.set({data:snap, k:token()}).catch(e=>{
-    if(String(e.code||e.message).includes('PERMISSION')){ PIN=null; unlocked=false; try{ localStorage.removeItem('pickle-pin'); localStorage.removeItem('pickle-unlocked'); }catch(_){} openPin('Wrong PIN on this phone. Enter it again and redo that last change.'); }
+  if(!PIN&&!ADMIN){ unlocked=false; openPin('That change needs the group PIN.'); return; }
+  const z=parts(), b=base||{nights:[]}, u={}; let needAdmin=false;
+  if(z.players!==b.players) u['data/players']=z.snap.players;
+  if(z.tonight!==b.tonight) u['data/tonight']=z.snap.tonight;
+  if(z.seasons!==b.seasons){ u['data/seasons']=z.snap.seasons; needAdmin=true; }
+  if(z.pairing!==b.pairing){ u['data/pairing']=z.snap.pairing; needAdmin=true; }
+  // saved nights: adding one at the end is open to the group (End night); touching an existing one is an admin write
+  if(z.nights.length>=b.nights.length && b.nights.every((x,i)=>x===z.nights[i])){ for(let i=b.nights.length;i<z.nights.length;i++) u['data/nights/'+i]=z.snap.nights[i]; }
+  else { u['data/nights']=z.snap.nights; needAdmin=true; }
+  if(!Object.keys(u).length) return;
+  if(needAdmin&&!ADMIN){ resync(); openAdmin('That change needs the admin PIN.'); return; }
+  const adm=needAdmin||!PIN; lastWrite=z.snap.updatedAt; u['data/updatedAt']=lastWrite; u.k=token(adm); base=z;
+  leagueRef.update(u).catch(e=>{
+    resync(); // put this phone back on what the league actually holds
+    if(String(e.code||e.message).includes('PERMISSION')){
+      if(adm){ ADMIN=null; ADMIN_NAME=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} openAdmin('Admin PIN did not work on this phone. Enter it again and redo that last change.'); }
+      else { PIN=null; unlocked=false; try{ localStorage.removeItem('pickle-pin'); localStorage.removeItem('pickle-unlocked'); }catch(_){} openPin('Wrong PIN on this phone. Enter it again and redo that last change.'); } }
     else toast('Save failed: '+(e.code||e.message)); $('#sync').className='sync off'; });
 }
 function applyRemote(d){
@@ -101,6 +127,7 @@ function applyRemote(d){
     const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null };
     if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
+    base=parts();
     if(state.tab) show(state.tab, state.sub);
   } finally { applying=false; }
 }
@@ -110,9 +137,8 @@ dataRef.on('value', snap=>{
   if(!loaded){
     loaded=true; $('#connecting').hidden=true;
     if(d){ applyRemote(d); startView(); return; }
-    // nothing at /league/data: either a league still in the old shape (whole doc at /league) or a brand-new database
-    leagueRef.once('value').then(s=>{ const old=s.val(); if(old&&old.seasons){ applyRemote(old); needsMigrate=true; startView(); toast('Scoring needs the PIN once more on this phone'); } else { startView(); } })
-      .catch(()=>{ blocked=true; startView(); toast('League is being moved. Try again in a minute.'); });
+    // nothing at /league/data: don't guess, and never write demo data over a league we couldn't read
+    blocked=true; startView(); toast('No league data found. Nothing will be saved.');
     return;
   }
   if(d && d.updatedAt===lastWrite) return; // our own write echoed back
@@ -127,18 +153,37 @@ $('#sync').style.cssText+='width:14px;height:14px;margin:-3px;cursor:pointer;bac
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#courtsSeg,#startBtn,#acts .gated,.changeBtn,.rowedit,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName,#log .item,#nightLog .item,#courts .matchup';
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#acts .gated,.changeBtn,#undoBtn,.scorebtn,#endNight,#addConfirm,#newName,#courts .matchup'; // admin-only controls aren't here: they don't render without the admin PIN
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.once('value').then(s=>{ pinOnServer=s.val()||null; }).catch(()=>{ pinOnServer='hidden'; }); // 'hidden' = new rules in place
-if(!PIN) unlocked=false; // an old "unlocked" flag without the PIN itself is no longer enough
+if(ADMIN) unlocked=true; else if(!PIN) unlocked=false; // an admin can do everything the group can; an old "unlocked" flag without a PIN is not enough
 document.addEventListener('click', e=>{
   if(unlocked) return; const t=e.target.closest(EDIT_SEL); if(!t) return;
   e.stopPropagation(); e.preventDefault(); openPin();
 }, true);
 document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
-document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#log .item,#nightLog .item,#courts .matchup')){ e.stopPropagation(); } }, true);
+document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#courts .matchup')){ e.stopPropagation(); } }, true);
+let pinMode='group';
+function openAdmin(msg){
+  pinMode='admin'; if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
+  $('#pinTitle').textContent='Admin PIN';
+  $('#pinHint').textContent='Admins can fix or delete saved scores, delete a night, edit the roster and run the season. Once per phone.';
+  $('#pinGo').textContent='Unlock admin';
+  $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
+}
+function lockAdmin(){ ADMIN=null; ADMIN_NAME=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} if(!PIN) unlocked=false; show(state.tab,state.sub); toast('Admin locked on this phone'); }
+$('#adminLink').onclick=()=>{ if(admin()) actionSheet('Admin',`${adminName()} can fix scores on this phone`,[{label:'Lock admin on this phone',run:lockAdmin}]); else openAdmin(); };
+function tryAdmin(v){
+  $('#pinErr').textContent='Checking…';
+  leagueRef.child('k').set('A'+v+':'+nonce()).then(()=>{
+    ADMIN=v; unlocked=true; try{ localStorage.setItem('pickle-admin',v); }catch(e){} hideSheet('#pinSheet'); show(state.tab,state.sub);
+    // the name goes on every score this phone corrects
+    const pick=p=>{ ADMIN_NAME=p; try{ localStorage.setItem('pickle-admin-name',p); }catch(e){} show(state.tab,state.sub); toast(`Admin unlocked for ${p}`); };
+    setTimeout(()=>actionSheet('Admin unlocked','Who are you?',PLAYERS.map(p=>({label:p,run:()=>pick(p)}))),250);
+  }).catch(()=>{ $('#pinErr').textContent='Wrong admin PIN.'; });
+}
 function openPin(msg){
-  const creating = pinOnServer===null;
+  pinMode='group'; const creating = pinOnServer===null;
   if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
   $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\\'t have it? Ask the group.';
@@ -149,11 +194,11 @@ $('#pinClose').onclick=()=>{ hideSheet('#pinSheet'); };
 function tryPin(){
   const v=$('#pinInput').value.trim();
   if(!/^\\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
-  const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone');
-    if(needsMigrate){ needsMigrate=false; persist(); dataRef.once('value').then(()=>{}); } };
+  if(pinMode==='admin'){ tryAdmin(v); return; }
+  const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone'); };
   const wrong=()=>{ $('#pinErr').textContent='Wrong PIN. Ask the group.'; };
   if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
-  else if(pinOnServer==='hidden'||pinOnServer===undefined){ $('#pinErr').textContent='Checking…'; leagueRef.child('k').set(v+':'+Date.now().toString(36)).then(done).catch(wrong); }
+  else if(pinOnServer==='hidden'||pinOnServer===undefined){ $('#pinErr').textContent='Checking…'; leagueRef.child('k').set(v+':'+nonce()).then(done).catch(wrong); }
   else if(v===String(pinOnServer)) done();
   else wrong();
 }
@@ -161,7 +206,9 @@ $('#pinGo').onclick=tryPin; $('#pinInput').addEventListener('keydown',e=>{ if(e.
 '''
 
 # replace the no-op hook and the startup lines
-s = s.replace('// ---------- persistence hook (no-op in the demo; the live build replaces it) ----------\nfunction persist(){}\n', sync_js, 1)
+HOOK = "// ---------- persistence + admin hooks (no-ops in the demo; the live build replaces them) ----------\nfunction persist(){}\nfunction admin(){ return true; } function adminName(){ return 'Devin'; } function adminUI(){}\n"
+assert HOOK in s, 'hook block missing'
+s = s.replace(HOOK, sync_js, 1)
 startup = "const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null);\n"
 assert startup in s
 s = s.replace(startup, "// startup happens once the league loads (see live sync above)\n", 1)

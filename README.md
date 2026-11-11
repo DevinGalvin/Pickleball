@@ -3,27 +3,13 @@
 Weekly pickleball league app: check-in, court rotation, tap-to-score, standings, live bracket, history.
 
 - Static page, hosted on GitHub Pages.
-- Data lives in one Firebase Realtime Database document (`/league`). Any phone with the link can view; scoring needs the group PIN (`/pin`).
+- Data lives in one Firebase Realtime Database document (`/league/data`). Any phone with the link can view.
+- Two PINs. The group PIN (`/pin`) runs a night: check in, score, end the night. The admin PIN (`/admin`) fixes saved scores, deletes nights, edits the roster and runs the season. See `RULES.md` for the rules and setup.
 - Install on a phone: open the link in Safari, Share, Add to Home Screen.
-
-## Firebase rules
-
-Test mode rules expire after 30 days. In the Firebase console, Realtime Database, Rules tab, paste:
-
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
-
-The link is the only secret. That's fine for a friends group; the PIN stops a forwarded link from editing, not a determined person.
 
 ## Editing the app
 
-`rally-night.html` is the source (the Claude artifact is a stale copy). `build-live.py` adds the Firebase sync, PIN gate and PWA head and writes `index.html`. Edit the source, run `python3 build-live.py`, commit both, push.
+`rally-night.html` is the source (the Claude artifact is a stale copy). `build-live.py` adds the Firebase sync, the group and admin PIN gates and the PWA head and writes `index.html`. Edit the source, run `python3 build-live.py`, commit both, push.
 
 ## Courts
 

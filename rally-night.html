@@ -112,6 +112,9 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .log .item .sc small{display:block;font-family:var(--body);font-weight:500;font-size:10px;color:var(--mute);letter-spacing:.3px}
 .log .item .t{min-width:0;overflow-wrap:anywhere}
 .log .item .t.r{text-align:right}
+.log .item.ro{grid-template-columns:22px 1fr auto 1fr;padding-right:10px}
+.log .item .ed{grid-column:1/-1;text-align:center;font-size:11px;line-height:1.2;color:var(--mute)}
+.adminlink{align-self:center;border:0;color:var(--mute);font-size:13px}
 .log .w{color:var(--ball)}
 
 /* score sheet */
@@ -339,6 +342,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <section class="view" id="v-history" hidden>
       <div><p class="eyebrow">All seasons</p><h2>History</h2></div>
       <div class="nights" id="nights"></div>
+      <button class="ghost adminlink" id="adminLink" hidden></button>
     </section>
 
     <!-- HISTORY: night detail -->
@@ -523,6 +527,7 @@ function show(tab, sub){
     'v-night':   tab==='history' && state.sub==='night'
   };
   for(const id in pages) document.getElementById(id).hidden=!pages[id];
+  $('#seasonBtn').hidden=!admin(); adminUI(); // season settings are admin-only
   pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
@@ -866,8 +871,11 @@ function renderCourt(){
   $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').textContent=T.games.length||cur.some(scored)?'End night':'Cancel night';
 }
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) asScorer(()=>openSheet(+b.dataset.i)); });
-function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
-  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item pressable" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div><button class="rowedit" data-g="${i}" aria-label="Edit game ${i+1}">Edit</button></div>`; }).join(''); }
+// Saved games are read-only unless this phone is an admin: no Edit button, no long press. A corrected game says who fixed it and what it was.
+const escH=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function edText(e){ const w=new Date(e.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); return `Edited by ${escH(e.by)}, ${w}${e.was?` · was ${escH(e.was)}`:''}`; }
+function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse(); const ad=admin();
+  return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item ${ad?'pressable':'ro'}" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div>${ad?`<button class="rowedit" data-g="${i}" aria-label="Edit game ${i+1}">Edit</button>`:''}${x.ed?`<div class="ed">${edText(x.ed)}</div>`:''}</div>`; }).join(''); }
 // Who's here is read-only: the view is shared, so looking must never reset everyone's screen. Edit (inside) does the reset.
 function editPresent(){ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); }
 $('#editPresent').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)); const c=state.tonight.courts===2?' · two courts':'';
@@ -928,7 +936,7 @@ $('#boxA').onclick=()=>{ haptic(); pickWin('a'); };
 $('#boxB').onclick=()=>{ haptic(); pickWin('b'); };
 $('#sheetClose').onclick=()=>{ hideSheet('#sheet'); state.pending=null; $('#saveScore').textContent='Save & next game'; };
 $('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const sc=pendingScore(p); if(!sc) return; haptic(20);
-  if(p.edit){ const g=p.edit.games[p.edit.i]; g.sa=sc.sa; g.sb=sc.sb; hideSheet('#sheet'); state.pending=null; $('#saveScore').textContent='Save & next game'; p.edit.after(); persist(); toast('Score updated'); return; }
+  if(p.edit){ const g=p.edit.games[p.edit.i]; if(g.sa!==sc.sa||g.sb!==sc.sb) g.ed={by:adminName(),at:Date.now(),was:(g.ed&&g.ed.was)||`${g.sa}–${g.sb}`}; g.sa=sc.sa; g.sb=sc.sb; hideSheet('#sheet'); state.pending=null; $('#saveScore').textContent='Save & next game'; p.edit.after(); persist(); toast('Score updated'); return; }
   const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
   g.sa=sc.sa; g.sb=sc.sb; g.at=Date.now();
   // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
@@ -1180,7 +1188,7 @@ function renderNight(){
     ${bp&&bp[1].n>=3?`<div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} games</div></div>`:''}
     ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the spread</p><div class="v">${beat.team}</div><div class="d num">${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · beat it by ${beat.by}</div></div>`:''}`;
   $('#nightLog').innerHTML=logHtml(N.games,false);
-  const del=$('#deleteNight'); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
+  const del=$('#deleteNight'); del.hidden=!admin(); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
   del.onclick=()=>{
     if(!del.dataset.armed){ del.dataset.armed='1'; del.textContent=N.live?'Tap again to discard every game from tonight':'Tap again to delete this night and its games'; return; }
     if(N.live){ state.tonight.games=[]; state.tonight.current=null; state.tonight.started=false; }
@@ -1230,15 +1238,16 @@ function reScore(games,i,after){
   const nm=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'); $('#whoA').innerHTML=g.a.map(nm).join('<br>'); $('#whoB').innerHTML=g.b.map(nm).join('<br>');
   $('#saveScore').textContent='Save score'; updateSheet(); showSheet('#sheet');
 }
-function editTonightGame(i){ asScorer(()=>editGame(state.tonight.games,i,renderCourt)); }
-function editNightGame(i){ const N=allNightsEver()[state.night]; if(!N) return; editGame(N.games,i,()=>{ if(!N.games.length){ if(N.live){ state.tonight.started=false; state.tonight.current=null; } else state.nights.splice(state.nights.indexOf(N),1); show('history',null); } else renderNight(); }); }
+function asAdmin(fn){ if(admin()) fn(); }
+function editTonightGame(i){ asAdmin(()=>editGame(state.tonight.games,i,renderCourt)); }
+function editNightGame(i){ const N=allNightsEver()[state.night]; if(!N||!admin()) return; editGame(N.games,i,()=>{ if(!N.games.length){ if(N.live){ state.tonight.started=false; state.tonight.current=null; } else state.nights.splice(state.nights.indexOf(N),1); show('history',null); } else renderNight(); }); }
 longPress($('#log'),'.item',el=>editTonightGame(+el.dataset.g));
 longPress($('#nightLog'),'.item',el=>editNightGame(+el.dataset.g));
 $('#log').addEventListener('click',e=>{ const b=e.target.closest('.rowedit'); if(b) editTonightGame(+b.dataset.g); });
 $('#nightLog').addEventListener('click',e=>{ const b=e.target.closest('.rowedit'); if(b) editNightGame(+b.dataset.g); });
 
 // 2. roster chips: rename or remove a player
-longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=allNightsEver().some(n=>n.games.some(g=>inGame(g,p)));
+longPress($('#roster'),'.chip[data-p]',el=>{ if(!admin()) return; const p=el.dataset.p; const played=allNightsEver().some(n=>n.games.some(g=>inGame(g,p)));
   actionSheet('Player',p,[
     {label:'Rename',run:()=>actionSheet('Rename',p,[{label:'Save name',run:v=>{ if(!v||v===p) return; if(PLAYERS.some(x=>x.toLowerCase()===v.toLowerCase())){ toast(`${v} is already on the roster`); return; }
       PLAYERS[PLAYERS.indexOf(p)]=v; const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
@@ -1263,8 +1272,9 @@ function matchupActions(i){ const cur=normCur(state.tonight.current)||[]; const 
 longPress($('#courts'),'.matchup',el=>asScorer(()=>matchupActions(+el.dataset.i)));
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.matchup.changeBtn'); if(b) asScorer(()=>matchupActions(+b.dataset.i)); });
 
-// ---------- persistence hook (no-op in the demo; the live build replaces it) ----------
+// ---------- persistence + admin hooks (no-ops in the demo; the live build replaces them) ----------
 function persist(){}
+function admin(){ return true; } function adminName(){ return 'Devin'; } function adminUI(){}
 
 // ---------- misc ----------
 let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,1800); }

@@ -1,6 +1,24 @@
 # Database rules
 
-Paste this into Firebase console → Realtime Database → Rules → Publish.
+Two tiers. The group PIN runs a night. The admin PIN changes anything already saved.
+
+| | Group PIN | Admin PIN |
+|---|---|---|
+| Check in, courts, start the night | yes | yes |
+| Score tonight, Undo, swap a matchup, End night | yes | yes |
+| Add a player | yes | yes |
+| Fix or delete a saved game (tonight or History) | no | yes |
+| Delete a night | no | yes |
+| Rename or remove a player | no | yes |
+| Season settings, pairing, end the season | no | yes |
+
+A corrected game carries a stamp everyone sees: "Edited by Evan, Nov 10, 7:42 PM · was 11–7".
+
+## Setup
+
+1. Firebase console → Realtime Database → Data. At the root, next to `pin`, add `admin` with a 5-digit string that is not the group PIN.
+2. Rules tab → paste the block below → Publish.
+3. In the app: History → "Wrong score? Admin unlock" → enter the admin PIN → pick your name. Once per phone.
 
 ```json
 {
@@ -8,23 +26,48 @@ Paste this into Firebase console → Realtime Database → Rules → Publish.
     ".read": false,
     ".write": false,
     "league": {
-      ".write": "root.child('pin').exists() && newData.child('k').isString() && newData.child('k').val().beginsWith(root.child('pin').val() + ':') && newData.child('k').val() !== data.child('k').val()",
-      "data": { ".read": true }
+      "k": {
+        ".write": "newData.isString() && newData.val() !== data.val() && ((root.child('pin').exists() && newData.val().beginsWith(root.child('pin').val() + ':')) || (root.child('admin').exists() && newData.val().beginsWith('A' + root.child('admin').val() + ':')))"
+      },
+      "data": {
+        ".read": true,
+        ".write": "newData.parent().child('k').isString() && newData.parent().child('k').val() !== data.parent().child('k').val() && root.child('admin').exists() && newData.parent().child('k').val().beginsWith('A' + root.child('admin').val() + ':')",
+        "players": {
+          ".write": "newData.parent().parent().child('k').isString() && newData.parent().parent().child('k').val() !== data.parent().parent().child('k').val() && root.child('pin').exists() && newData.parent().parent().child('k').val().beginsWith(root.child('pin').val() + ':')"
+        },
+        "tonight": {
+          ".write": "newData.parent().parent().child('k').isString() && newData.parent().parent().child('k').val() !== data.parent().parent().child('k').val() && root.child('pin').exists() && newData.parent().parent().child('k').val().beginsWith(root.child('pin').val() + ':')"
+        },
+        "updatedAt": {
+          ".write": "newData.parent().parent().child('k').isString() && newData.parent().parent().child('k').val() !== data.parent().parent().child('k').val() && root.child('pin').exists() && newData.parent().parent().child('k').val().beginsWith(root.child('pin').val() + ':')"
+        },
+        "nights": {
+          "$i": {
+            ".write": "!data.exists() && newData.exists() && newData.parent().parent().parent().child('k').isString() && newData.parent().parent().parent().child('k').val() !== data.parent().parent().parent().child('k').val() && root.child('pin').exists() && newData.parent().parent().parent().child('k').val().beginsWith(root.child('pin').val() + ':')"
+          }
+        }
+      }
     }
   }
 }
 ```
 
-What it does
+## What the rules enforce
 
-- Anyone with the link can read `/league/data` (the whole league). Nothing else is readable, including `/pin` and `/league/k`.
-- A write to `/league` is accepted only when it carries a `k` of the form `<PIN>:<nonce>` where `<PIN>` matches `/pin`, and that `k` differs from the one already stored. So a saved token cannot be replayed, and a write that leaves `k` alone (for example a PUT to `/league/data` by someone who found the URL) is rejected because the merged `k` equals the stored one.
-- The PIN is changed by editing `/pin` in the console. Every phone will be asked for the new one on its next change.
+- Anyone with the link can read `/league/data`. Nothing else is readable: not `/pin`, not `/admin`, not `/league/k`.
+- Every write is one update that carries a fresh `/league/k`: `<PIN>:<nonce>` for the group, `A<ADMIN PIN>:<nonce>` for an admin. `k` must differ from the stored one, so a saved token can't be replayed and a write that leaves `k` alone is rejected.
+- Group token: may write `tonight`, `players`, and may create a night that doesn't exist yet (`nights/<next index>`, which is what End night does). It cannot change or delete an existing night, or touch `seasons` or `pairing`.
+- Admin token: may write anything under `/league/data`.
+- Hard-locked by the database: saved nights, seasons, pairing. Locked by the app only: fixing a game from tonight that is still in progress, and rename/remove on the roster. Someone with the group PIN and the skills to talk to the database directly could get past those two; once the night is ended it is hard-locked.
+- Change either PIN by editing `/pin` or `/admin` in the console. Phones are asked for the new one on their next change.
 
-Layout
+Tested in the Firebase emulator (28 permission checks plus a two-phone run of the app).
+
+## Layout
 
 ```
 /pin            "01950"               not readable
+/admin          "....."               not readable
 /league/data    { ...league... }      readable
 /league/k       "01950:m3x9..."       not readable, rotates on every write
 ```
