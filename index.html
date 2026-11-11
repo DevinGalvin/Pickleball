@@ -559,7 +559,7 @@ function show(tab, sub){
   pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
-  $('#hdrDate').textContent = tab==='tonight'&&(state.tonight.games.length||state.tonight.started||!isEarly())? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : leagueDate()) : season().name;
+  $('#hdrDate').textContent = tab==='tonight'&&(state.tonight.games.length||state.tonight.started||!isEarly())? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : nightDate()) : season().name;
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
@@ -585,16 +585,16 @@ function renderCheckin(){
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
   // on a Monday to see the matchups and drop the whole group onto a scoring screen a day early; this stops that.
   const early=isEarly(); const back=$('#startBtn').textContent==='Back to the court';
-  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').innerHTML=early?`Who's playing <span class="day${dayPopped?'':' pop'}">${dateShort(leagueDate())}</span>?`:"Who's here?"; if(early) dayPopped=true;
-  $('#hdrDate').textContent=early?season().name:dateShort(leagueDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
+  $('#ciEyebrow').hidden=early; $('#ciEyebrow').textContent='Tonight'; $('#ciTitle').innerHTML=early?`Who's playing <span class="day${dayPopped?'':' pop'}">${dateShort(nightDate())}</span>?`:"Who's here?"; if(early) dayPopped=true;
+  $('#hdrDate').textContent=early?season().name:dateShort(nightDate()); // the corner shows the date on the night itself; before that, the season name like the other tabs ('Sign-up' up there got tapped as a button)
   lastEarly=early; const locked=early&&!back; $('#startBtn').classList.toggle('locked',locked);
   $('#startBtn').textContent=locked?`Starts in ${countdownText()}`:back?'Back to the court':'Start the night'; $('#startBtn').classList.toggle('num',locked);
   $('#shareBtn').hidden=!locked;
-  const sh=$('#startHint'); sh.hidden=!locked; sh.textContent=`Game time ${dateLong(leagueDate()).replace(/,.*$/,'')} ${gameTimeText()}. Playing another day? Hold to start.`;
+  const sh=$('#startHint'); sh.hidden=!locked; sh.textContent=`Game time ${dateLong(nightDate()).replace(/,.*$/,'')} ${gameTimeText()}. Playing another day? Hold to start.`;
 }
 // Game time is 7:00pm on league night; the countdown runs to it. The court unlocks UNLOCK_MIN before, since some nights start at 6:50.
 const GAME_H=19, GAME_M=0, UNLOCK_MIN=30;
-const gameTime=()=>new Date(leagueDate()+'T'+String(GAME_H).padStart(2,'0')+':'+String(GAME_M).padStart(2,'0')+':00');
+const gameTime=()=>new Date(nightDate()+'T'+String(GAME_H).padStart(2,'0')+':'+String(GAME_M).padStart(2,'0')+':00');
 const gameTimeText=()=>gameTime().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M$/i,'');
 const unlockText=()=>new Date(gameTime().getTime()-UNLOCK_MIN*60000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}).replace(/\s?[AP]M$/i,'');
 const isEarly=()=>Date.now()<gameTime().getTime()-UNLOCK_MIN*60000;
@@ -603,7 +603,7 @@ const isEarly=()=>Date.now()<gameTime().getTime()-UNLOCK_MIN*60000;
 const LIVE_URL='https://devingalvin.github.io/Pickleball/#tonight';
 function signupMessage(){ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)); const n=P.length;
   const who=n?`${n} in so far: ${P.join(', ')}.`:'Nobody in yet.';
-  return `Who's playing ${dateShort(leagueDate())}? ${who} Tap your name if you're in:`; }
+  return `Who's playing ${dateShort(nightDate())}? ${who} Tap your name if you're in:`; }
 $('#shareBtn').onclick=async()=>{ haptic(); const text=signupMessage();
   if(navigator.share){ try{ await navigator.share({text, url:LIVE_URL}); }catch(_){} return; }
   try{ await navigator.clipboard.writeText(text+'\n'+LIVE_URL); toast('Copied. Paste it in the group chat.'); }catch(_){ toast('Could not copy'); } };
@@ -632,9 +632,12 @@ const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezo
 // League night is Tuesday. Every date the app shows or saves is a Tuesday: the coming one before a night starts,
 // the one after that once a night is saved. Open the app on Monday and it says Tuesday, not Monday.
 const LEAGUE_DAY=2; // 0=Sun … 2=Tue
+// The night the sign-up is for: the coming Tuesday, unless End night already rolled state.tonight.date past it
+// (we played and saved tonight), in which case that later date. Keeps the court shut for the rest of Tuesday after a night.
+const nightDate=()=>{ const d=state.tonight&&state.tonight.date; const L=leagueDate(); return (d&&d>L)?d:L; };
 function leagueDate(from=todayISO(), after=false){ const d=new Date(from+'T12:00'); let n=(LEAGUE_DAY-d.getDay()+7)%7; if(after&&n===0) n=7; d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
-$('#startBtn').onclick=()=>{ if($('#startBtn').classList.contains('locked')){ toast(`Court opens ${dateLong(leagueDate()).replace(/,.*$/,'')} at ${unlockText()}. Hold to start anyway.`); return; } startNight(leagueDate()); };
-longPress($('#v-checkin'),'#startBtn',b=>{ if(b.disabled) return; if(!b.classList.contains('locked')){ startNight(leagueDate()); return; }
+$('#startBtn').onclick=()=>{ if($('#startBtn').classList.contains('locked')){ toast(`Court opens ${dateLong(nightDate()).replace(/,.*$/,'')} at ${unlockText()}. Hold to start anyway.`); return; } startNight(nightDate()); };
+longPress($('#v-checkin'),'#startBtn',b=>{ if(b.disabled) return; if(!b.classList.contains('locked')){ startNight(nightDate()); return; }
   confirmSheet('Not league night',`Start a night for today, ${dateLong(todayISO())}? It counts toward the season like any other.`,'Start it',()=>startNight(todayISO())); });
 
 // ---------- court ----------
@@ -1361,7 +1364,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='b6d76014';
+const BUILD='19f953eb';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
