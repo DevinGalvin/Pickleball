@@ -71,17 +71,25 @@ const LIVE = location.hostname==='devingalvin.github.io';
 if(!LIVE){ $('#connecting').hidden=true; const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); console.warn('Pickle: not on the live host, running offline on demo data'); }
 else firebase.initializeApp(''' + cfg + ''');
 const stubRef={ on(){}, set(){ return Promise.resolve(); }, once(){ return Promise.resolve({val:()=>null}); } };
-const fdb = LIVE ? firebase.database() : { ref:()=>stubRef }; const leagueRef = fdb.ref('league'); const pinRef = fdb.ref('pin');
-let applying=false, loaded=false, lastWrite=null;
+const fdb = LIVE ? firebase.database() : { ref:()=>stubRef }; const leagueRef = fdb.ref('league'); const dataRef = fdb.ref('league/data'); const pinRef = fdb.ref('pin');
+// Security model (see RULES.md): /league/data is readable by anyone with the link. Every write replaces /league with
+// {data, k} where k is "<PIN>:<nonce>". The rules accept the write only if k starts with the PIN kept at /pin (which
+// nobody can read) and differs from the last k, so a saved token can't be replayed and a write without the PIN fails.
+let PIN=null; try{ PIN=localStorage.getItem('pickle-pin'); }catch(e){}
+const token=()=>PIN+':'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+let applying=false, loaded=false, lastWrite=null, needsMigrate=false, blocked=false; // blocked: rules are in but the data has not been moved yet; never write demo data over the league
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
     tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null },
     updatedAt: Date.now() };
 }
 function persist(){
-  if(applying||!loaded) return;
+  if(applying||!loaded||blocked) return;
   const snap=snapshotState(); lastWrite=snap.updatedAt;
-  leagueRef.set(snap).catch(e=>{ toast('Save failed: '+(e.code||e.message)); $('#sync').className='sync off'; });
+  if(!PIN){ unlocked=false; openPin('That change needs the group PIN.'); return; }
+  leagueRef.set({data:snap, k:token()}).catch(e=>{
+    if(String(e.code||e.message).includes('PERMISSION')){ PIN=null; unlocked=false; try{ localStorage.removeItem('pickle-pin'); localStorage.removeItem('pickle-unlocked'); }catch(_){} openPin('Wrong PIN on this phone. Enter it again and redo that last change.'); }
+    else toast('Save failed: '+(e.code||e.message)); $('#sync').className='sync off'; });
 }
 function applyRemote(d){
   if(!d) return;
@@ -96,12 +104,15 @@ function applyRemote(d){
     if(state.tab) show(state.tab, state.sub);
   } finally { applying=false; }
 }
-leagueRef.on('value', snap=>{
+const startView=()=>{ const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); };
+dataRef.on('value', snap=>{
   const d=snap.val();
   if(!loaded){
     loaded=true; $('#connecting').hidden=true;
-    if(!d){ persist(); toast('League created from last Tuesday\\'s games'); const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); }
-    else { applyRemote(d); const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); }
+    if(d){ applyRemote(d); startView(); return; }
+    // nothing at /league/data: either a league still in the old shape (whole doc at /league) or a brand-new database
+    leagueRef.once('value').then(s=>{ const old=s.val(); if(old&&old.seasons){ applyRemote(old); needsMigrate=true; startView(); toast('Scoring needs the PIN once more on this phone'); } else { startView(); } })
+      .catch(()=>{ blocked=true; startView(); toast('League is being moved. Try again in a minute.'); });
     return;
   }
   if(d && d.updatedAt===lastWrite) return; // our own write echoed back
@@ -118,15 +129,17 @@ setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If th
 // ---------- group PIN gate ----------
 const EDIT_SEL='#roster,#courtsSeg,#startBtn,#acts .gated,.changeBtn,.rowedit,#undoBtn,.scorebtn,#endNight,#deleteNight,#seasonBtn,#addConfirm,#newName,#log .item,#nightLog .item,#courts .matchup';
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
-let pinOnServer=undefined; pinRef.on('value', s=>{ pinOnServer=s.val()||null; });
+let pinOnServer=undefined; pinRef.once('value').then(s=>{ pinOnServer=s.val()||null; }).catch(()=>{ pinOnServer='hidden'; }); // 'hidden' = new rules in place
+if(!PIN) unlocked=false; // an old "unlocked" flag without the PIN itself is no longer enough
 document.addEventListener('click', e=>{
   if(unlocked) return; const t=e.target.closest(EDIT_SEL); if(!t) return;
   e.stopPropagation(); e.preventDefault(); openPin();
 }, true);
 document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
 document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#log .item,#nightLog .item,#courts .matchup')){ e.stopPropagation(); } }, true);
-function openPin(){
+function openPin(msg){
   const creating = pinOnServer===null;
+  if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
   $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\\'t have it? Ask the group.';
   $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
@@ -136,10 +149,13 @@ $('#pinClose').onclick=()=>{ hideSheet('#pinSheet'); };
 function tryPin(){
   const v=$('#pinInput').value.trim();
   if(!/^\\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
-  const done=()=>{ unlocked=true; try{ localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone'); };
+  const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone');
+    if(needsMigrate){ needsMigrate=false; persist(); dataRef.once('value').then(()=>{}); } };
+  const wrong=()=>{ $('#pinErr').textContent='Wrong PIN. Ask the group.'; };
   if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
+  else if(pinOnServer==='hidden'||pinOnServer===undefined){ $('#pinErr').textContent='Checking…'; leagueRef.child('k').set(v+':'+Date.now().toString(36)).then(done).catch(wrong); }
   else if(v===String(pinOnServer)) done();
-  else $('#pinErr').textContent='Wrong PIN. Ask whoever runs the night.';
+  else wrong();
 }
 $('#pinGo').onclick=tryPin; $('#pinInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryPin(); });
 '''
