@@ -334,6 +334,10 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 @keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:1}}
 .courtwrap svg.sim{position:absolute;inset:0;z-index:2;width:100%;height:100%;pointer-events:none;overflow:visible}
 .courtwrap svg.sim text.cn{font-family:var(--display);font-weight:800;font-size:10.5px;letter-spacing:.4px;text-transform:uppercase;fill:#fff;text-anchor:middle;paint-order:stroke;stroke:rgba(8,30,56,.55);stroke-width:1.4px;stroke-linejoin:round;transition:opacity .3s}
+/* the winners: names turn lime and jump twice, the second a beat behind the first; the losers' names dim */
+.courtwrap svg.sim text.cn.win{fill:var(--ball);transform-box:fill-box;transform-origin:50% 100%;animation:nameJump 1s cubic-bezier(.3,.7,.3,1) both}
+.courtwrap svg.sim text.cn.win.d2{animation-delay:.12s}
+@keyframes nameJump{0%{transform:none}16%{transform:translateY(-8px) scale(1.2)}34%{transform:none}52%{transform:translateY(-5px) scale(1.14)}70%{transform:none}84%{transform:translateY(-2px) scale(1.1)}100%{transform:scale(1.1)}}
 .gamebar .g.flip{animation:flipIn .35s cubic-bezier(.2,.8,.2,1) both}
 @keyframes flipIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 /* the result: score stamps over the net, winners pop with a burst of balls, losers sag */
@@ -341,7 +345,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 @keyframes stampIn{0%{opacity:0;transform:translate(-50%,-50%) scale(1.8) rotate(-8deg)}60%{opacity:1;transform:translate(-50%,-50%) scale(.96) rotate(2deg)}100%{transform:translate(-50%,-50%) scale(1) rotate(-3deg)}}
 .courtwrap .burst{position:absolute;z-index:3;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--ball);pointer-events:none;opacity:0;animation:burst .8s cubic-bezier(.1,.7,.3,1) .15s both}
 .courtwrap .burst.a{left:22%}.courtwrap .burst.b{left:78%}
-@keyframes burst{0%{opacity:1;transform:rotate(var(--a)) translateX(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateX(70px) scale(.3)}}
+@keyframes burst{0%{opacity:1;transform:rotate(var(--a)) translateX(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--d,70px)) scale(.3)}}
 /* sign-up date: one quick pop the first time the sign-up opens, so the eye lands on the night. Never replays on re-render. */
 #ciTitle .day{display:inline-block;color:var(--ball)}#ciTitle .day.pop{animation:dayPop .3s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes dayPop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
@@ -785,7 +789,7 @@ class ServeCue{
   // height reads two ways: the ball lifts off its shadow and grows as it rises
   place(x,y,z){ this.ballEl.setAttribute('transform',`translate(${x.toFixed(2)},${(y-z).toFixed(2)}) scale(${(1+z*.04).toFixed(3)})`); this.shadowEl.setAttribute('cx',(x+z*.25).toFixed(2)); this.shadowEl.setAttribute('cy',(y+2.4).toFixed(2)); this.shadowEl.setAttribute('rx',(2.6*Math.max(.55,1-z*.035)).toFixed(2)); }
   stop(){ this.dead=true; cancelAnimationFrame(this.raf); }
-  finish(w){ this.stop(); this.ballEl.style.opacity=0; this.shadowEl.style.opacity=0; this.trail.style.opacity=0; this.svg.querySelectorAll('.cn').forEach(e=>{ if(!e.classList.contains(w)) e.style.opacity=.45; }); }
+  finish(w){ this.stop(); this.ballEl.style.opacity=0; this.shadowEl.style.opacity=0; this.trail.style.opacity=0; let n=0; this.svg.querySelectorAll('.cn').forEach(e=>{ if(e.classList.contains(w)){ e.classList.add('win'); if(n++) e.classList.add('d2'); } else e.style.opacity=.45; }); }
   tick(now){
     if(this.dead) return; const dt=Math.min(.05,(now-this.last)/1000); this.last=now;
     if(this.delay>0){ this.delay-=dt; this.raf=requestAnimationFrame(t=>this.tick(t)); return; }
@@ -917,7 +921,7 @@ function playResult(i,sa,sb){
   const wrap=document.querySelectorAll('#courts .courtwrap')[i]; if(!wrap) return;
   wrap.classList.add('result'); const aw=sa>sb; if(sims[i]) sims[i].finish(aw?'a':'b');
   const side=aw?'a':'b'; let extra=`<div class="stamp num">${sa}–${sb}</div>`;
-  for(let k=0;k<10;k++) extra+=`<span class="burst ${side}" style="--a:${k*36+(k%2?10:-10)}deg;animation-delay:${.12+k*.02}s"></span>`;
+  for(let k=0;k<18;k++) extra+=`<span class="burst ${side}" style="--a:${k*20+(k%2?8:-8)}deg;--d:${k%2?64:104}px;animation-delay:${(.1+k*.012).toFixed(3)}s"></span>`;
   wrap.insertAdjacentHTML('beforeend',extra);
 }
 
