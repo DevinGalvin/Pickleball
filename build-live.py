@@ -75,7 +75,7 @@ const fdb = LIVE ? firebase.database() : { ref:()=>stubRef }; const leagueRef = 
 let applying=false, loaded=false, lastWrite=null;
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
-    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1 },
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null },
     updatedAt: Date.now() };
 }
 function persist(){
@@ -90,7 +90,7 @@ function applyRemote(d){
     PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split';
     state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
-    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1 };
+    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null };
     if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     if(state.tab) show(state.tab, state.sub);

@@ -449,6 +449,19 @@ const $ = s => document.querySelector(s);
 // Haptics. Android: the Vibration API. iPhone has no API for web apps, but Safari 17.4+ ticks when a switch-style checkbox
 // flips, so we flip a hidden one from inside the tap handler. One light tick, no patterns. Only on moments that mark a decision.
 function haptic(ms=10){ try{ if(navigator.vibrate){ navigator.vibrate(ms); return; } const sw=document.getElementById('hapticSwitch'); if(sw) sw.click(); }catch(_){} }
+// ---- one scorekeeper per night ----
+// The first phone to score picks a name from the roster and holds the pen for the night. Other phones watch live;
+// their scoring controls are dimmed and offer Take over (with a confirm), because phones die and people leave early.
+function deviceId(){ try{ let id=localStorage.getItem('pickle-device'); if(!id){ id=Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem('pickle-device',id); } return id; }catch(_){ return 'nostorage'; } }
+const scorer=()=>state.tonight.scorer||null;
+const iAmScorer=()=>{ const sc=scorer(); return !!sc && sc.id===deviceId(); };
+// run fn if this phone holds the pen; otherwise claim it (nobody has it) or offer to take it over
+function asScorer(fn){ const sc=scorer();
+  if(!sc){ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
+    actionSheet('Scorekeeper',"Who's scoring tonight?",P.map(p=>({label:p,run:()=>{ state.tonight.scorer={id:deviceId(),name:p}; haptic(15); persist(); renderCourt(); fn(); }}))); return; }
+  if(sc.id===deviceId()){ fn(); return; }
+  confirmSheet('Scorekeeper',`${sc.name} is scoring tonight on another phone. Take over?`,'Take over',()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
+    actionSheet('Scorekeeper','Who are you?',P.map(p=>({label:p,run:()=>{ state.tonight.scorer={id:deviceId(),name:p}; haptic(15); persist(); renderCourt(); toast(`${p} is scoring now`); }}))); }); }
 const fmt = n => (n>0?'+':'')+n;
 const r1 = n => Math.round(n*10)/10;
 const pairKey = (x,y)=>[x,y].sort().join('|');
@@ -649,7 +662,7 @@ function boardHtml(g,i,multi){
     <div class="courtwrap ${done?'done':''}">${COURT_SVG}
     ${hasLine(g)?`<span class="linelbl">${lineText(g)}</span>`:''}
     <svg class="sim" viewBox="0 0 210 110" role="img" aria-label="${g.a.join(' and ')} versus ${g.b.join(' and ')}"></svg></div>
-    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}</div>`:`<button class="cta scorebtn" data-i="${i}">Enter final score</button>`}</div>`;
+    ${done?`<div class="saved num">Saved ${g.sa}–${g.sb}</div>`:`<button class="cta scorebtn ${scorer()&&!iAmScorer()?'locked':''}" data-i="${i}">${scorer()&&!iAmScorer()?`${nm(scorer().name)} is scoring`:'Enter final score'}</button>`}</div>`;
 }
 let logCount=0;
 // ---------- live rally ----------
@@ -882,7 +895,7 @@ function renderCourt(){
   if(T.games.length>logCount){ const f=$('#log .item'); if(f) f.classList.add('new'); } logCount=T.games.length;
   $('#undoBtn').disabled=T.games.length===0&&!cur.some(scored); $('#endNight').textContent=T.games.length||cur.some(scored)?'End night':'Cancel night';
 }
-$('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) openSheet(+b.dataset.i); });
+$('#courts').addEventListener('click',e=>{ const b=e.target.closest('.scorebtn'); if(b) asScorer(()=>openSheet(+b.dataset.i)); });
 function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse) arr.reverse();
   return arr.map(({x,i})=>{ const aw=x.sa>x.sb; return `<div class="item pressable" data-g="${i}"><span class="n num">${i+1}</span><div class="t ${aw?'w':''}">${x.a.join(' & ')}</div><div class="sc num">${x.sa}–${x.sb}</div><div class="t r ${aw?'':'w'}">${x.b.join(' & ')}</div><button class="rowedit" data-g="${i}" aria-label="Edit game ${i+1}">Edit</button></div>`; }).join(''); }
 // Who's here is read-only: the view is shared, so looking must never reset everyone's screen. Edit (inside) does the reset.
@@ -890,21 +903,21 @@ function editPresent(){ state.tonight.started=false; flushScored(); $('#startBtn
 $('#editPresent').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y)); const c=state.tonight.courts===2?' · two courts':'';
   actionSheet(`${P.length} playing${c}`, P.join(', '), [{label:'Edit who\'s here',gated:true,run:editPresent}]); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
-$('#undoBtn').onclick=()=>{ haptic();
+$('#undoBtn').onclick=()=>asScorer(()=>{ haptic();
   const T=state.tonight; const cur=normCur(T.current)||[];
   const open=cur.filter(scored).sort((x,y)=>(y.at||0)-(x.at||0))[0];
   if(open){ delete open.sa; delete open.sb; delete open.at; renderCourt(); persist(); toast('Score removed'); return; }
   const LR=lastRound(T.games); if(!LR.length) return;
   T.games=T.games.filter(g=>!LR.includes(g)); T.current=LR.map(g=>({a:g.a,b:g.b,...(hasLine(g)?{line:g.line}:{})}));
   renderCourt(); persist(); toast(LR.length>1?'Last round reopened':'Last score removed');
-};
-$('#endNight').onclick=()=>{ haptic(15);
+});
+$('#endNight').onclick=()=>asScorer(()=>{ haptic(15);
   const T=state.tonight; flushScored();
-  if(!T.games.length){ T.started=false; T.current=null; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Night cancelled'); return; }
+  if(!T.games.length){ T.started=false; T.current=null; delete T.scorer; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Night cancelled'); return; }
   state.nights.push({date:T.date,games:T.games,season:season().id});
   state.tonight={date:leagueDate(T.date,true),present:new Set(T.present),started:false,games:[],current:null,courts:1};
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; show('history','night'); persist(); toast('Night saved');
-};
+});
 
 // sheets animate out before they hide
 function hideSheet(sel){ const el=$(sel); if(el.hidden) return; el.classList.add('out'); clearTimeout(el._t); el._t=setTimeout(()=>{ if(el.classList.contains('out')){ el.hidden=true; el.classList.remove('out'); } },200); }
@@ -1230,7 +1243,7 @@ function reScore(games,i,after){
   const nm=x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;'); $('#whoA').innerHTML=g.a.map(nm).join('<br>'); $('#whoB').innerHTML=g.b.map(nm).join('<br>');
   $('#saveScore').textContent='Save score'; updateSheet(); showSheet('#sheet');
 }
-function editTonightGame(i){ editGame(state.tonight.games,i,renderCourt); }
+function editTonightGame(i){ asScorer(()=>editGame(state.tonight.games,i,renderCourt)); }
 function editNightGame(i){ const N=allNightsEver()[state.night]; if(!N) return; editGame(N.games,i,()=>{ if(!N.games.length){ if(N.live){ state.tonight.started=false; state.tonight.current=null; } else state.nights.splice(state.nights.indexOf(N),1); show('history',null); } else renderNight(); }); }
 longPress($('#log'),'.item',el=>editTonightGame(+el.dataset.g));
 longPress($('#nightLog'),'.item',el=>editNightGame(+el.dataset.g));
@@ -1260,8 +1273,8 @@ function matchupActions(i){ const cur=normCur(state.tonight.current)||[]; const 
       const taken=new Set([...g.a,...g.b]); let n=null; for(let k=0;k<12&&!n;k++){ const c=nextGame(pool,state.tonight.games); if(c&&[...c.a,...c.b].some(p=>!taken.has(p))) n=c; else if(c&&pool.length<=4) n=c; }
       if(!n){ toast('Nobody else to draw from'); return; } apply(n.a,n.b); }}
   ]); }
-longPress($('#courts'),'.matchup',el=>matchupActions(+el.dataset.i));
-$('#courts').addEventListener('click',e=>{ const b=e.target.closest('.matchup.changeBtn'); if(b) matchupActions(+b.dataset.i); });
+longPress($('#courts'),'.matchup',el=>asScorer(()=>matchupActions(+el.dataset.i)));
+$('#courts').addEventListener('click',e=>{ const b=e.target.closest('.matchup.changeBtn'); if(b) asScorer(()=>matchupActions(+b.dataset.i)); });
 
 // ---------- live sync (Firebase Realtime Database) ----------
 // Safety: the live build only talks to the league database when served from the real site. Opened from disk or
@@ -1275,7 +1288,7 @@ const fdb = LIVE ? firebase.database() : { ref:()=>stubRef }; const leagueRef = 
 let applying=false, loaded=false, lastWrite=null;
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
-    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1 },
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null },
     updatedAt: Date.now() };
 }
 function persist(){
@@ -1290,7 +1303,7 @@ function applyRemote(d){
     PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split';
     state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
-    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1 };
+    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null };
     if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     if(state.tab) show(state.tab, state.sub);
@@ -1348,7 +1361,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='2c06de15';
+const BUILD='b6d76014';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
