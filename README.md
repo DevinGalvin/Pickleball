@@ -1,6 +1,6 @@
 # Pickle League
 
-Weekly pickleball league app: check-in, court rotation, tap-to-score, standings, live bracket, history.
+Weekly pickleball league app: check-in, court rotation, tap-to-score, standings, playoffs, history.
 
 - Static page, hosted on GitHub Pages.
 - Data lives in one Firebase Realtime Database document (`/league/data`). Any phone with the link can view.

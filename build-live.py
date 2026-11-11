@@ -92,7 +92,7 @@ function parts(){ const s=snapshotState(); return { snap:s, players:J(s.players)
 function resync(){ dataRef.once('value').then(s=>{ if(s.val()) applyRemote(s.val()); }).catch(()=>{}); }
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, organizers:orgs(), nights:state.nights,
-    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null, late:[...lateSet()].filter(p=>state.tonight.present.has(p)), credit:credits() },
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null, late:[...lateSet()].filter(p=>state.tonight.present.has(p)), credit:credits(), po:state.tonight.po||null },
     updatedAt: Date.now() };
 }
 function persist(){
@@ -122,9 +122,10 @@ function applyRemote(d){
   applying=true;
   try{
     PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split'; state.organizers = d.organizers||[];
-    state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
+    state.nights = (d.nights||[]).map(n=>{ const po=poNorm(n.po); return {date:n.date, season:n.season, games:n.games||[], ...(po?{po}:{})}; }); // po: a playoff night keeps its teams and schedule
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
     const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null, late:new Set(t.late||[]), credit:(t.credit||[]).filter(c=>c&&c.p) };
+    const tpo=poNorm(t.po); if(tpo) state.tonight.po=tpo;
     if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     base=parts();
@@ -153,7 +154,7 @@ $('#sync').style.cssText+='width:14px;height:14px;margin:-3px;cursor:pointer;bac
 setTimeout(()=>{ if(!loaded) $('#connHint').textContent='Still connecting. If this hangs, the database may not be set up yet.'; }, 8000);
 
 // ---------- group PIN gate ----------
-const EDIT_SEL='#roster,#courtsSeg,#startBtn,#acts .gated,.changeBtn,#undoBtn,.scorebtn,#endNight,#addConfirm,#newName,#courts .matchup,#lateBtn,.latehere'; // admin-only controls aren't here: they don't render without the admin PIN
+const EDIT_SEL='#roster,#courtsSeg,#startBtn,#acts .gated,.changeBtn,#undoBtn,.scorebtn,#endNight,#addConfirm,#newName,#courts .matchup,#lateBtn,.latehere,#poSave'; // admin-only controls aren't here: they don't render without the admin PIN
 let unlocked=false; try{ unlocked=localStorage.getItem('pickle-unlocked')==='1'; }catch(e){}
 let pinOnServer=undefined; pinRef.once('value').then(s=>{ pinOnServer=s.val()||null; }).catch(()=>{ pinOnServer='hidden'; }); // 'hidden' = new rules in place
 if(ADMIN) unlocked=true; else if(!PIN) unlocked=false; // an admin can do everything the group can; an old "unlocked" flag without a PIN is not enough
