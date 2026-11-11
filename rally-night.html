@@ -419,6 +419,12 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .prow .wl{width:30px;flex:none;text-align:right;color:var(--mute);font-size:13px}
 .prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:20px}
 .sharebox{display:flex;flex-direction:column;gap:8px}
+.recg{display:flex;flex-direction:column;justify-content:center;gap:10px;width:100%}
+.tug{display:flex;gap:3px;width:100%}.tug i{display:block;height:14px;border-radius:7px;min-width:8px}.tug .w{background:var(--ball)}.tug .l{background:#4d6270}
+.race{position:relative;display:flex;flex-direction:column;gap:5px;width:100%}
+.race .ln{display:grid;grid-template-columns:repeat(var(--n),1fr);gap:3px}.race .ln i{display:block;height:10px;border-radius:3px;background:var(--panel-2)}
+.race .ln.w i.on{background:var(--ball)}.race .ln.l i.on{background:#6d8391}
+.race .fin{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--fg)}
 .igname.ic{display:flex;align-items:center;gap:6px}
 </style>
 
@@ -1024,6 +1030,7 @@ function playResult(i,sa,sb){
 // ---------- standings ----------
 // Season rating = total +/- divided by (games + SHRINK): a hot 4-game night can't outrank 40 solid games, but nobody is excluded.
 const SHRINK=5;
+const GAME_TO=11; // games are to 11, win by 2
 function ranking(tonight){
   const games=tonight?state.tonight.games:allGames(); const t=tally(games);
   return PLAYERS.map(p=>({p,s:t[p],avg:t[p]?t[p].pm/t[p].gp:null,rating:t[p]?(tonight?t[p].pm/t[p].gp:t[p].pm/(t[p].gp+SHRINK)):null,np:nightsPlayed(p)}))
@@ -1350,8 +1357,13 @@ function renderRecords(){ const R=records(); const el=$('#records');
     <button class="rec swl" ${ni(Wn.i)}><span class="ignum neg num">${fmt(Wn.pm)}</span><span class="swtrack"><span class="swbar neg" style="width:${Math.round(-Wn.pm/sw*100)}%"></span></span><span class="igsub">${escH(Wn.p)} · ${R.day(Wn.date)}</span></button>
     <span class="swaxis"></span>
     <button class="rec swr" ${ni(B.i)}><span class="ignum pos num">${fmt(B.pm)}</span><span class="swtrack"><span class="swbar pos" style="width:${Math.round(B.pm/sw*100)}%"></span></span><span class="igsub">${escH(B.p)} · ${R.day(B.date)}</span></button></div></section>`;
-  const board=(label,x)=>`<button class="rec sb" ${ni(x.i)}><span class="sbcap">${label} · ${R.day(x.date)}</span><span class="sbrow"><span class="sbteam r">${x.win.map(escH).join('<br>')}</span><span class="sbdig win num">${x.ws}</span><span class="sbdig num">${x.ls}</span><span class="sbteam">${x.lose.map(escH).join('<br>')}</span></span></button>`;
-  const boards=`<section class="ig"><p class="eyebrow">Scoreboard</p>${board('Biggest blowout',R.blowout)}${board('Longest game',R.marathon)}</section>`;
+  // the two single-game records each get their own picture: a blowout is about the split of the points, a long game
+  // is about how far past the usual finish it ran
+  const recHead=x=>`<span class="igrow"><span class="igmain"><span class="igname sm">${x.win.map(escH).join(' & ')}</span><span class="igsub">beat ${x.lose.map(escH).join(' & ')} · ${R.day(x.date)}</span></span><span class="ignum num">${x.score}</span></span>`;
+  const blowout=x=>`<section class="ig"><p class="eyebrow">Biggest blowout</p><button class="rec recg" ${ni(x.i)}>${recHead(x)}<span class="tug" aria-hidden="true"><i class="w" style="flex:${x.ws}"></i>${x.ls?`<i class="l" style="flex:${x.ls}"></i>`:''}</span><span class="igsub">${x.ls?`Took ${x.ws} of the ${x.ws+x.ls} points`:`Took all ${x.ws} points`}</span></button></section>`;
+  const marathon=x=>{ const n=Math.max(x.ws,GAME_TO), over=x.ws-GAME_TO; const ln=(k,c)=>`<span class="ln ${c}" style="--n:${n}">${Array.from({length:n},(_,j)=>`<i class="${j<k?'on':''}"></i>`).join('')}</span>`;
+    return `<section class="ig"><p class="eyebrow">Longest game</p><button class="rec recg" ${ni(x.i)}>${recHead(x)}<span class="race" aria-hidden="true">${ln(x.ws,'w')}${ln(x.ls,'l')}${over>0?`<b class="fin" style="left:calc(${(GAME_TO/n*100).toFixed(2)}% - 2.5px)"></b>`:''}</span><span class="igsub">${x.ws+x.ls} points played${over>0?`, ${over} past the usual ${GAME_TO}`:''}</span></button></section>`; };
+  const boards=blowout(R.blowout)+marathon(R.marathon);
   const pair=R.pair?(()=>{ const [a,b]=R.pair.k.split(' & '); return `<section class="ig"><p class="eyebrow">Best pair</p><div class="igrow"><span class="duo"><i>${escH(a[0])}</i><i>${escH(b[0])}</i></span><span class="igmain"><span class="igname sm">${escH(a)} &amp; ${escH(b)}</span><span class="igsub">${R.pair.n} games together</span></span><span class="ignum pos num">${fmt(r1(R.pair.avg))}<small>avg</small></span></div></section>`; })():'';
   const rings=(n,c)=>`<span class="rings ${c}">${'<i></i>'.repeat(Math.min(n,10))}${n>10?`<b>+${n-10}</b>`:''}</span>`;
   const bagels=R.gave||R.ate?`<section class="ig"><p class="eyebrow">Bagel shop · 11–0 games</p>
