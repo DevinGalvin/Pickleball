@@ -1323,15 +1323,19 @@ $('#log').addEventListener('click',e=>{ const b=e.target.closest('.rowedit'); if
 $('#nightLog').addEventListener('click',e=>{ const b=e.target.closest('.rowedit'); if(b) editNightGame(+b.dataset.g); });
 
 // 2. roster chips: rename or remove a player
-longPress($('#roster'),'.chip[data-p]',el=>{ if(!admin()) return; const p=el.dataset.p; const played=allNightsEver().some(n=>n.games.some(g=>inGame(g,p)));
-  actionSheet('Player',p,[
+// Everyone gets the late toggle here (same as the link under the roster); rename and remove are admin-only.
+longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=allNightsEver().some(n=>n.games.some(g=>inGame(g,p)));
+  const on=state.tonight.present.has(p), late=on&&lateSet().has(p);
+  const lateAct=late? {label:'Here now',gated:true,run:()=>{ haptic(); arrive(p); flushScored(); renderCheckin(); persist(); toast(`${p} is in the draw`); }}
+    : {label:on?'Running late':'In, but running late',gated:true,run:()=>{ haptic(); state.tonight.present.add(p); lateSet().add(p); flushScored(); renderCheckin(); persist(); toast(`${p} sits out until he arrives`); }};
+  actionSheet('Player',p,[lateAct].concat(!admin()?[]:[
     {label:'Rename',run:()=>actionSheet('Rename',p,[{label:'Save name',run:v=>{ if(!v||v===p) return; if(PLAYERS.some(x=>x.toLowerCase()===v.toLowerCase())){ toast(`${v} is already on the roster`); return; }
       PLAYERS[PLAYERS.indexOf(p)]=v; const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
       state.nights.forEach(n=>n.games.forEach(fix)); state.tonight.games.forEach(fix); (normCur(state.tonight.current)||[]).forEach(fix);
       if(state.tonight.present.delete(p)) state.tonight.present.add(v); if(lateSet().delete(p)) lateSet().add(v); credits().forEach(c=>{ if(c.p===p) c.p=v; }); renderCheckin(); persist(); toast(`${p} is now ${v}`); }}],{value:p,placeholder:'Name'})},
     {label:played?'Remove from roster':'Remove',danger:true,run:()=>confirmSheet('Remove',played?`${p} has played this season. Past games stay in history; ${p} just leaves the check-in list.`:`Remove ${p} from the roster?`,'Yes, remove',()=>{
       PLAYERS.splice(PLAYERS.indexOf(p),1); state.tonight.present.delete(p); lateSet().delete(p); flushScored(); renderCheckin(); persist(); toast(`${p} removed`); })}
-  ]); });
+  ])); });
 
 // 4. the drawn matchup: swap partners or redraw, for when the algorithm's pick isn't what the court wants
 function matchupActions(i){ const cur=normCur(state.tonight.current)||[]; const g=cur[i]; if(!g||scored(g)) return;
@@ -1519,7 +1523,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='5464b215';
+const BUILD='a4088d17';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
