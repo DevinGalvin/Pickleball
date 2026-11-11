@@ -384,11 +384,12 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
 /* night recap: The night / Your night, the share box and the first-open sheet. Every box centers its content. */
 .eyebrow.lime{color:var(--ball)}
-.igname.xl{font-size:44px}.igname.xxl{font-size:60px}.ignum.xl{font-size:48px}
+.igname.xl{font-size:44px;overflow-wrap:anywhere}.igname.xxl{font-size:60px}.ignum.xl{font-size:48px}
 .igside{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px;text-align:right}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ig.tile{justify-content:center;gap:6px;min-width:0}.ig.tile.alt{background:var(--panel-2);border-radius:14px;padding:12px;min-height:92px}
 .ig.tile .sc{font-family:var(--display);font-weight:800;font-size:36px;line-height:1}
+.ig.tile .igname{overflow-wrap:anywhere;max-width:100%}
 .ig.tile .who{font-size:14px;font-weight:600;margin:0;overflow-wrap:anywhere}
 .rb{display:flex;flex-direction:column;gap:6px}
 .rbrow{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border-radius:10px;background:var(--panel-2)}
@@ -715,6 +716,7 @@ function show(tab, sub){
   const dir = tab===prevTab && state.sub && state.sub!==prevSub ? 'fromRight' : tab===prevTab && prevSub && !state.sub ? 'fromLeft' : '';
   document.querySelectorAll('.view').forEach(v=>{ v.classList.remove('fromRight','fromLeft'); if(dir) v.classList.add(dir); });
   const T=state.tonight; if(T.started&&!T.po) poSetup=false;
+  if(!(tab==='history'&&state.sub==='night')) nightFor=null;
   document.querySelector('.app').classList.toggle('po', tab==='tonight'&&(!!T.po||poSetup));
   const pages={
     'v-checkin': tab==='tonight' && !T.started,
@@ -1383,7 +1385,7 @@ const ARROW={up:'<svg viewBox="0 0 24 24" class="pos" aria-hidden="true"><path d
 // the night's order: +/-, then wins, then fewer games. The same rule as Night MVP, so the MVP is always first.
 const nightOrder=t=>Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm||t[b].w-t[a].w||t[a].gp-t[b].gp||a.localeCompare(b));
 // season order from a list of games, by the standings rule (rating, then win rate)
-function rankFrom(games){ const t=tally(games); const r=p=>t[p].pm/(t[p].gp+SHRINK); return Object.keys(t).filter(p=>PLAYERS.includes(p)).sort((a,b)=>r(b)-r(a)||t[b].w/t[b].gp-t[a].w/t[a].gp||a.localeCompare(b)); }
+function rankFrom(games){ const t=tally(games); const r=p=>t[p].pm/(t[p].gp+SHRINK); return Object.keys(t).filter(p=>PLAYERS.includes(p)).sort((a,b)=>r(b)-r(a)||t[b].w/t[b].gp-t[a].w/t[a].gp||PLAYERS.indexOf(a)-PLAYERS.indexOf(b)); }
 // where everyone stood in that night's season before and after it. A playoff night never moves the standings.
 function nightMoves(idx){ const all=allNightsEver(), N=all[idx]; if(!N||N.po) return null;
   const sn=all.map((n,i)=>({n,i})).filter(x=>x.n.season===N.season&&!x.n.po); const k=sn.findIndex(x=>x.i===idx); if(k<0) return null;
@@ -1449,10 +1451,12 @@ function renderNight(){
   // only opens the share sheet straight from a tap. Where pictures can't be shared, it copies the recap as text.
   const key=state.night+':'+JSON.stringify(N.games); prepShare(F,key); const pic=canSharePic();
   $('#shareHint').textContent=pic?'Sends one picture of the night to your group text.':'Copies the night as text to paste in the group chat.';
-  $('#copyRecap').onclick=()=>{ haptic();
-    if(pic&&shareBlob&&shareKey===key){ navigator.share({files:[new File([shareBlob],`pickle-${N.date}.png`,{type:'image/png'})]}).catch(()=>{}); return; }
-    const lines=[`Pickle · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
+  const asText=()=>{ const lines=[`Pickle · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
     navigator.clipboard?.writeText(lines).then(()=>toast('Copied. Paste it in the group chat.')).catch(()=>toast('Copy blocked here')); };
+  $('#copyRecap').onclick=()=>{ haptic(); if(!pic){ asText(); return; }
+    let blob=shareKey===key?shareBlob:null; if(!blob){ try{ blob=cardBlobNow(F); }catch(e){} } // not drawn yet: draw it now, inside the tap
+    if(!blob){ asText(); return; }
+    navigator.share({files:[new File([blob],`pickle-${N.date}.png`,{type:'image/png'})]}).catch(e=>{ if(!e||e.name!=='AbortError') asText(); }); }; // AbortError = he closed the share sheet himself
 }
 // ----- the share card: the night as one picture, drawn on a canvas so it can go straight into a text thread -----
 let shareBlob=null, shareKey='';
@@ -1460,6 +1464,7 @@ let _canPic=null; function canSharePic(){ if(_canPic===null){ try{ _canPic=!!(na
 function prepShare(F,key){ if(shareKey===key&&shareBlob) return; shareBlob=null; shareKey=key;
   const go=()=>{ try{ recapCard(F).toBlob(b=>{ if(shareKey===key) shareBlob=b; },'image/png'); }catch(e){} };
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(go,go); }
+function cardBlobNow(F){ const d=recapCard(F).toDataURL('image/png').split(',')[1], b=atob(d), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return new Blob([u],{type:'image/png'}); }
 function recapCard(F){ const {N,t,ps,mvp}=F; const rest=ps.slice(1), W=390, PAD=20, ROW=34;
   const H=PAD+28+14+92+14+(rest.length?rest.length*ROW+20+14:0)+64+PAD; const S=3;
   const c=document.createElement('canvas'); c.width=W*S; c.height=H*S; const x=c.getContext('2d'); x.scale(S,S);
@@ -1495,7 +1500,7 @@ let recapIdx=null;
 function recapCheck(){
   if(ME===null) return; // "Who are you?" comes first
   const T=state.tonight; if(T.started||T.games.length) return;
-  const i=state.nights.length-1, N=state.nights[i]; if(!N||N.po||!N.games||!N.games.length) return;
+  const i=state.nights.length-1, N=state.nights[i]; if(!N||N.po||!N.date||!N.games||!N.games.length) return;
   if(recapSeen&&N.date<=recapSeen) return;
   if(Date.now()>new Date(N.date+'T12:00').getTime()+RECAP_DAYS*86400000) return;
   const n=me(); if(n&&!tally(N.games)[n]) return; // sat that one out: it's in History, no pop
