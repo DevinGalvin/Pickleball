@@ -401,8 +401,8 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .rbrow .wl{color:var(--mute);font-size:13px;white-space:nowrap}
 .rbrow .mv{font-size:13px;font-weight:600;white-space:nowrap}
 .rbrow .pm{min-width:40px;text-align:right;font-family:var(--display);font-weight:800;font-size:22px;white-space:nowrap}
-.rbrow svg,.igrow>svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.igrow>svg{width:26px;height:26px}
+.rbrow svg.arw,.igrow>svg.arw,.igname.ic svg.arw{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.igrow>svg.arw{width:26px;height:26px}.igname.ic svg.arw{width:20px;height:20px}
 .mygames{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .myg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;min-width:0;padding:6px 4px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);text-align:center}
 .myg.w{background:#22382a;border-color:#2f5a3a}
@@ -419,7 +419,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .prow .wl{width:30px;flex:none;text-align:right;color:var(--mute);font-size:13px}
 .prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:20px}
 .sharebox{display:flex;flex-direction:column;gap:8px}
-.igname.ic{display:flex;align-items:center;gap:6px}.igname.ic svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.igname.ic{display:flex;align-items:center;gap:6px}
 </style>
 
 <div class="app">
@@ -1381,7 +1381,7 @@ $('#nightBack').onclick=()=>{ nightFor=null; show('history',null); };
 $('#nightSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.dataset.n===nightMode) return; nightMode=b.dataset.n; haptic(); renderNight(); document.querySelector('main').scrollTop=0; });
 const ord=n=>{ const v=n%100; return n+(v>10&&v<14?'th':['th','st','nd','rd'][n%10]||'th'); };
 const pmCls=v=>v>0?'pos':v<0?'neg':'';
-const ARROW={up:'<svg viewBox="0 0 24 24" class="pos" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',down:'<svg viewBox="0 0 24 24" class="neg" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',flat:'<svg viewBox="0 0 24 24" aria-hidden="true" style="color:var(--mute)"><path d="M5 12h14"/></svg>'};
+const ARROW={up:'<svg viewBox="0 0 24 24" class="arw pos" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',down:'<svg viewBox="0 0 24 24" class="arw neg" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',flat:'<svg viewBox="0 0 24 24" class="arw" aria-hidden="true" style="color:var(--mute)"><path d="M5 12h14"/></svg>'};
 // the night's order: +/-, then wins, then fewer games. The same rule as Night MVP, so the MVP is always first.
 const nightOrder=t=>Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm||t[b].w-t[a].w||t[a].gp-t[b].gp||a.localeCompare(b));
 // season order from a list of games, by the standings rule (rating, then win rate)
