@@ -1002,8 +1002,7 @@ function renderBracket(){
   $('#teams').innerHTML = teams.map(t=>`<div class="teamrow"><div class="sd num">${t.seed}</div><div class="nm">${t.name}</div><div class="rt num">${fmt(r1(t.rating))}</div></div>`).join('')
     + (alt?`<div class="teamrow"><div class="sd">–</div><div class="nm">${alt.p}<div class="meta">Alternate · subs in if someone can't make it</div></div><div class="rt num">${fmt(r1(alt.rating))}</div></div>`:'');
   const T=teams.length; let html='', hint='';
-  if(T===3){ html=`<div class="rr">${[[0,1],[0,2],[1,2]].map(([i,j])=>`<div class="match"><div class="slot"><span class="s num">${teams[i].seed}</span><span>${teams[i].name}</span></div><div class="slot"><span class="s num">${teams[j].seed}</span><span>${teams[j].name}</span></div></div>`).join('')}</div>`; hint='Round robin. Best record wins, point differential breaks ties.'; }
-  else {
+  {
     const size=T<=2?2:T<=4?4:8; const order=size===2?[1,2]:size===4?[1,4,2,3]:[1,8,4,5,3,6,2,7];
     const byT=s=>teams.find(t=>t.seed===s)||null;
     let cur=[]; for(let i=0;i<order.length;i+=2) cur.push({a:byT(order[i]),b:byT(order[i+1]),n:i/2+1});
@@ -1014,7 +1013,7 @@ function renderBracket(){
         row.push({a:adv(x),b:adv(y),fa:x.n,fb:y.n,n:next++}); }
       rs.push(row); cur=row; }
     html=svgBracket(rs,labels);
-    hint=T===2?'One match for the title. Best of 3.':T<size?`Top seeds get a first-round bye.`:`Single elimination. Higher seed takes Side A.`;
+    hint=T===2?'One match for the title. Best of 3.':T===3?'Top seed sits out the first round. Winner of 2 vs 3 plays them for the title.':T<size?`Top seeds get a first-round bye.`:`Single elimination. Higher seed takes Side A.`;
   }
   $('#bracket').innerHTML=html; wireBracket(); $('#brHint').textContent=hint;
 }
@@ -1032,10 +1031,12 @@ function svgBracket(rs,labels){
   const H=top+n1*(mH+matchGap)-matchGap+10;
   const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
   const maxCh=Math.floor((colW-16-30)/8.2); const fit=t=>t.length>maxCh?t.slice(0,maxCh-1)+'…':t;
+  const byN={}; rs.forEach(round=>round.forEach(m=>{ byN[m.n]=m; }));
+  const winnerOf=ref=>{ const m=byN[ref]; return m&&m.a&&m.b?`Winner of ${m.a.seed} vs ${m.b.seed}`:'Winner of M'+ref; };
   const slotSvg=(y,t,ref)=>{
     const line=`<line x1="0" y1="${y+slotH}" x2="${colW-16}" y2="${y+slotH}" stroke="${t?'var(--paint)':'var(--line)'}" stroke-width="1.5"/>`;
     if(t) return line+`<rect x="0" y="${y+6}" width="22" height="22" rx="4" fill="var(--ball)"/><text x="11" y="${y+22}" text-anchor="middle" style="fill:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:14px">${t.seed}</text><text x="30" y="${y+23}" style="fill:var(--fg);font-weight:600;font-size:15px">${esc(fit(t.name))}</text>`;
-    return line+`<text x="4" y="${y+23}" style="fill:var(--mute);font-size:14px;font-style:italic">${ref===null?'Bye':'Winner of M'+ref}</text>`;
+    return line+`<text x="4" y="${y+23}" style="fill:var(--mute);font-size:14px;font-style:italic">${ref===null?'Bye':winnerOf(ref)}</text>`;
   };
   const svgs=rs.map((round,r)=>{
     let out='';
