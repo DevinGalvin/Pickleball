@@ -1,8 +1,8 @@
 # Database rules
 
-Two tiers. The group PIN runs a night. The admin PIN changes anything already saved.
+Two tiers. The group PIN runs a night. The admin code changes anything already saved.
 
-| | Group PIN | Admin PIN |
+| | Group PIN | Admin code |
 |---|---|---|
 | Check in, courts, start the night | yes | yes |
 | Score tonight, Undo, swap a matchup, End night | yes | yes |
@@ -16,9 +16,9 @@ A corrected game carries a stamp everyone sees: "Edited by Evan, Nov 10, 7:42 PM
 
 ## Setup
 
-1. Firebase console → Realtime Database → Data. At the root, next to `pin`, add `admin` with a 5-digit string that is not the group PIN.
+1. Firebase console → Realtime Database → Data. At the root, next to `pin`, add `admin` with the admin code as a lowercase string (a word is fine; the app lowercases what is typed, so capitals don't matter).
 2. Rules tab → paste the block below → Publish.
-3. In the app: History → "Wrong score? Admin unlock" → enter the admin PIN → pick your name. Once per phone.
+3. In the app: History → "Wrong score? Admin unlock" → enter the admin code → pick your name. Once per phone.
 
 ```json
 {
@@ -55,7 +55,7 @@ A corrected game carries a stamp everyone sees: "Edited by Evan, Nov 10, 7:42 PM
 ## What the rules enforce
 
 - Anyone with the link can read `/league/data`. Nothing else is readable: not `/pin`, not `/admin`, not `/league/k`.
-- Every write is one update that carries a fresh `/league/k`: `<PIN>:<nonce>` for the group, `A<ADMIN PIN>:<nonce>` for an admin. `k` must differ from the stored one, so a saved token can't be replayed and a write that leaves `k` alone is rejected.
+- Every write is one update that carries a fresh `/league/k`: `<PIN>:<nonce>` for the group, `A<admin code>:<nonce>` for an admin. `k` must differ from the stored one, so a saved token can't be replayed and a write that leaves `k` alone is rejected.
 - Group token: may write `tonight`, `players`, and may create a night that doesn't exist yet (`nights/<next index>`, which is what End night does). It cannot change or delete an existing night, or touch `seasons` or `pairing`.
 - Admin token: may write anything under `/league/data`.
 - Hard-locked by the database: saved nights, seasons, pairing. Locked by the app only: fixing a game from tonight that is still in progress, and rename/remove on the roster. Someone with the group PIN and the skills to talk to the database directly could get past those two; once the night is ended it is hard-locked.

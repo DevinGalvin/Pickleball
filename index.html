@@ -426,7 +426,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
   <div class="card">
     <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
     <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don't have it? Ask the group.</p>
-    <label class="field"><span class="eyebrow">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits"></label>
+    <label class="field"><span class="eyebrow" id="pinLabel">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits"></label>
     <p class="err" id="pinErr"></p>
     <button class="cta" id="pinGo">Unlock scoring</button>
   </div>
@@ -1355,12 +1355,12 @@ function persist(){
   if(z.nights.length>=b.nights.length && b.nights.every((x,i)=>x===z.nights[i])){ for(let i=b.nights.length;i<z.nights.length;i++) u['data/nights/'+i]=z.snap.nights[i]; }
   else { u['data/nights']=z.snap.nights; needAdmin=true; }
   if(!Object.keys(u).length) return;
-  if(needAdmin&&!ADMIN){ resync(); openAdmin('That change needs the admin PIN.'); return; }
+  if(needAdmin&&!ADMIN){ resync(); openAdmin('That change needs the admin code.'); return; }
   const adm=needAdmin||!PIN; lastWrite=z.snap.updatedAt; u['data/updatedAt']=lastWrite; u.k=token(adm); base=z;
   leagueRef.update(u).catch(e=>{
     resync(); // put this phone back on what the league actually holds
     if(String(e.code||e.message).includes('PERMISSION')){
-      if(adm){ ADMIN=null; ADMIN_NAME=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} openAdmin('Admin PIN did not work on this phone. Enter it again and redo that last change.'); }
+      if(adm){ ADMIN=null; ADMIN_NAME=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} openAdmin('Admin code did not work on this phone. Enter it again and redo that last change.'); }
       else { PIN=null; unlocked=false; try{ localStorage.removeItem('pickle-pin'); localStorage.removeItem('pickle-unlocked'); }catch(_){} openPin('Wrong PIN on this phone. Enter it again and redo that last change.'); } }
     else toast('Save failed: '+(e.code||e.message)); $('#sync').className='sync off'; });
 }
@@ -1411,9 +1411,13 @@ document.addEventListener('click', e=>{
 document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
 document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#courts .matchup')){ e.stopPropagation(); } }, true);
 let pinMode='group';
+// one sheet, two inputs: digits for the group PIN, a word for the admin code (not case sensitive)
+function pinField(adminMode){ const i=$('#pinInput'); $('#pinLabel').textContent=adminMode?'Code':'PIN';
+  if(adminMode){ i.setAttribute('inputmode','text'); i.removeAttribute('pattern'); i.maxLength=24; i.placeholder='Admin code'; i.setAttribute('autocomplete','off'); i.setAttribute('autocapitalize','none'); i.setAttribute('autocorrect','off'); i.spellcheck=false; }
+  else { i.setAttribute('inputmode','numeric'); i.setAttribute('pattern','[0-9]*'); i.maxLength=5; i.placeholder='5 digits'; i.setAttribute('autocomplete','one-time-code'); } }
 function openAdmin(msg){
-  pinMode='admin'; if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
-  $('#pinTitle').textContent='Admin PIN';
+  pinMode='admin'; pinField(true); if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
+  $('#pinTitle').textContent='Admin code';
   $('#pinHint').textContent='Admins can fix or delete saved scores, delete a night, edit the roster and run the season. Once per phone.';
   $('#pinGo').textContent='Unlock admin';
   $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
@@ -1427,10 +1431,10 @@ function tryAdmin(v){
     // the name goes on every score this phone corrects
     const pick=p=>{ ADMIN_NAME=p; try{ localStorage.setItem('pickle-admin-name',p); }catch(e){} show(state.tab,state.sub); toast(`Admin unlocked for ${p}`); };
     setTimeout(()=>actionSheet('Admin unlocked','Who are you?',PLAYERS.map(p=>({label:p,run:()=>pick(p)}))),250);
-  }).catch(()=>{ $('#pinErr').textContent='Wrong admin PIN.'; });
+  }).catch(()=>{ $('#pinErr').textContent='Wrong admin code.'; });
 }
 function openPin(msg){
-  pinMode='group'; const creating = pinOnServer===null;
+  pinMode='group'; pinField(false); const creating = pinOnServer===null;
   if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
   $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
   $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\'t have it? Ask the group.';
@@ -1439,9 +1443,9 @@ function openPin(msg){
 }
 $('#pinClose').onclick=()=>{ hideSheet('#pinSheet'); };
 function tryPin(){
+  if(pinMode==='admin'){ const c=$('#pinInput').value.trim().toLowerCase(); if(c.length<3||c.includes(':')){ $('#pinErr').textContent='Enter the admin code.'; return; } tryAdmin(c); return; }
   const v=$('#pinInput').value.trim();
   if(!/^\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
-  if(pinMode==='admin'){ tryAdmin(v); return; }
   const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone'); };
   const wrong=()=>{ $('#pinErr').textContent='Wrong PIN. Ask the group.'; };
   if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
@@ -1456,7 +1460,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='0e5b192a';
+const BUILD='43cbbcc7';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
