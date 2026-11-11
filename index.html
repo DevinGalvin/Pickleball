@@ -1051,7 +1051,7 @@ function renderBracket(){
         row.push({a:adv(x),b:adv(y),fa:x.n,fb:y.n,n:next++}); }
       rs.push(row); cur=row; }
     html=svgBracket(rs,labels);
-    hint=T===2?'One match for the title. Best of 3.':T===3?'Top seed sits out the first round. Winner of 2 vs 3 plays them for the title.':T<size?`Top seeds get a first-round bye.`:`Single elimination. Higher seed takes Side A.`;
+    hint=T===2?'One match for the title. Best of 3.':T===3?'Top seed sits out the first round. Winner of 2 vs 3 plays them for the title. Every match is best of 3.':T<size?`Top seeds get a first-round bye. Every match is best of 3.`:`Single elimination, every match best of 3. Higher seed takes Side A.`;
   }
   $('#bracket').innerHTML=html; wireBracket(); $('#brHint').textContent=hint;
 }
@@ -1381,7 +1381,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='0bc88494';
+const BUILD='b1739944';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
