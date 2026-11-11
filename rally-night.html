@@ -57,6 +57,22 @@ h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-trans
 .chip.late .dot{background:none;border-color:#f5b942;transform:none}
 .chip.late .sub{color:#f5b942}
 .sitnm{font:inherit;color:inherit;padding:6px 0;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
+.mechip{display:flex;align-items:center;gap:6px;min-height:36px;padding:0 12px 0 8px;border-radius:999px;background:var(--panel-2);border:1.5px solid var(--line);font-weight:600;font-size:14px;color:var(--fg);white-space:nowrap}
+.mechip svg{width:18px;height:18px;flex:none}
+.mechip span{max-width:112px;overflow:hidden;text-overflow:ellipsis}
+.mechip.org{border-color:var(--ball)}
+header.top .date{white-space:nowrap}
+.rolepill{display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:var(--panel-2);border:1.5px solid var(--line);color:var(--mute);white-space:nowrap}
+.rolepill.org{border-color:var(--ball);color:var(--ball)}
+.mehead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mebox{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:14px;border-radius:14px;background:var(--panel-2);font-size:15px;line-height:1.4}
+.mebox b{font-weight:700}
+.mebox .who{display:flex;flex-wrap:wrap;gap:8px}
+.mebox .who span{display:inline-flex;align-items:center;min-height:32px;padding:0 12px;border-radius:999px;border:1.5px solid var(--ball);color:var(--ball);font-weight:600;font-size:14px}
+.mebox .who em{color:var(--mute);font-style:normal}
+.lockline{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin-top:10px;padding:6px 12px;border-radius:12px;background:var(--panel-2);color:var(--mute);font-size:14px;text-align:center}
+.lockline svg{width:16px;height:16px;flex:none}
+.textlink{align-self:center;min-height:40px;padding:0 8px;color:var(--mute);font-size:14px;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px}
 .latelink{align-self:center;border:0;color:var(--mute);font-size:14px}
 .latehere{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 8px;width:100%;min-height:44px;margin-top:6px;padding:6px 10px;border-radius:10px;background:var(--panel-2);font-size:14px;font-weight:600;color:#f5b942;text-align:left}
 .latehere b{color:var(--ball);font-weight:700;white-space:nowrap}
@@ -295,7 +311,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 </style>
 
 <div class="app">
-  <header class="top"><h1><svg class="ball" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="ballRim" cx=".6" cy=".4" r=".62"><stop offset=".78" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="var(--ball)"/><circle cx="50" cy="50" r="48" fill="url(#ballRim)"/><g fill="var(--bg)"><circle cx="29.8" cy="14.9" r="3.1"/><circle cx="43.2" cy="14.9" r="3.1"/><circle cx="56.8" cy="14.9" r="3.1"/><circle cx="70.2" cy="14.9" r="3.1"/><circle cx="23.0" cy="26.6" r="3.1"/><circle cx="36.5" cy="26.6" r="3.1"/><circle cx="50.0" cy="26.6" r="3.1"/><circle cx="63.5" cy="26.6" r="3.1"/><circle cx="77.0" cy="26.6" r="3.1"/><circle cx="16.2" cy="38.3" r="3.1"/><circle cx="29.8" cy="38.3" r="3.1"/><circle cx="43.2" cy="38.3" r="3.1"/><circle cx="56.8" cy="38.3" r="3.1"/><circle cx="70.2" cy="38.3" r="3.1"/><circle cx="83.8" cy="38.3" r="3.1"/><circle cx="9.5" cy="50.0" r="3.1"/><circle cx="23.0" cy="50.0" r="3.1"/><circle cx="36.5" cy="50.0" r="3.1"/><circle cx="50.0" cy="50.0" r="3.1"/><circle cx="63.5" cy="50.0" r="3.1"/><circle cx="77.0" cy="50.0" r="3.1"/><circle cx="90.5" cy="50.0" r="3.1"/><circle cx="16.2" cy="61.7" r="3.1"/><circle cx="29.8" cy="61.7" r="3.1"/><circle cx="43.2" cy="61.7" r="3.1"/><circle cx="56.8" cy="61.7" r="3.1"/><circle cx="70.2" cy="61.7" r="3.1"/><circle cx="83.8" cy="61.7" r="3.1"/><circle cx="23.0" cy="73.4" r="3.1"/><circle cx="36.5" cy="73.4" r="3.1"/><circle cx="50.0" cy="73.4" r="3.1"/><circle cx="63.5" cy="73.4" r="3.1"/><circle cx="77.0" cy="73.4" r="3.1"/><circle cx="29.8" cy="85.1" r="3.1"/><circle cx="43.2" cy="85.1" r="3.1"/><circle cx="56.8" cy="85.1" r="3.1"/><circle cx="70.2" cy="85.1" r="3.1"/></g></svg>Pickle</h1><div class="hdr-right"><div class="date" id="hdrDate"></div></div></header>
+  <header class="top"><h1><svg class="ball" viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="ballRim" cx=".6" cy=".4" r=".62"><stop offset=".78" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><circle cx="50" cy="50" r="48" fill="var(--ball)"/><circle cx="50" cy="50" r="48" fill="url(#ballRim)"/><g fill="var(--bg)"><circle cx="29.8" cy="14.9" r="3.1"/><circle cx="43.2" cy="14.9" r="3.1"/><circle cx="56.8" cy="14.9" r="3.1"/><circle cx="70.2" cy="14.9" r="3.1"/><circle cx="23.0" cy="26.6" r="3.1"/><circle cx="36.5" cy="26.6" r="3.1"/><circle cx="50.0" cy="26.6" r="3.1"/><circle cx="63.5" cy="26.6" r="3.1"/><circle cx="77.0" cy="26.6" r="3.1"/><circle cx="16.2" cy="38.3" r="3.1"/><circle cx="29.8" cy="38.3" r="3.1"/><circle cx="43.2" cy="38.3" r="3.1"/><circle cx="56.8" cy="38.3" r="3.1"/><circle cx="70.2" cy="38.3" r="3.1"/><circle cx="83.8" cy="38.3" r="3.1"/><circle cx="9.5" cy="50.0" r="3.1"/><circle cx="23.0" cy="50.0" r="3.1"/><circle cx="36.5" cy="50.0" r="3.1"/><circle cx="50.0" cy="50.0" r="3.1"/><circle cx="63.5" cy="50.0" r="3.1"/><circle cx="77.0" cy="50.0" r="3.1"/><circle cx="90.5" cy="50.0" r="3.1"/><circle cx="16.2" cy="61.7" r="3.1"/><circle cx="29.8" cy="61.7" r="3.1"/><circle cx="43.2" cy="61.7" r="3.1"/><circle cx="56.8" cy="61.7" r="3.1"/><circle cx="70.2" cy="61.7" r="3.1"/><circle cx="83.8" cy="61.7" r="3.1"/><circle cx="23.0" cy="73.4" r="3.1"/><circle cx="36.5" cy="73.4" r="3.1"/><circle cx="50.0" cy="73.4" r="3.1"/><circle cx="63.5" cy="73.4" r="3.1"/><circle cx="77.0" cy="73.4" r="3.1"/><circle cx="29.8" cy="85.1" r="3.1"/><circle cx="43.2" cy="85.1" r="3.1"/><circle cx="56.8" cy="85.1" r="3.1"/><circle cx="70.2" cy="85.1" r="3.1"/></g></svg>Pickle</h1><div class="hdr-right"><div class="date" id="hdrDate"></div><button class="mechip" id="meChip" aria-label="You and your role"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span></span></button></div></header>
   <main>
 
     <!-- TONIGHT: check-in -->
@@ -355,7 +371,6 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <section class="view" id="v-history" hidden>
       <div><p class="eyebrow">All seasons</p><h2>History</h2></div>
       <div class="nights" id="nights"></div>
-      <button class="ghost adminlink" id="adminLink" hidden></button>
     </section>
 
     <!-- HISTORY: night detail -->
@@ -364,7 +379,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
       <div><p class="eyebrow">Night recap</p><h2 id="nightTitle"></h2></div>
       <div class="cards" id="recap"></div>
       <button class="cta" id="copyRecap">Copy recap for the group text</button>
-      <div><p class="eyebrow" style="margin-bottom:8px">Every game</p><div class="log" id="nightLog"></div></div>
+      <div><p class="eyebrow" style="margin-bottom:8px">Every game</p><div class="log" id="nightLog"></div><div class="lockline" id="lockLine" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="lockText"></span></div></div>
       <button class="ghost" id="deleteNight" style="align-self:center;border-color:var(--bad);color:var(--bad)">Delete this night</button>
     </section>
   </main>
@@ -400,6 +415,24 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <p class="hint" id="endHint" hidden>Standings reset and the next season starts with the next night. History keeps everything.</p>
   </div>
 </div>
+<div class="sheet" id="whoSheet" hidden>
+  <div class="card">
+    <div><p class="eyebrow" id="whoEyebrow">Welcome to Pickle</p><h2>Who are you?</h2></div>
+    <p class="hint">Tap your name. This phone will remember it.</p>
+    <div class="pickgrid" id="whoGrid"></div>
+    <button class="textlink" id="whoSkip">I'm not on the list</button>
+  </div>
+</div>
+<div class="sheet" id="meSheet" hidden>
+  <div class="card">
+    <div class="mehead"><div><p class="eyebrow">This phone</p><h2 id="meName"></h2></div><span class="rolepill" id="mePill"></span></div>
+    <div class="mebox"><span id="meCan"></span></div>
+    <div class="mebox"><b>Organizers</b><div class="who" id="meOrgs"></div><span id="meOrgNote">They fix wrong scores, edit the roster and run the season.</span></div>
+    <button class="ghost" id="meRole"></button>
+    <button class="textlink" id="meSwitch"></button>
+    <button class="cta" id="meDone">Done</button>
+  </div>
+</div>
 <div class="sheet" id="pickSheet" hidden>
   <div class="card">
     <div class="row"><h2 id="pickTitle">Pick the players</h2><button class="ghost" id="pickClose">Cancel</button></div>
@@ -431,6 +464,7 @@ NIGHT1.season=1;
 const state = {
   seasons:[{id:1,name:'Season 1',start:'2026-11-03',end:null}],
   pairing:'split',
+  organizers:['Devin','Evan'],
   nights:[NIGHT1],
   tonight:{date:'2026-11-10', present:new Set(['Devin','Kevin','Tom','Evan','Ben']), started:false, games:[], current:null, courts:1},
   scope:'season', pending:null, tab:'tonight', sub:null, player:null, night:null
@@ -565,7 +599,7 @@ function show(tab, sub){
     'v-night':   tab==='history' && state.sub==='night'
   };
   for(const id in pages) document.getElementById(id).hidden=!pages[id];
-  $('#seasonBtn').hidden=!admin(); adminUI(); // season settings are admin-only
+  $('#seasonBtn').hidden=!admin(); // season settings are organizer-only
   pauseSims(!pages['v-court']);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(location.hash!=='#'+tab) history.replaceState(null,'','#'+tab);
@@ -574,6 +608,7 @@ function show(tab, sub){
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderBracket();
   document.querySelector('main').scrollTop=0;
+  roleUI(); firstOpen();
   if(tab==='tonight') staleCheck();
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
@@ -960,7 +995,7 @@ let staleAsked=null;
 function staleNight(){ const T=state.tonight; if(!T.date||!(T.started||T.games.length||normCur(T.current))) return false; return Date.now()>new Date(T.date+'T12:00').getTime()+18*3600*1000; }
 function staleCheck(){ const T=state.tonight; if(!staleNight()||staleAsked===T.date) return; staleAsked=T.date;
   const n=T.games.length+(normCur(T.current)||[]).filter(scored).length;
-  setTimeout(()=>{ if(!staleNight()) return; actionSheet('Still open',`${dateLong(T.date)} was never ended`,[n?{label:`Save it to History · ${n} game${n===1?'':'s'}`,gated:true,run:()=>{ haptic(15); saveNight(); }}:{label:'Clear it · no games were scored',gated:true,run:()=>{ haptic(); const X=state.tonight; X.started=false; X.current=null; delete X.scorer; X.present=new Set(); X.late=new Set(); X.credit=[]; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Cleared. Sign-up is open for the next night.'); }}]); },600); }
+  setTimeout(()=>{ if(!staleNight()) return; if(!$('#whoSheet').hidden){ staleAsked=null; return; } actionSheet('Still open',`${dateLong(T.date)} was never ended`,[n?{label:`Save it to History · ${n} game${n===1?'':'s'}`,gated:true,run:()=>{ haptic(15); saveNight(); }}:{label:'Clear it · no games were scored',gated:true,run:()=>{ haptic(); const X=state.tonight; X.started=false; X.current=null; delete X.scorer; X.present=new Set(); X.late=new Set(); X.credit=[]; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast('Cleared. Sign-up is open for the next night.'); }}]); },600); }
 
 // sheets animate out before they hide
 function hideSheet(sel){ const el=$(sel); if(el.hidden) return; el.classList.add('out'); clearTimeout(el._t); el._t=setTimeout(()=>{ if(el.classList.contains('out')){ el.hidden=true; el.classList.remove('out'); } },200); }
@@ -1320,11 +1355,11 @@ longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=
   const doneAct=on&&state.tonight.games.some(g=>inGame(g,p))?[{label:'Done for the night',gated:true,run:()=>checkOut(p)}]:[];
   actionSheet('Player',p,[lateAct,...doneAct].concat(!admin()?[]:[
     {label:'Rename',run:()=>actionSheet('Rename',p,[{label:'Save name',run:v=>{ if(!v||v===p) return; if(PLAYERS.some(x=>x.toLowerCase()===v.toLowerCase())){ toast(`${v} is already on the roster`); return; }
-      PLAYERS[PLAYERS.indexOf(p)]=v; const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
+      PLAYERS[PLAYERS.indexOf(p)]=v; if(state.organizers) state.organizers=state.organizers.map(x=>x===p?v:x); if(ME===p) setMe(v); const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
       state.nights.forEach(n=>n.games.forEach(fix)); state.tonight.games.forEach(fix); (normCur(state.tonight.current)||[]).forEach(fix);
       if(state.tonight.present.delete(p)) state.tonight.present.add(v); if(lateSet().delete(p)) lateSet().add(v); credits().forEach(c=>{ if(c.p===p) c.p=v; }); renderCheckin(); persist(); toast(`${p} is now ${v}`); }}],{value:p,placeholder:'Name'})},
     {label:played?'Remove from roster':'Remove',danger:true,run:()=>confirmSheet('Remove',played?`${p} has played this season. Past games stay in history; ${p} just leaves the check-in list.`:`Remove ${p} from the roster?`,'Yes, remove',()=>{
-      PLAYERS.splice(PLAYERS.indexOf(p),1); state.tonight.present.delete(p); lateSet().delete(p); flushScored(); renderCheckin(); persist(); toast(`${p} removed`); })}
+      PLAYERS.splice(PLAYERS.indexOf(p),1); if(state.organizers) state.organizers=state.organizers.filter(x=>x!==p); state.tonight.present.delete(p); lateSet().delete(p); flushScored(); renderCheckin(); persist(); toast(`${p} removed`); })}
   ])); });
 
 // 4. the drawn matchup: swap partners or redraw, for when the algorithm's pick isn't what the court wants
@@ -1363,9 +1398,38 @@ $('#pickSave').onclick=()=>{ if(!pick||pick.sel.length!==4) return; const sel=pi
 longPress($('#courts'),'.matchup',el=>asScorer(()=>matchupActions(+el.dataset.i)));
 $('#courts').addEventListener('click',e=>{ const b=e.target.closest('.matchup.changeBtn'); if(b) asScorer(()=>matchupActions(+b.dataset.i)); });
 
-// ---------- persistence + admin hooks (no-ops in the demo; the live build replaces them) ----------
+// ---------- who is holding this phone, and what they can do ----------
+// One tap on first open, remembered on the phone. It is not a login: it only lets the app say "you're Tom, a player;
+// Devin and Evan are the organizers" and put a name on a corrected score. Being an organizer still takes the code.
+let ME=null; try{ ME=localStorage.getItem('pickle-me')||localStorage.getItem('pickle-admin-name'); }catch(e){} // null = never asked, '-' = not on the list
+const me=()=>ME&&ME!=='-'&&PLAYERS.includes(ME)?ME:null;
+function setMe(p){ ME=p; try{ localStorage.setItem('pickle-me',p); }catch(e){} }
+function adminName(){ return me()||'an organizer'; }
+const orgs=()=>(state.organizers||[]).filter(p=>PLAYERS.includes(p));
+const orgNames=()=>{ const o=orgs(); return !o.length?'An organizer':o.length===1?o[0]:o.slice(0,-1).join(', ')+' or '+o[o.length-1]; };
+function claimOrg(){ const n=me(); if(admin()&&n&&!orgs().includes(n)){ state.organizers=orgs().concat(n); persist(); } } // organizers are listed for everyone to see
+function roleUI(){ const c=$('#meChip'), n=me(); c.className='mechip'+(admin()&&n?' org':''); c.lastElementChild.textContent=n||(ME==='-'?'Watching':'Who are you?');
+  $('#lockLine').hidden=admin(); $('#lockText').textContent=`Scores are locked. ${orgNames()} can fix one.`;
+  const d=$('#hdrDate'), h=document.querySelector('header.top'); d.hidden=false; if(h.scrollWidth>h.clientWidth+1) d.hidden=true; } // the name wins the corner when both won't fit
+let whoShown=false;
+function firstOpen(){ if(ME!==null||whoShown||!PLAYERS.length) return; whoShown=true; setTimeout(()=>{ if(ME===null) openWho(true); },400); }
+function openWho(first){ $('#whoEyebrow').textContent=first?'Welcome to Pickle':'This phone'; const n=me();
+  $('#whoGrid').innerHTML=PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>`<button class="pk ${p===n?'a':''}" data-p="${encodeURIComponent(p)}"><span>${escH(p)}</span><span class="tg">${p===n?'You':''}</span></button>`).join(''); showSheet('#whoSheet'); }
+$('#whoGrid').addEventListener('click',e=>{ const b=e.target.closest('.pk'); if(!b) return; const p=decodeURIComponent(b.dataset.p), old=me(); haptic(); setMe(p);
+  if(admin()&&old&&old!==p&&orgs().includes(old)){ state.organizers=orgs().filter(x=>x!==old).concat(p); persist(); } else claimOrg();
+  hideSheet('#whoSheet'); show(state.tab,state.sub); toast(`Hi ${p}`); });
+$('#whoSkip').onclick=()=>{ if(!me()) setMe('-'); hideSheet('#whoSheet'); roleUI(); };
+function openMe(){ const n=me(); if(!n){ openWho(false); return; } const org=admin(), o=orgs();
+  $('#meName').textContent=n; $('#mePill').textContent=org?'Organizer':'Player'; $('#mePill').className='rolepill'+(org?' org':'');
+  $('#meCan').textContent=org?'You can fix or delete saved scores, edit the roster and run the season.':'You can check in, keep score and end the night.';
+  $('#meOrgs').innerHTML=o.length?o.map(x=>`<span>${escH(x)}${x===n?' (you)':''}</span>`).join(''):'<em>Nobody yet</em>'; $('#meOrgNote').hidden=org;
+  $('#meRole').textContent=org?'Stop being an organizer on this phone':"I'm an organizer"; $('#meSwitch').textContent=`Not ${n}? Change name`; showSheet('#meSheet'); }
+$('#meChip').onclick=openMe; $('#meDone').onclick=()=>hideSheet('#meSheet');
+$('#meRole').onclick=()=>{ hideSheet('#meSheet'); if(admin()) stopOrganizer(); else becomeOrganizer(); };
+$('#meSwitch').onclick=()=>{ hideSheet('#meSheet'); openWho(false); };
+// ---------- persistence + organizer hooks (no-ops in the demo; the live build replaces them) ----------
 function persist(){}
-function admin(){ return true; } function adminName(){ return 'Devin'; } function adminUI(){}
+function admin(){ return true; } function becomeOrganizer(){} function stopOrganizer(){}
 
 // ---------- misc ----------
 let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,1800); }

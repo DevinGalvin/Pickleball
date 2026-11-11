@@ -4,7 +4,8 @@ Weekly pickleball league app: check-in, court rotation, tap-to-score, standings,
 
 - Static page, hosted on GitHub Pages.
 - Data lives in one Firebase Realtime Database document (`/league/data`). Any phone with the link can view.
-- Two PINs. The group PIN (`/pin`) runs a night: check in, score, end the night. The admin PIN (`/admin`) fixes saved scores, deletes nights, edits the roster and runs the season. See `RULES.md` for the rules and setup.
+- Two tiers. The group PIN (`/pin`) runs a night: check in, score, end the night. The organizer code (`/admin`) fixes saved scores, deletes nights, edits the roster and runs the season. See `RULES.md`.
+- Each phone is asked "Who are you?" once. Your name sits top right; tap it to see your role, who the organizers are, and to become one.
 - Install on a phone: open the link in Safari, Share, Add to Home Screen.
 
 ## Editing the app

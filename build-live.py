@@ -59,8 +59,8 @@ extra_markup = '''<div class="sheet" id="pinSheet" hidden>
 s = s.replace('<div class="toast" id="toast" hidden></div>', extra_markup, 1)
 
 # status dot in the header
-assert '<div class="date" id="hdrDate"></div></div>' in s, 'header slot missing'
-s = s.replace('<div class="date" id="hdrDate"></div></div>', '<div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span></div>', 1)
+assert '<div class="date" id="hdrDate"></div><button class="mechip"' in s, 'header slot missing'
+s = s.replace('<div class="date" id="hdrDate"></div><button class="mechip"', '<div class="date" id="hdrDate"></div><span class="sync" id="sync" title="Live"></span><button class="mechip"', 1)
 # (.sync and #connecting styles live in rally-night.html so this file never depends on the header's CSS text)
 
 sync_js = '''// ---------- live sync (Firebase Realtime Database) ----------
@@ -70,10 +70,9 @@ sync_js = '''// ---------- live sync (Firebase Realtime Database) ----------
 const LIVE = location.hostname==='devingalvin.github.io';
 // Two tiers (see RULES.md). Group PIN: check in, score tonight, end the night. Admin PIN: fix or delete saved games,
 // delete nights, rename/remove players, season settings. Off the live host, ?admin=0 previews the non-admin view.
-let ADMIN=null, ADMIN_NAME=null; try{ ADMIN=localStorage.getItem('pickle-admin'); ADMIN_NAME=localStorage.getItem('pickle-admin-name'); }catch(e){}
-if(!LIVE){ ADMIN=/[?&]admin=0/.test(location.search)?null:'demo'; ADMIN_NAME='Devin'; }
-function admin(){ return !!ADMIN; } function adminName(){ return ADMIN_NAME||'Admin'; }
-function adminUI(){ const b=$('#adminLink'); b.hidden=false; b.textContent=admin()?`Admin: ${adminName()}`:'Wrong score? Admin unlock'; }
+let ADMIN=null; try{ ADMIN=localStorage.getItem('pickle-admin'); }catch(e){}
+if(!LIVE){ ADMIN=/[?&]admin=0/.test(location.search)?null:'demo'; }
+function admin(){ return !!ADMIN; } function becomeOrganizer(){ openAdmin(); } function stopOrganizer(){ lockAdmin(); }
 if(!LIVE){ $('#connecting').hidden=true; const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null); console.warn('Pickle: not on the live host, running offline on demo data'); }
 else firebase.initializeApp(''' + cfg + ''');
 const stubRef={ on(){}, set(){ return Promise.resolve(); }, update(){ return Promise.resolve(); }, child(){ return stubRef; }, once(){ return Promise.resolve({val:()=>null}); } };
@@ -89,10 +88,10 @@ const token=adm=>adm? 'A'+ADMIN+':'+nonce() : PIN+':'+nonce();
 let applying=false, loaded=false, lastWrite=null, blocked=false; // blocked: nothing to sync against; never write demo data over the league
 let base=null; // what the server holds, part by part, as of the last sync
 const J=JSON.stringify;
-function parts(){ const s=snapshotState(); return { snap:s, players:J(s.players), tonight:J(s.tonight), seasons:J(s.seasons), pairing:J(s.pairing), nights:s.nights.map(n=>J(n)) }; }
+function parts(){ const s=snapshotState(); return { snap:s, players:J(s.players), tonight:J(s.tonight), seasons:J(s.seasons), pairing:J(s.pairing), organizers:J(s.organizers), nights:s.nights.map(n=>J(n)) }; }
 function resync(){ dataRef.once('value').then(s=>{ if(s.val()) applyRemote(s.val()); }).catch(()=>{}); }
 function snapshotState(){
-  return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, nights:state.nights,
+  return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, organizers:orgs(), nights:state.nights,
     tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null, late:[...lateSet()].filter(p=>state.tonight.present.has(p)), credit:credits() },
     updatedAt: Date.now() };
 }
@@ -104,16 +103,17 @@ function persist(){
   if(z.tonight!==b.tonight) u['data/tonight']=z.snap.tonight;
   if(z.seasons!==b.seasons){ u['data/seasons']=z.snap.seasons; needAdmin=true; }
   if(z.pairing!==b.pairing){ u['data/pairing']=z.snap.pairing; needAdmin=true; }
+  if(z.organizers!==b.organizers){ u['data/organizers']=z.snap.organizers; needAdmin=true; }
   // saved nights: adding one at the end is open to the group (End night); touching an existing one is an admin write
   if(z.nights.length>=b.nights.length && b.nights.every((x,i)=>x===z.nights[i])){ for(let i=b.nights.length;i<z.nights.length;i++) u['data/nights/'+i]=z.snap.nights[i]; }
   else { u['data/nights']=z.snap.nights; needAdmin=true; }
   if(!Object.keys(u).length) return;
-  if(needAdmin&&!ADMIN){ resync(); openAdmin('That change needs the admin code.'); return; }
+  if(needAdmin&&!ADMIN){ resync(); openAdmin('That change needs an organizer.'); return; }
   const adm=needAdmin||!PIN; lastWrite=z.snap.updatedAt; u['data/updatedAt']=lastWrite; u.k=token(adm); base=z;
   leagueRef.update(u).catch(e=>{
     resync(); // put this phone back on what the league actually holds
     if(String(e.code||e.message).includes('PERMISSION')){
-      if(adm){ ADMIN=null; ADMIN_NAME=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} openAdmin('Admin code did not work on this phone. Enter it again and redo that last change.'); }
+      if(adm){ ADMIN=null; try{ localStorage.removeItem('pickle-admin'); }catch(_){} show(state.tab,state.sub); openAdmin('The organizer code did not work on this phone. Enter it again and redo that last change.'); }
       else { PIN=null; unlocked=false; try{ localStorage.removeItem('pickle-pin'); localStorage.removeItem('pickle-unlocked'); }catch(_){} openPin('Wrong PIN on this phone. Enter it again and redo that last change.'); } }
     else toast('Save failed: '+(e.code||e.message)); $('#sync').className='sync off'; });
 }
@@ -121,7 +121,7 @@ function applyRemote(d){
   if(!d) return;
   applying=true;
   try{
-    PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split';
+    PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split'; state.organizers = d.organizers||[];
     state.nights = (d.nights||[]).map(n=>({date:n.date, season:n.season, games:n.games||[]}));
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
     const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null, late:new Set(t.late||[]), credit:(t.credit||[]).filter(c=>c&&c.p) };
@@ -136,7 +136,7 @@ dataRef.on('value', snap=>{
   const d=snap.val();
   if(!loaded){
     loaded=true; $('#connecting').hidden=true;
-    if(d){ applyRemote(d); startView(); return; }
+    if(d){ applyRemote(d); startView(); claimOrg(); return; }
     // nothing at /league/data: don't guess, and never write demo data over a league we couldn't read
     blocked=true; startView(); toast('No league data found. Nothing will be saved.');
     return;
@@ -166,25 +166,24 @@ document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('
 let pinMode='group';
 // one sheet, two inputs: digits for the group PIN, a word for the admin code (not case sensitive)
 function pinField(adminMode){ const i=$('#pinInput'); $('#pinLabel').textContent=adminMode?'Code':'PIN';
-  if(adminMode){ i.setAttribute('inputmode','text'); i.removeAttribute('pattern'); i.maxLength=24; i.placeholder='Admin code'; i.setAttribute('autocomplete','off'); i.setAttribute('autocapitalize','none'); i.setAttribute('autocorrect','off'); i.spellcheck=false; }
+  if(adminMode){ i.setAttribute('inputmode','text'); i.removeAttribute('pattern'); i.maxLength=24; i.placeholder='Organizer code'; i.setAttribute('autocomplete','off'); i.setAttribute('autocapitalize','none'); i.setAttribute('autocorrect','off'); i.spellcheck=false; }
   else { i.setAttribute('inputmode','numeric'); i.setAttribute('pattern','[0-9]*'); i.maxLength=5; i.placeholder='5 digits'; i.setAttribute('autocomplete','one-time-code'); } }
 function openAdmin(msg){
   pinMode='admin'; pinField(true); if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
-  $('#pinTitle').textContent='Admin code';
-  $('#pinHint').textContent='Admins can fix or delete saved scores, delete a night, edit the roster and run the season. Once per phone.';
-  $('#pinGo').textContent='Unlock admin';
+  $('#pinTitle').textContent='Organizer code';
+  $('#pinHint').textContent=(orgs().length?`Ask ${orgNames()} for the code.`:'Ask whoever runs the league for the code.')+' You only enter it once on this phone.';
+  $('#pinGo').textContent='Make me an organizer';
   $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
 }
-function lockAdmin(){ ADMIN=null; ADMIN_NAME=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} if(!PIN) unlocked=false; show(state.tab,state.sub); toast('Admin locked on this phone'); }
-$('#adminLink').onclick=()=>{ if(admin()) actionSheet('Admin',`${adminName()} can fix scores on this phone`,[{label:'Lock admin on this phone',run:lockAdmin}]); else openAdmin(); };
+function lockAdmin(){ const n=me(); if(n&&orgs().includes(n)){ state.organizers=orgs().filter(x=>x!==n); persist(); } // off the list everyone sees, while this phone can still write it
+  ADMIN=null; try{ localStorage.removeItem('pickle-admin'); localStorage.removeItem('pickle-admin-name'); }catch(_){} if(!PIN) unlocked=false; show(state.tab,state.sub); toast('This phone is no longer an organizer'); }
 function tryAdmin(v){
   $('#pinErr').textContent='Checking…';
   leagueRef.child('k').set('A'+v+':'+nonce()).then(()=>{
-    ADMIN=v; unlocked=true; try{ localStorage.setItem('pickle-admin',v); }catch(e){} hideSheet('#pinSheet'); show(state.tab,state.sub);
-    // the name goes on every score this phone corrects
-    const pick=p=>{ ADMIN_NAME=p; try{ localStorage.setItem('pickle-admin-name',p); }catch(e){} show(state.tab,state.sub); toast(`Admin unlocked for ${p}`); };
-    setTimeout(()=>actionSheet('Admin unlocked','Who are you?',PLAYERS.map(p=>({label:p,run:()=>pick(p)}))),250);
-  }).catch(()=>{ $('#pinErr').textContent='Wrong admin code.'; });
+    ADMIN=v; unlocked=true; try{ localStorage.setItem('pickle-admin',v); }catch(e){} hideSheet('#pinSheet');
+    // the name goes on the organizer list and on every score this phone corrects
+    if(me()){ claimOrg(); show(state.tab,state.sub); toast(`You're an organizer, ${me()}`); } else { show(state.tab,state.sub); setTimeout(()=>openWho(false),250); }
+  }).catch(()=>{ $('#pinErr').textContent='Wrong code.'; });
 }
 function openPin(msg){
   pinMode='group'; pinField(false); const creating = pinOnServer===null;
@@ -196,7 +195,7 @@ function openPin(msg){
 }
 $('#pinClose').onclick=()=>{ hideSheet('#pinSheet'); };
 function tryPin(){
-  if(pinMode==='admin'){ const c=$('#pinInput').value.trim().toLowerCase(); if(c.length<3||c.includes(':')){ $('#pinErr').textContent='Enter the admin code.'; return; } tryAdmin(c); return; }
+  if(pinMode==='admin'){ const c=$('#pinInput').value.trim().toLowerCase(); if(c.length<3||c.includes(':')){ $('#pinErr').textContent='Enter the organizer code.'; return; } tryAdmin(c); return; }
   const v=$('#pinInput').value.trim();
   if(!/^\\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
   const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone'); };
@@ -210,7 +209,7 @@ $('#pinGo').onclick=tryPin; $('#pinInput').addEventListener('keydown',e=>{ if(e.
 '''
 
 # replace the no-op hook and the startup lines
-HOOK = "// ---------- persistence + admin hooks (no-ops in the demo; the live build replaces them) ----------\nfunction persist(){}\nfunction admin(){ return true; } function adminName(){ return 'Devin'; } function adminUI(){}\n"
+HOOK = "// ---------- persistence + organizer hooks (no-ops in the demo; the live build replaces them) ----------\nfunction persist(){}\nfunction admin(){ return true; } function becomeOrganizer(){} function stopOrganizer(){}\n"
 assert HOOK in s, 'hook block missing'
 s = s.replace(HOOK, sync_js, 1)
 startup = "const h=(location.hash||'#tonight').slice(1); show(['tonight','season','bracket','history'].includes(h)?h:'tonight', null);\n"

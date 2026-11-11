@@ -18,7 +18,7 @@ A corrected game carries a stamp everyone sees: "Edited by Evan, Nov 10, 7:42 PM
 
 1. Firebase console → Realtime Database → Data. At the root, next to `pin`, add `admin` with the admin code as a lowercase string (a word is fine; the app lowercases what is typed, so capitals don't matter).
 2. Rules tab → paste the block below → Publish.
-3. In the app: History → "Wrong score? Admin unlock" → enter the admin code → pick your name. Once per phone.
+3. In the app: tap your name (top right) → "I'm an organizer" → enter the code. Once per phone. The app calls this role Organizer; the database path is still `/admin`.
 
 ```json
 {
@@ -62,6 +62,11 @@ A corrected game carries a stamp everyone sees: "Edited by Evan, Nov 10, 7:42 PM
 - Change either PIN by editing `/pin` or `/admin` in the console. Phones are asked for the new one on their next change.
 
 Tested in the Firebase emulator (28 permission checks plus a two-phone run of the app).
+
+## Who the app thinks you are
+
+- On first open each phone is asked "Who are you?" and remembers the name. It is not a login and grants nothing; it lets the app show your role and put a name on a corrected score.
+- `/league/data/organizers` is the list of organizer names everyone sees. An organizer phone adds its own name; only the organizer code can write it.
 
 ## Layout
 
