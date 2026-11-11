@@ -580,10 +580,10 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dat
 
 // ---------- check-in ----------
 function renderCheckin(){
-  const t=tally(state.nights.flatMap(n=>n.games));
+  const t=tally(state.nights.flatMap(n=>n.games)); const tn=tally(state.tonight.games);
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
-  $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const s=t[p];
-    return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
+  $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const s=t[p]; const tg=tn[p]?tn[p].gp:0;
+    return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} tonight kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
     + (adding?'':`<button class="chip add" id="addBtn">+ Add a new player</button>`);
   $('#addrow').hidden=!adding;
   const T=state.tonight; const np=T.present.size; const LATE=[...lateSet()].filter(p=>T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const n=np-LATE.length; // n = at the court now
@@ -630,7 +630,10 @@ function startNight(date){ haptic(15); if(!state.tonight.games.length) state.ton
 $('#roster').addEventListener('click',e=>{
   if(e.target.closest('#addBtn')){ adding=true; renderCheckin(); $('#newName').focus(); return; }
   const b=e.target.closest('.chip'); if(!b||!b.dataset.p) return; const p=b.dataset.p;
-  if(state.tonight.present.has(p)){ state.tonight.present.delete(p); lateSet().delete(p); } else state.tonight.present.add(p); haptic(); flushScored(); renderCheckin(); persist(); });
+  if(state.tonight.present.has(p)) checkOut(p); else { state.tonight.present.add(p); haptic(); flushScored(); renderCheckin(); persist(); } });
+// Taking a name off mid-night only stops him being drawn. Say so, because it looks like it might wipe his games.
+function checkOut(p){ const T=state.tonight; T.present.delete(p); lateSet().delete(p); haptic(); flushScored(); const tg=(tally(T.games)[p]||{}).gp||0; renderCheckin(); persist();
+  if(tg) toast(`${p} is done. His ${tg} game${tg===1?'':'s'} tonight still count${tg===1?'s':''}.`); }
 $('#courtsSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const c=+b.dataset.c; if(c===state.tonight.courts) return;
   state.tonight.courts=c; flushScored(); renderCheckin(); persist(); });
 function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
@@ -1314,7 +1317,8 @@ longPress($('#roster'),'.chip[data-p]',el=>{ const p=el.dataset.p; const played=
   const on=state.tonight.present.has(p), late=on&&lateSet().has(p);
   const lateAct=late? {label:'Here now',gated:true,run:()=>{ haptic(); arrive(p); flushScored(); renderCheckin(); persist(); toast(`${p} is in the draw`); }}
     : {label:on?'Running late':'In, but running late',gated:true,run:()=>{ haptic(); state.tonight.present.add(p); lateSet().add(p); flushScored(); renderCheckin(); persist(); toast(`${p} sits out until he arrives`); }};
-  actionSheet('Player',p,[lateAct].concat(!admin()?[]:[
+  const doneAct=on&&state.tonight.games.some(g=>inGame(g,p))?[{label:'Done for the night',gated:true,run:()=>checkOut(p)}]:[];
+  actionSheet('Player',p,[lateAct,...doneAct].concat(!admin()?[]:[
     {label:'Rename',run:()=>actionSheet('Rename',p,[{label:'Save name',run:v=>{ if(!v||v===p) return; if(PLAYERS.some(x=>x.toLowerCase()===v.toLowerCase())){ toast(`${v} is already on the roster`); return; }
       PLAYERS[PLAYERS.indexOf(p)]=v; const fix=g=>{ g.a=g.a.map(x=>x===p?v:x); g.b=g.b.map(x=>x===p?v:x); };
       state.nights.forEach(n=>n.games.forEach(fix)); state.tonight.games.forEach(fix); (normCur(state.tonight.current)||[]).forEach(fix);
