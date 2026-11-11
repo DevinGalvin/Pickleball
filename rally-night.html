@@ -185,6 +185,11 @@ header.top .date{white-space:nowrap}
 .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
 .stat{grid-column:span 2}
 .stat.half{grid-column:span 3}
+.rec{cursor:pointer;text-align:left;color:inherit;font:inherit}
+.rec .v small{font-family:var(--body,inherit);font-size:15px;font-weight:600;color:var(--mute);margin-left:6px}
+.rechead{grid-column:1/-1;margin:10px 0 0}
+.stat.wide{grid-column:1/-1}
+.form{display:flex;align-items:center;gap:2px;height:18px;margin-top:4px}.form i{width:6px;height:6px;flex:none;border-radius:50%;background:var(--bad)}.form i.w{background:var(--good)}
 /* rule: any card whose height is set by its neighbors or by the screen centers its content vertically, never top-aligns with dead space below */
 .stat{background:var(--panel);border-radius:14px;padding:12px;min-width:0;display:flex;flex-direction:column;justify-content:center}
 .stat.big{grid-column:1/-1;background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}
@@ -370,7 +375,9 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <!-- HISTORY: nights list -->
     <section class="view" id="v-history" hidden>
       <div><p class="eyebrow">All seasons</p><h2>History</h2></div>
+      <div class="seg" id="histSeg"><button class="on" data-h="records">Records</button><button data-h="nights">Nights</button></div>
       <div class="nights" id="nights"></div>
+      <div id="records" hidden></div>
     </section>
 
     <!-- HISTORY: night detail -->
@@ -512,6 +519,8 @@ const inGame = (g,p)=>g.a.includes(p)||g.b.includes(p);
 const dateLong = d => new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
 const dateShort = d => new Date(d+'T12:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
 function diffs(g){ const d=g.sa-g.sb; const m={}; g.a.forEach(p=>m[p]=d); g.b.forEach(p=>m[p]=-d); return m; }
+// Night MVP: best +/- of the night; ties go to more wins, then fewer games. One rule for the night page, History and the MVP count.
+function mvpOf(t){ return Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm||t[b].w-t[a].w||t[a].gp-t[b].gp||a.localeCompare(b))[0]; }
 function tally(games){ const t={}; games.forEach(g=>{ const d=diffs(g); for(const p in d){ t[p]=t[p]||{pm:0,gp:0,w:0,l:0}; t[p].pm+=d[p]; t[p].gp++; d[p]>0?t[p].w++:t[p].l++; } }); return t; }
 const season = ()=>state.seasons[state.seasons.length-1];
 // every night ever, including the one in progress
@@ -1208,9 +1217,16 @@ function renderPlayer(){
   const rating=t.pm/(t.gp+SHRINK); const np=nightsPlayed(p); const avg=t.pm/t.gp;
   // Lead with rank: that's what the rating is for. The rating itself is a formula (total ÷ games+SHRINK), so it gets one plain line.
   const rows=ranking(false).filter(r=>r.s); const rank=rows.findIndex(r=>r.p===p)+1;
+  // form: current streak, the last ten games, and nights finished as MVP (a night still in progress doesn't count yet)
+  const res=games.map(g=>diffs(g)[p]>0); let streak=0; for(let i=res.length-1;i>=0&&res[i]===res[res.length-1];i--) streak++;
+  const sw=res[res.length-1]; const last=res.slice(-10); const lw=last.filter(Boolean).length;
+  const done=nights.filter(n=>!n.live&&n.games.some(g=>inGame(g,p))); const mvps=done.filter(n=>mvpOf(tally(n.games))===p).length;
   const ratingNote=Math.abs(rating-avg)<0.05?`Rating ${fmt(r1(rating))}`:`Rating ${fmt(r1(rating))} · nears your avg with more games`;
   $('#plStats').innerHTML=`
     <div class="stat big ${t.pm<0?'down':''}"><p class="eyebrow">Season</p><div class="v num">#${rank}<small style="font-size:16px;color:var(--mute);margin-left:6px">of ${rows.length}</small></div><div class="d num"><span class="${t.pm>0?'pos':t.pm<0?'neg':''}">${fmt(t.pm)} total</span> · ${fmt(r1(avg))} per game · ${t.w}–${t.l} · ${np} night${np===1?'':'s'}</div><div class="d num">${ratingNote}</div></div>
+    <div class="stat"><p class="eyebrow">Streak</p><div class="v num ${sw?'pos':'neg'}">${sw?'W':'L'}${streak}</div><div class="d">${streak} ${sw?'win':'loss'}${streak===1?'':sw?'s':'es'} in a row</div></div>
+    <div class="stat"><p class="eyebrow">Last ${last.length}</p><div class="v num">${lw}–${last.length-lw}</div><div class="form" aria-hidden="true">${last.map(w=>`<i class="${w?'w':''}"></i>`).join('')}</div></div>
+    <div class="stat"><p class="eyebrow">Night MVP</p><div class="v num">${mvps}</div><div class="d">of ${done.length} night${done.length===1?'':'s'}</div></div>
     <div class="stat half"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
     <div class="stat half"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
     ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}`;
@@ -1258,9 +1274,59 @@ function barChart(bars,title){
 }
 
 // ---------- history ----------
+// ---------- league records: all seasons, finished nights only ----------
+let histMode=null; // Records leads once there are two saved nights; with one, the records are just that night's recap, so the list leads
+$('#histSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; histMode=b.dataset.h; haptic(); renderHistory(); document.querySelector('main').scrollTop=0; });
+$('#records').addEventListener('click',e=>{ const b=e.target.closest('.rec'); if(!b) return; haptic();
+  if(b.dataset.night){ state.night=+b.dataset.night; show('history','night'); } else if(b.dataset.player){ state.player=decodeURIComponent(b.dataset.player); show('season','player'); } });
+function records(){
+  const all=allNightsEver(); const nights=all.map((n,i)=>({n,i})).filter(x=>!x.n.live); const R={};
+  const games=[]; nights.forEach(({n,i})=>n.games.forEach(g=>games.push({g,i,date:n.date})));
+  if(!games.length) return null;
+  const day=d=>dateShort(d).replace(/^\w+,\s*/,''); const top=(o,f)=>Object.keys(o).sort((a,b)=>f(o[b])-f(o[a])||a.localeCompare(b))[0];
+  // streaks: longest run of wins and of losses, and the run each player is on now
+  const seq={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d)(seq[p]=seq[p]||[]).push({w:d[p]>0,i:x.i,date:x.date}); });
+  const best={w:null,l:null}, cur={};
+  for(const p in seq){ let run=0,kind=null,start=null; seq[p].forEach(r=>{ if(r.w===kind) run++; else { kind=r.w; run=1; start=r; } const k=kind?'w':'l'; if(!best[k]||run>best[k].n) best[k]={p,n:run,from:start.date,to:r.date,i:r.i}; }); cur[p]={n:run,w:kind}; }
+  R.winStreak=best.w; R.loseStreak=best.l; const hp=Object.keys(cur).filter(p=>cur[p].w).sort((a,b)=>cur[b].n-cur[a].n||a.localeCompare(b))[0]; R.hot=hp?{p:hp,n:cur[hp].n}:null;
+  // nights: MVP count, best and worst single night
+  const mv={}; let bn=null, wn=null; nights.forEach(({n,i})=>{ const t=tally(n.games); if(!Object.keys(t).length) return; const m=mvpOf(t); mv[m]=(mv[m]||0)+1;
+    for(const p in t){ if(!bn||t[p].pm>bn.pm) bn={p,pm:t[p].pm,date:n.date,i}; if(!wn||t[p].pm<wn.pm) wn={p,pm:t[p].pm,date:n.date,i}; } });
+  const mp=top(mv,v=>v); R.mvp={p:mp,n:mv[mp]}; R.bestNight=bn; R.worstNight=wn;
+  // pairs with a real sample
+  const pr={}; games.forEach(x=>{ [[x.g.a,x.g.sa-x.g.sb],[x.g.b,x.g.sb-x.g.sa]].forEach(([t,d])=>{ const k=t.slice().sort().join(' & '); pr[k]=pr[k]||{pm:0,n:0}; pr[k].pm+=d; pr[k].n++; }); });
+  const pk=Object.keys(pr).filter(k=>pr[k].n>=3).sort((a,b)=>pr[b].pm/pr[b].n-pr[a].pm/pr[a].n)[0]; R.pair=pk?{k:pk,avg:pr[pk].pm/pr[pk].n,n:pr[pk].n}:null;
+  // single games
+  const line=x=>{ const aw=x.g.sa>x.g.sb; return {score:`${Math.max(x.g.sa,x.g.sb)}–${Math.min(x.g.sa,x.g.sb)}`,who:`${(aw?x.g.a:x.g.b).join(' & ')} over ${(aw?x.g.b:x.g.a).join(' & ')}`,date:x.date,i:x.i}; };
+  const mar=x=>Math.abs(x.g.sa-x.g.sb), tot=x=>x.g.sa+x.g.sb;
+  R.blowout=line(games.slice().sort((a,b)=>mar(b)-mar(a))[0]); R.marathon=line(games.slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]);
+  // bagels and games played
+  const gave={}, ate={}, gp={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d) gp[p]=(gp[p]||0)+1; if(Math.min(x.g.sa,x.g.sb)===0){ const aw=x.g.sa>x.g.sb; (aw?x.g.a:x.g.b).forEach(p=>gave[p]=(gave[p]||0)+1); (aw?x.g.b:x.g.a).forEach(p=>ate[p]=(ate[p]||0)+1); } });
+  const gv=top(gave,v=>v), at=top(ate,v=>v), ir=top(gp,v=>v); R.gave=gv?{p:gv,n:gave[gv]}:null; R.ate=at?{p:at,n:ate[at]}:null; R.iron={p:ir,n:gp[ir]};
+  R.day=day; R.nights=nights.length; R.games=games.length; return R; }
+function renderRecords(){ const R=records(); const el=$('#records');
+  if(!R){ el.innerHTML='<div class="stats"><div class="stat big"><div class="d">Records start after the first night is saved.</div></div></div>'; return; }
+  const P=(cls,label,v,d,attr)=>`<button class="stat rec ${cls}" ${attr}><p class="eyebrow">${label}</p><div class="v">${v}</div><div class="d num">${d}</div></button>`;
+  const pl=p=>`data-player="${encodeURIComponent(p)}"`, ni=i=>`data-night="${i}"`, span=(a,b)=>a===b?R.day(a):`${R.day(a)} to ${R.day(b)}`;
+  // an odd tile out takes the full row, so a section never ends on a half-empty line
+  const fill=a=>{ a=a.filter(Boolean); if(a.length%2) a[a.length-1]=a[a.length-1].replace('stat rec half','stat rec wide'); return a.join(''); };
+  el.innerHTML=`<div class="stats">${P('big','Longest win streak',`${escH(R.winStreak.p)}<small>${R.winStreak.n} straight</small>`,span(R.winStreak.from,R.winStreak.to),pl(R.winStreak.p))}${fill([R.hot&&!(R.hot.p===R.winStreak.p&&R.hot.n===R.winStreak.n)?P('half','Hot hand',`${escH(R.hot.p)}<small>W${R.hot.n}</small>`,'Longest streak still alive',pl(R.hot.p)):'',
+    P('half','Most Night MVPs',`${escH(R.mvp.p)}<small>${R.mvp.n}</small>`,`of ${R.nights} night${R.nights===1?'':'s'}`,pl(R.mvp.p)),
+    P('half','Best night',`<span class="num pos">${fmt(R.bestNight.pm)}</span>`,`${escH(R.bestNight.p)} · ${R.day(R.bestNight.date)}`,ni(R.bestNight.i)),
+    R.pair?P('half','Best pair',`<span class="num">${fmt(r1(R.pair.avg))}</span><small>avg</small>`,`${escH(R.pair.k)} · ${R.pair.n} games`,''):'',
+    P('half','Biggest blowout',`<span class="num">${R.blowout.score}</span>`,`${escH(R.blowout.who)} · ${R.day(R.blowout.date)}`,ni(R.blowout.i)),
+    P('half','Longest game',`<span class="num">${R.marathon.score}</span>`,`${escH(R.marathon.who)} · ${R.day(R.marathon.date)}`,ni(R.marathon.i)),
+    R.gave?P('half','Bagels served',`${escH(R.gave.p)}<small>${R.gave.n}</small>`,'Most 11–0 wins',pl(R.gave.p)):'',
+    P('half','Iron man',`${escH(R.iron.p)}<small>${R.iron.n}</small>`,`games played of ${R.games}`,pl(R.iron.p))])}
+    <p class="eyebrow rechead">Hall of shame</p>${fill([P('half','Losing streak',`${escH(R.loseStreak.p)}<small>${R.loseStreak.n} straight</small>`,span(R.loseStreak.from,R.loseStreak.to),pl(R.loseStreak.p)),
+    P('half','Worst night',`<span class="num neg">${fmt(R.worstNight.pm)}</span>`,`${escH(R.worstNight.p)} · ${R.day(R.worstNight.date)}`,ni(R.worstNight.i)),
+    R.ate?P('half','Bagels eaten',`${escH(R.ate.p)}<small>${R.ate.n}</small>`,'Most 11–0 losses',pl(R.ate.p)):''])}</div>`; }
 function renderHistory(){
+  if(histMode===null) histMode=state.nights.length>=2?'records':'nights';
+  document.querySelectorAll('#histSeg button').forEach(b=>b.classList.toggle('on',b.dataset.h===histMode)); $('#nights').hidden=histMode!=='nights'; $('#records').hidden=histMode!=='records';
+  if(histMode==='records'){ renderRecords(); return; }
   const nights=allNightsEver(); const multi=state.seasons.length>1;
-  $('#nights').innerHTML = nights.length? nights.slice().reverse().map((n,ri)=>{ const idx=nights.length-1-ri; const t=tally(n.games); const mvp=Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm)[0];
+  $('#nights').innerHTML = nights.length? nights.slice().reverse().map((n,ri)=>{ const idx=nights.length-1-ri; const t=tally(n.games); const mvp=mvpOf(t);
     const sn=state.seasons.find(s=>s.id===n.season);
     return `<button class="night" data-i="${idx}"><div><div class="d">${dateLong(n.date)}${n.live?' <span class="hint">(in progress)</span>':''}</div><div class="m">${multi&&sn?sn.name+' · ':''}${Object.keys(t).length} players · MVP ${mvp} ${fmt(t[mvp].pm)}</div></div><div class="c num">${n.games.length}<small>games</small></div><span class="chev" style="color:var(--mute)">›</span></button>`; }).join('')
     : '<p class="hint">No nights yet.</p>';
@@ -1270,7 +1336,7 @@ $('#nightBack').onclick=()=>show('history',null);
 function renderNight(){
   const N=allNightsEver()[state.night]; if(!N){ show('history',null); return; }
   $('#nightTitle').textContent=dateLong(N.date);
-  const t=tally(N.games); const ps=Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm); const mvp=ps[0];
+  const t=tally(N.games); const ps=Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm); const mvp=mvpOf(t);
   const blow=N.games.slice().sort((a,b)=>Math.abs(b.sa-b.sb)-Math.abs(a.sa-a.sb))[0];
   const close=N.games.slice().sort((a,b)=>Math.abs(a.sa-a.sb)-Math.abs(b.sa-b.sb))[0];
   const pairs={}; N.games.forEach(g=>{ const d=g.sa-g.sb; const add=(pr,v)=>{const k=pr.join(' & '); pairs[k]=pairs[k]||{pm:0,n:0}; pairs[k].pm+=v; pairs[k].n++;}; add(g.a,d); add(g.b,-d); });

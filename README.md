@@ -23,3 +23,9 @@ With 8 or more checked in, the check-in screen offers a second court. It is neve
 - Pick the players: Change on the matchup, "Pick the players". Two taps for Side A, two for Side B. It counts in the rotation like any drawn game.
 - Leaving or arriving mid-night: "Who's here" on the court screen has "Someone's done for the night" and "Someone just got here". Neither sends anyone back to check-in. Tapping a name in the Sitting panel also offers "Done for the night".
 - A night nobody ended: from 6am the next morning, the first phone to open the app is asked to save it to History (or clear it if nothing was scored).
+
+## Stats
+
+- Player page: current streak, record over the last ten games, and nights finished as Night MVP.
+- History opens on Records once two nights are saved (Nights is the other half of the toggle): longest win streak, most Night MVPs, best night, best pair (3+ games together), biggest blowout, longest game, bagels served, iron man, and a Hall of shame. Records cover all seasons and only finished nights.
+- Night MVP is the best +/- of the night; ties go to more wins, then fewer games. There is no minimum number of games.
