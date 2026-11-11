@@ -621,7 +621,7 @@ function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games)); const tn=tally(state.tonight.games);
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const s=t[p]; const tg=tn[p]?tn[p].gp:0;
-    return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} tonight kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
+    return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
     + (adding?'':`<button class="chip add" id="addBtn">+ Add a new player</button>`);
   $('#addrow').hidden=!adding;
   const T=state.tonight; const np=T.present.size; const LATE=[...lateSet()].filter(p=>T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const n=np-LATE.length; // n = at the court now
@@ -1551,7 +1551,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='c8d94e23';
+const BUILD='2674506b';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
