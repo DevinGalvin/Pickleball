@@ -405,6 +405,44 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 #ciTitle .day{display:inline-block;color:var(--ball)}#ciTitle .day.pop{animation:dayPop .3s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes dayPop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* night recap: The night / Your night, the share box and the first-open sheet. Every box centers its content. */
+.eyebrow.lime{color:var(--ball)}
+.igname.xl{font-size:44px}.igname.xxl{font-size:60px}.ignum.xl{font-size:48px}
+.igside{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px;text-align:right}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ig.tile{justify-content:center;gap:6px;min-width:0}.ig.tile.alt{background:var(--panel-2);border-radius:14px;padding:12px;min-height:92px}
+.ig.tile .sc{font-family:var(--display);font-weight:800;font-size:36px;line-height:1}
+.ig.tile .who{font-size:14px;font-weight:600;margin:0;overflow-wrap:anywhere}
+.rb{display:flex;flex-direction:column;gap:6px}
+.rbrow{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border-radius:10px;background:var(--panel-2)}
+.rbrow.me{background:#22323c;box-shadow:inset 0 0 0 1.5px var(--ball)}
+.rbrow .k{width:16px;flex:none;color:var(--mute);font-size:13px;font-weight:600}
+.rbrow .nm{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.3px;overflow-wrap:anywhere}
+.rbrow .nm.pl{font-family:var(--body);font-weight:600;font-size:15px;text-transform:none;letter-spacing:0}
+.rbrow .nm em{font-family:var(--body);font-style:normal;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ball)}
+.rbrow .wl{color:var(--mute);font-size:13px;white-space:nowrap}
+.rbrow .mv{font-size:13px;font-weight:600;white-space:nowrap}
+.rbrow .pm{min-width:40px;text-align:right;font-family:var(--display);font-weight:800;font-size:22px;white-space:nowrap}
+.rbrow svg,.igrow>svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.igrow>svg{width:26px;height:26px}
+.mygames{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.myg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;min-width:0;padding:6px 4px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);text-align:center}
+.myg.w{background:#22382a;border-color:#2f5a3a}
+.myg b{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--bad)}.myg.w b{color:var(--ball)}
+.myg .s{font-family:var(--display);font-weight:800;font-size:24px;line-height:1;color:var(--mute)}.myg.w .s{color:var(--fg)}
+.myg small{font-size:12px;color:var(--mute);overflow-wrap:anywhere}
+.igdiv{height:1px;background:var(--line)}
+.prow{display:flex;align-items:center;gap:10px;min-height:36px}
+.prow .nm{width:64px;flex:none;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbar{flex:1;display:flex;align-items:center;height:22px;min-width:0}
+.pbar .h{flex:1;height:14px;display:flex;background:var(--panel-2)}.pbar .h.l{justify-content:flex-end;border-radius:7px 0 0 7px}.pbar .h.r{border-radius:0 7px 7px 0}
+.pbar .ax{width:2px;height:22px;flex:none;background:var(--mute)}
+.pbar i{display:block;height:14px}.pbar .l i{background:var(--bad);border-radius:7px 0 0 7px}.pbar .r i{background:var(--ball);border-radius:0 7px 7px 0}
+.prow .wl{width:30px;flex:none;text-align:right;color:var(--mute);font-size:13px}
+.prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:20px}
+.sharebox{display:flex;flex-direction:column;gap:8px}
+.igname.ic{display:flex;align-items:center;gap:6px}.igname.ic svg{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .updatebar{position:fixed;left:16px;width:calc(100% - 32px);bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:60;min-height:44px;border-radius:12px;border:0;background:var(--ball);color:var(--ball-ink);font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:updateIn .3s both}
 @keyframes updateIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .updatescrim{position:fixed;inset:0;z-index:59;background:rgba(6,12,16,.72);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:fadeIn .25s both}
@@ -479,9 +517,11 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <section class="view" id="v-night" hidden>
       <button class="back" id="nightBack"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>History</button>
       <div><p class="eyebrow" id="nightEyebrow">Night recap</p><h2 id="nightTitle"></h2></div>
-      <div class="cards" id="recap"></div>
-      <button class="cta" id="copyRecap">Copy recap for the group text</button>
-      <div><p class="eyebrow" style="margin-bottom:8px">Every game</p><div class="log" id="nightLog"></div><div class="lockline" id="lockLine" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="lockText"></span></div></div>
+      <div class="seg" id="nightSeg" hidden><button class="on" data-n="all">The night</button><button data-n="me">Your night</button></div>
+      <div class="igwrap" id="recap"></div>
+      <div class="igwrap" id="recapMe" hidden></div>
+      <div class="sharebox"><button class="cta" id="copyRecap"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share to the group</button><p class="hint" id="shareHint" style="text-align:center"></p></div>
+      <div id="nightGames"><p class="eyebrow" id="nightLogTitle" style="margin-bottom:8px">Every game</p><div class="log" id="nightLog"></div><div class="lockline" id="lockLine" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span id="lockText"></span></div></div>
       <button class="ghost" id="deleteNight" style="align-self:center;border-color:var(--bad);color:var(--bad)">Delete this night</button>
     </section>
   </main>
@@ -515,6 +555,14 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <p class="hint">A season runs until you end it. Nights keep counting toward standings and the playoff seeds until then.</p>
     <button class="ghost" id="endSeason" style="border-color:var(--bad);color:var(--bad)">End this season</button>
     <p class="hint" id="endHint" hidden>Standings reset and the next season starts with the next night. History keeps everything.</p>
+  </div>
+</div>
+<div class="sheet" id="recapSheet" hidden>
+  <div class="card">
+    <div class="row"><div><p class="eyebrow" id="rsEyebrow"></p><h2 id="rsTitle"></h2></div><button class="ghost" id="rsClose">Close</button></div>
+    <div class="igwrap" id="rsBody"></div>
+    <button class="cta" id="rsGo">See full recap</button>
+    <p class="hint" id="rsHint" style="text-align:center"></p>
   </div>
 </div>
 <div class="sheet" id="whoSheet" hidden>
@@ -724,7 +772,7 @@ function show(tab, sub){
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
   if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderPlayoffs();
   document.querySelector('main').scrollTop=0;
-  roleUI(); firstOpen();
+  roleUI(); firstOpen(); recapCheck();
   if(tab==='tonight') staleCheck();
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
@@ -1359,38 +1407,155 @@ function renderHistory(){
     : '<p class="hint">No nights yet.</p>';
 }
 $('#nights').addEventListener('click',e=>{ const b=e.target.closest('.night'); if(!b) return; state.night=+b.dataset.i; show('history','night'); });
-$('#nightBack').onclick=()=>show('history',null);
+// ---------- night recap ----------
+// One page per night, two halves. "The night" is the same for everyone: MVP, the final board, the two games worth
+// retelling, who moved in the standings, then every game. "Your night" is the same night for the name on this phone;
+// it only shows when that name played. Nothing here is stored: it is all worked out from the saved scores, so a
+// corrected score corrects the recap.
+let nightMode='all', nightFor=null, nightWant=null; // nightWant: the half to open on, set by the recap sheet
+$('#nightBack').onclick=()=>{ nightFor=null; show('history',null); };
+$('#nightSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.dataset.n===nightMode) return; nightMode=b.dataset.n; haptic(); renderNight(); document.querySelector('main').scrollTop=0; });
+const ord=n=>{ const v=n%100; return n+(v>10&&v<14?'th':['th','st','nd','rd'][n%10]||'th'); };
+const pmCls=v=>v>0?'pos':v<0?'neg':'';
+const ARROW={up:'<svg viewBox="0 0 24 24" class="pos" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',down:'<svg viewBox="0 0 24 24" class="neg" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg>',flat:'<svg viewBox="0 0 24 24" aria-hidden="true" style="color:var(--mute)"><path d="M5 12h14"/></svg>'};
+// the night's order: +/-, then wins, then fewer games. The same rule as Night MVP, so the MVP is always first.
+const nightOrder=t=>Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm||t[b].w-t[a].w||t[a].gp-t[b].gp||a.localeCompare(b));
+// season order from a list of games, by the standings rule (rating, then win rate)
+function rankFrom(games){ const t=tally(games); const r=p=>t[p].pm/(t[p].gp+SHRINK); return Object.keys(t).filter(p=>PLAYERS.includes(p)).sort((a,b)=>r(b)-r(a)||t[b].w/t[b].gp-t[a].w/t[a].gp||a.localeCompare(b)); }
+// where everyone stood in that night's season before and after it. A playoff night never moves the standings.
+function nightMoves(idx){ const all=allNightsEver(), N=all[idx]; if(!N||N.po) return null;
+  const sn=all.map((n,i)=>({n,i})).filter(x=>x.n.season===N.season&&!x.n.po); const k=sn.findIndex(x=>x.i===idx); if(k<0) return null;
+  const g=m=>sn.slice(0,m).flatMap(x=>x.n.games); const before=rankFrom(g(k)), after=rankFrom(g(k+1));
+  return after.map((p,j)=>({p,now:j+1,was:before.indexOf(p)+1})); }
+// one player's night: his games in order, and how he did next to each partner
+function myNight(N,p){ const games=N.games.filter(g=>inGame(g,p)); const mates={};
+  const rows=games.map(g=>{ const onA=g.a.includes(p); const team=onA?g.a:g.b; const mate=team.find(x=>x!==p)||null; const mine=onA?g.sa:g.sb, theirs=onA?g.sb:g.sa; const d=mine-theirs;
+    if(mate){ const m=mates[mate]=mates[mate]||{pm:0,n:0,w:0}; m.pm+=d; m.n++; if(d>0) m.w++; } return {mate,mine,theirs,w:d>0}; });
+  const list=Object.keys(mates).map(k=>({p:k,...mates[k]})).sort((a,b)=>b.pm-a.pm||b.n-a.n||a.p.localeCompare(b.p));
+  return {rows,list,best:list[0]&&list[0].pm>0?list[0]:null}; }
+function nightFacts(idx){ const N=allNightsEver()[idx]; if(!N||!N.games.length) return null;
+  const t=tally(N.games), ps=nightOrder(t), mvp=ps[0]; const mar=g=>Math.abs(g.sa-g.sb), tot=g=>g.sa+g.sb;
+  const blow=N.games.slice().sort((a,b)=>mar(b)-mar(a)||tot(b)-tot(a))[0], close=N.games.slice().sort((a,b)=>mar(a)-mar(b)||tot(b)-tot(a))[0];
+  const wn=g=>(g.sa>g.sb?g.a:g.b).join(' & '), ln=g=>(g.sa>g.sb?g.b:g.a).join(' & '), sc=g=>`${Math.max(g.sa,g.sb)}–${Math.min(g.sa,g.sb)}`;
+  return {N,t,ps,mvp,blow,close,wn,ln,sc,moves:nightMoves(idx)}; }
+const heroHtml=(eyebrow,big,sub,num,numSub,xxl)=>`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">${eyebrow}</p><span class="igname ${xxl?'xxl num':'xl'}">${big}</span><span class="igsub">${sub}</span></span><span class="igside"><span class="ignum xl ${pmCls(num)}">${fmt(num)}</span><span class="igsub">${numSub}</span></span></div></section>`;
+const gameTile=(label,F,g,alt)=>`<section class="ig tile${alt?' alt':''}"><p class="eyebrow">${label}</p><div class="sc num">${F.sc(g)}</div><p class="who">${escH(F.wn(g))}</p><p class="igsub">over ${escH(F.ln(g))}</p></section>`;
+function standingLine(m){ if(!m) return null; const d=m.was?m.was-m.now:0;
+  return {icon:!m.was?ARROW.flat:d>0?ARROW.up:d<0?ARROW.down:ARROW.flat, text:!m.was?'First night on the board':d>0?`Up ${d} spot${d===1?'':'s'}`:d<0?`Down ${-d} spot${d===-1?'':'s'}`:'Held your spot', cls:d>0?'pos':d<0?'neg':''}; }
 function renderNight(){
-  const N=allNightsEver()[state.night]; if(!N){ show('history',null); return; }
-  $('#nightTitle').textContent=dateLong(N.date); $('#nightEyebrow').textContent=N.po?'Playoffs recap':'Night recap';
-  const t=tally(N.games); const ps=Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm); const mvp=mvpOf(t);
-  const blow=N.games.slice().sort((a,b)=>Math.abs(b.sa-b.sb)-Math.abs(a.sa-a.sb))[0];
-  const close=N.games.slice().sort((a,b)=>Math.abs(a.sa-a.sb)-Math.abs(b.sa-b.sb))[0];
-  const pairs={}; N.games.forEach(g=>{ const d=g.sa-g.sb; const add=(pr,v)=>{const k=pr.join(' & '); pairs[k]=pairs[k]||{pm:0,n:0}; pairs[k].pm+=v; pairs[k].n++;}; add(g.a,d); add(g.b,-d); });
-  const bp=Object.entries(pairs).sort((a,b)=>b[1].pm-a[1].pm)[0]; const bagels=N.games.filter(g=>g.sa===0||g.sb===0).length;
-  const wn=g=>(g.sa>g.sb?g.a:g.b).join(' & '), ln=g=>(g.sa>g.sb?g.b:g.a).join(' & ');
+  const F=nightFacts(state.night); if(!F){ show('history',null); return; } const {N,t,ps,mvp}=F;
+  const n=me(), mine=n&&t[n]?n:null;
+  if(nightFor!==state.night){ nightFor=state.night; nightMode=nightWant==='me'&&mine?'me':'all'; } nightWant=null;
+  if(!mine) nightMode='all'; const meMode=nightMode==='me';
+  $('#nightTitle').textContent=dateLong(N.date); $('#nightEyebrow').textContent=`${N.po?'Playoffs recap':'Night recap'} · ${N.games.length} game${N.games.length===1?'':'s'} · ${ps.length} players${N.live?' · in progress':''}`;
+  $('#nightSeg').hidden=!mine; document.querySelectorAll('#nightSeg button').forEach(b=>b.classList.toggle('on',b.dataset.n===nightMode));
+  $('#recap').hidden=meMode; $('#recapMe').hidden=!meMode; $('#nightGames').hidden=meMode;
+  // ----- the night -----
+  const pairs={}; N.games.forEach(g=>{ const d=g.sa-g.sb; const add=(pr,v)=>{const k=pr.slice().sort().join(' & '); pairs[k]=pairs[k]||{pm:0,n:0}; pairs[k].pm+=v; pairs[k].n++;}; add(g.a,d); add(g.b,-d); });
+  const bp=Object.entries(pairs).sort((a,b)=>b[1].pm-a[1].pm)[0];
   // biggest cover of the night, from either side of the line
   let beat=null; N.games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const by=Math.abs(c); if(by>0&&(!beat||by>beat.by)) beat={g,by,team:(c>0?g.a:g.b).join(' & ')}; });
-  $('#recap').innerHTML=`
-    <div class="stat big"><p class="eyebrow">Night MVP</p><div class="v">${mvp}</div><div class="d num">${fmt(t[mvp].pm)} over ${t[mvp].gp} games · ${t[mvp].w}–${t[mvp].l}</div></div>
-    <div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Night +/−</p><div class="d" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;color:var(--fg)">${ps.map(p=>`<span class="row num"><span>${p}</span><span class="${t[p].pm>0?'pos':t[p].pm<0?'neg':''}" style="font-weight:600">${fmt(t[p].pm)}</span></span>`).join('')}</div></div>
-    <div class="stat"><p class="eyebrow">Games</p><div class="v num">${N.games.length}</div><div class="d">${ps.length} players</div></div>
-    <div class="stat"><p class="eyebrow">Bagels</p><div class="v num">${bagels}</div><div class="d">11–0 games</div></div>
-    <div class="stat"><p class="eyebrow">Biggest blowout</p><div class="v num">${blow.sa}–${blow.sb}</div><div class="d">${wn(blow)} over ${ln(blow)}</div></div>
-    <div class="stat"><p class="eyebrow">Tightest game</p><div class="v num">${close.sa}–${close.sb}</div><div class="d">${wn(close)} edged ${ln(close)}</div></div>
-    ${bp&&bp[1].n>=3?`<div class="stat big"><p class="eyebrow">Best partnership</p><div class="v">${bp[0]}</div><div class="d num">${fmt(bp[1].pm)} across ${bp[1].n} games</div></div>`:''}
-    ${beat?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Beat the spread</p><div class="v">${beat.team}</div><div class="d num">${lineText(beat.g)} · final ${beat.g.sa}–${beat.g.sb} · beat it by ${beat.by}</div></div>`:''}`;
+  const board=`<section class="ig"><p class="eyebrow">Final board</p><div class="rb">${ps.map((p,i)=>`<div class="rbrow ${p===mine?'me':''}"><span class="k num">${i+1}</span><span class="nm">${escH(p)}${p===mine?'<em>YOU</em>':''}</span><span class="wl num">${t[p].w}–${t[p].l}</span><span class="pm num ${pmCls(t[p].pm)}">${fmt(t[p].pm)}</span></div>`).join('')}</div></section>`;
+  const same=F.blow===F.close;
+  const games=same?gameTile('Game of the night',F,F.blow):`<div class="duo">${gameTile('Closest game',F,F.close)}${gameTile('Biggest win',F,F.blow)}</div>`;
+  const mv=(F.moves||[]).filter(m=>t[m.p]&&m.was&&m.was!==m.now).sort((a,b)=>Math.abs(b.was-b.now)-Math.abs(a.was-a.now)||a.now-b.now).slice(0,3).sort((a,b)=>a.now-b.now);
+  const movers=mv.length?`<section class="ig"><p class="eyebrow">Standings movers</p><div class="rb">${mv.map(m=>{ const d=m.was-m.now; return `<div class="rbrow">${d>0?ARROW.up:ARROW.down}<span class="nm pl">${escH(m.p)}</span><span class="mv ${d>0?'pos':'neg'}">${d>0?'Up':'Down'} ${Math.abs(d)}</span><span class="pm num">${ord(m.now)}</span></div>`; }).join('')}</div></section>`:'';
+  $('#recap').innerHTML=heroHtml('Night MVP',escH(mvp),`Won ${t[mvp].w} of ${t[mvp].gp} games`,t[mvp].pm,'on the night')+board+games
+    +(bp&&bp[1].n>=3?`<section class="ig"><p class="eyebrow">Best pair</p><div class="igrow"><span class="igmain"><span class="igname sm">${escH(bp[0])}</span><span class="igsub">${bp[1].n} games together</span></span><span class="ignum sm num ${pmCls(bp[1].pm)}">${fmt(bp[1].pm)}</span></div></section>`:'')
+    +(beat?`<section class="ig"><p class="eyebrow">Beat the spread</p><div class="igrow"><span class="igmain"><span class="igname sm">${escH(beat.team)}</span><span class="igsub num">${escH(lineText(beat.g))} · final ${beat.g.sa}–${beat.g.sb}</span></span><span class="ignum sm num pos">+${beat.by}</span></div></section>`:'')
+    +movers;
+  // ----- your night -----
+  if(mine){ const M=myNight(N,mine), s=t[mine], rank=ps.indexOf(mine)+1; const mx=Math.max(1,...M.list.map(x=>Math.abs(x.pm)));
+    const st=standingLine((F.moves||[]).find(m=>m.p===mine)), now=((F.moves||[]).find(m=>m.p===mine)||{}).now;
+    $('#recapMe').innerHTML=heroHtml(`Your night, ${escH(mine)}`,`${s.w}–${s.l}`,`Won ${s.w} of ${s.gp} game${s.gp===1?'':'s'}`,s.pm,`${ord(rank)} of ${ps.length} on the night`,true)
+      +`<section class="ig"><p class="eyebrow">Your games, in order</p><div class="mygames">${M.rows.map(r=>`<div class="myg ${r.w?'w':''}"><b>${r.w?'WIN':'LOSS'}</b><span class="s num">${r.mine}–${r.theirs}</span><small>${r.mate?'with '+escH(r.mate):''}</small></div>`).join('')}</div></section>`
+      +(M.list.length?`<section class="ig">${M.best?`<p class="eyebrow">Best partner</p><div class="igrow"><span class="igmain"><span class="igname">${escH(M.best.p)}</span><span class="igsub">${M.best.n===1?'1 game together, won it':M.best.w===M.best.n?`${M.best.n} games together, won ${M.best.n===2?'both':'all '+M.best.n}`:`${M.best.n} games together, won ${M.best.w}`}</span></span><span class="ignum num pos">${fmt(M.best.pm)}</span></div><div class="igdiv"></div>`:''}
+        <p class="eyebrow">Everyone you played with</p><div>${M.list.map(x=>{ const w=Math.round(Math.abs(x.pm)/mx*100); return `<div class="prow"><span class="nm">${escH(x.p)}</span><span class="pbar" aria-hidden="true"><span class="h l">${x.pm<0?`<i style="width:${w}%"></i>`:''}</span><span class="ax"></span><span class="h r">${x.pm>0?`<i style="width:${w}%"></i>`:''}</span></span><span class="wl num">${x.w}–${x.n-x.w}</span><span class="pm num ${pmCls(x.pm)}">${fmt(x.pm)}</span></div>`; }).join('')}</div>
+        <p class="igsub">One night is a small sample. Your season best partner is on your player page.</p></section>`:'')
+      +(st?`<section class="ig"><div class="igrow">${st.icon}<span class="igmain"><p class="eyebrow">Season standings</p><span style="font-size:15px;font-weight:600">${st.text}</span></span><span class="ignum num">${ord(now)}</span></div></section>`:'');
+  } else $('#recapMe').innerHTML='';
+  $('#nightLogTitle').textContent=`All ${N.games.length} game${N.games.length===1?'':'s'}`;
   $('#nightLog').innerHTML=logHtml(N.games,false);
-  const del=$('#deleteNight'); del.hidden=!admin(); del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
+  const del=$('#deleteNight'); del.hidden=!admin()||meMode; del.textContent=N.live?'Discard tonight so far':'Delete this night'; del.dataset.armed='';
   del.onclick=()=>{
     if(!del.dataset.armed){ del.dataset.armed='1'; del.textContent=N.live?'Tap again to discard every game from tonight':'Tap again to delete this night and its games'; return; }
     if(N.live){ state.tonight.games=[]; state.tonight.current=null; state.tonight.started=false; delete state.tonight.po; }
     else { state.nights.splice(state.nights.indexOf(N),1); }
-    persist(); show('history',null); toast(N.live?'Tonight cleared':'Night deleted');
+    nightFor=null; persist(); show('history',null); toast(N.live?'Tonight cleared':'Night deleted');
   };
-  $('#copyRecap').onclick=()=>{ const lines=[`Pickle · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
-    navigator.clipboard?.writeText(lines).then(()=>toast('Copied')).catch(()=>toast('Copy blocked here')); };
+  // share: one picture of the night (never the personal half). The picture is drawn ahead of the tap because iPhone
+  // only opens the share sheet straight from a tap. Where pictures can't be shared, it copies the recap as text.
+  const key=state.night+':'+JSON.stringify(N.games); prepShare(F,key); const pic=canSharePic();
+  $('#shareHint').textContent=pic?'Sends one picture of the night to your group text.':'Copies the night as text to paste in the group chat.';
+  $('#copyRecap').onclick=()=>{ haptic();
+    if(pic&&shareBlob&&shareKey===key){ navigator.share({files:[new File([shareBlob],`pickle-${N.date}.png`,{type:'image/png'})]}).catch(()=>{}); return; }
+    const lines=[`Pickle · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
+    navigator.clipboard?.writeText(lines).then(()=>toast('Copied. Paste it in the group chat.')).catch(()=>toast('Copy blocked here')); };
 }
+// ----- the share card: the night as one picture, drawn on a canvas so it can go straight into a text thread -----
+let shareBlob=null, shareKey='';
+let _canPic=null; function canSharePic(){ if(_canPic===null){ try{ _canPic=!!(navigator.canShare&&navigator.canShare({files:[new File([new Blob(['x'],{type:'image/png'})],'x.png',{type:'image/png'})]})); }catch(e){ _canPic=false; } } return _canPic; }
+function prepShare(F,key){ if(shareKey===key&&shareBlob) return; shareBlob=null; shareKey=key;
+  const go=()=>{ try{ recapCard(F).toBlob(b=>{ if(shareKey===key) shareBlob=b; },'image/png'); }catch(e){} };
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(go,go); }
+function recapCard(F){ const {N,t,ps,mvp}=F; const rest=ps.slice(1), W=390, PAD=20, ROW=34;
+  const H=PAD+28+14+92+14+(rest.length?rest.length*ROW+20+14:0)+64+PAD; const S=3;
+  const c=document.createElement('canvas'); c.width=W*S; c.height=H*S; const x=c.getContext('2d'); x.scale(S,S);
+  const css=getComputedStyle(document.documentElement), v=k=>css.getPropertyValue(k).trim();
+  const C={bg:v('--bg'),panel:v('--panel'),fg:v('--fg'),mute:v('--mute'),ball:v('--ball'),ink:v('--ball-ink'),good:v('--good'),bad:v('--bad')};
+  const D='"Barlow Condensed",system-ui,sans-serif', B='"Barlow",system-ui,sans-serif';
+  const box=(X,Y,w,h,r,fill,stroke)=>{ x.beginPath(); x.moveTo(X+r,Y); x.arcTo(X+w,Y,X+w,Y+h,r); x.arcTo(X+w,Y+h,X,Y+h,r); x.arcTo(X,Y+h,X,Y,r); x.arcTo(X,Y,X+w,Y,r); x.closePath(); x.fillStyle=fill; x.fill(); if(stroke){ x.strokeStyle=stroke; x.lineWidth=1; x.stroke(); } };
+  const tx=(s,X,Y,font,color,align,max)=>{ x.font=font; x.fillStyle=color; x.textAlign=align||'left'; x.textBaseline='middle'; if(max) x.fillText(s,X,Y,max); else x.fillText(s,X,Y); };
+  const col=n=>n>0?C.good:n<0?C.bad:C.fg, up=s=>String(s).toUpperCase();
+  x.fillStyle=C.bg; x.fillRect(0,0,W,H); let y=PAD;
+  // header: the ball, the name, the date
+  x.fillStyle=C.ball; x.beginPath(); x.arc(PAD+12,y+14,12,0,Math.PI*2); x.fill(); x.fillStyle=C.ink; [[-4.5,-3.5],[2,-5.5],[4.5,1],[-2,3],[2.5,6.5]].forEach(([dx,dy])=>{ x.beginPath(); x.arc(PAD+12+dx,y+14+dy,1.6,0,Math.PI*2); x.fill(); });
+  tx('PICKLE',PAD+32,y+15,`800 24px ${D}`,C.fg); tx(up(`${dateShort(N.date)} · ${N.games.length} games`),W-PAD,y+15,`600 12px ${B}`,C.mute,'right'); y+=28+14;
+  // MVP
+  const g=x.createLinearGradient(PAD,y,W-PAD,y+92); g.addColorStop(0,'#223b2a'); g.addColorStop(1,C.panel); box(PAD,y,W-2*PAD,92,16,g,'#2f5a3a');
+  tx('NIGHT MVP',PAD+14,y+24,`600 12px ${B}`,C.ball); tx(up(mvp),PAD+14,y+58,`800 44px ${D}`,C.fg,'left',200);
+  tx(fmt(t[mvp].pm),W-PAD-14,y+40,`800 44px ${D}`,col(t[mvp].pm),'right'); tx(`${t[mvp].w}–${t[mvp].l}`,W-PAD-14,y+72,`400 13px ${B}`,C.mute,'right'); y+=92+14;
+  // the rest of the board
+  if(rest.length){ const h=rest.length*ROW+20; box(PAD,y,W-2*PAD,h,16,C.panel); rest.forEach((p,i)=>{ const cy=y+10+i*ROW+ROW/2;
+      tx(String(i+2),PAD+14,cy,`600 13px ${B}`,C.mute); tx(up(p),PAD+38,cy+1,`800 19px ${D}`,C.fg,'left',170); tx(`${t[p].w}–${t[p].l}`,W-PAD-64,cy,`400 13px ${B}`,C.mute,'right'); tx(fmt(t[p].pm),W-PAD-14,cy+1,`800 20px ${D}`,col(t[p].pm),'right'); }); y+=h+14; }
+  // one game worth retelling
+  const cg=F.close, same=F.blow===F.close; box(PAD,y,W-2*PAD,64,16,C.panel); tx(same?'GAME OF THE NIGHT':'CLOSEST GAME',PAD+14,y+22,`600 12px ${B}`,C.mute);
+  tx(`${F.wn(cg)} over ${F.ln(cg)}`,PAD+14,y+43,`600 14px ${B}`,C.fg,'left',W-2*PAD-28-78); tx(F.sc(cg),W-PAD-14,y+33,`800 30px ${D}`,C.fg,'right');
+  return c; }
+// ----- the recap sheet: the first time a phone opens the app after a night ends, it gets that night once -----
+// Rules: only the latest saved night; only if the name on this phone played it (a phone with no name gets the night's
+// MVP instead); never once the next night has started or after RECAP_DAYS; never on top of another sheet; never twice,
+// so a corrected score doesn't bring it back. The phone that ends the night lands on the full recap, which counts.
+const RECAP_DAYS=3;
+let recapSeen=null; try{ recapSeen=localStorage.getItem('pickle-recap-seen'); }catch(e){}
+function markRecap(d){ if(!recapSeen||d>recapSeen){ recapSeen=d; try{ localStorage.setItem('pickle-recap-seen',d); }catch(e){} } }
+let recapIdx=null;
+function recapCheck(){
+  if(ME===null) return; // "Who are you?" comes first
+  const T=state.tonight; if(T.started||T.games.length) return;
+  const i=state.nights.length-1, N=state.nights[i]; if(!N||N.po||!N.games||!N.games.length) return;
+  if(recapSeen&&N.date<=recapSeen) return;
+  if(Date.now()>new Date(N.date+'T12:00').getTime()+RECAP_DAYS*86400000) return;
+  const n=me(); if(n&&!tally(N.games)[n]) return; // sat that one out: it's in History, no pop
+  if(state.tab==='history'&&state.sub==='night'&&state.night===i){ markRecap(N.date); return; } // already reading it
+  if([...document.querySelectorAll('.sheet')].some(el=>!el.hidden&&!el.classList.contains('out'))) return; // try again on the next screen
+  markRecap(N.date); openRecap(i);
+}
+function openRecap(i){ const F=nightFacts(i); if(!F) return; const {N,t,ps,mvp}=F; const n=me(), mine=n&&t[n]?n:null; recapIdx=i;
+  $('#rsEyebrow').textContent=`${dateShort(N.date)} · Night recap`; $('#rsTitle').textContent=mine?`Your night, ${mine}`:'How the night went';
+  const mvpRow=`<div class="rbrow"><span class="nm pl" style="color:var(--mute);font-weight:500">Night MVP</span><span style="font-weight:600;font-size:15px">${escH(mvp)}</span><span class="pm num ${pmCls(t[mvp].pm)}">${fmt(t[mvp].pm)}</span></div>`;
+  if(mine){ const M=myNight(N,mine), s=t[mine], rank=ps.indexOf(mine)+1; const m=(F.moves||[]).find(x=>x.p===mine), st=standingLine(m);
+    const a=M.best?`<section class="ig tile alt"><p class="eyebrow">Best partner</p><span class="igname">${escH(M.best.p)}</span><p class="igsub">${M.best.w===M.best.n?(M.best.n===1?'Won your game':M.best.n===2?'Won both':`Won all ${M.best.n}`):`Won ${M.best.w} of ${M.best.n}`}, <b class="pos">${fmt(M.best.pm)}</b></p></section>`
+                    :`<section class="ig tile alt"><p class="eyebrow">Games</p><span class="igname num">${s.gp}</span><p class="igsub">played that night</p></section>`;
+    const b=st?`<section class="ig tile alt"><p class="eyebrow">Standings</p><span class="igname ic">${ord(m.now)}${st.icon}</span><p class="igsub">${st.text}</p></section>`
+               :`<section class="ig tile alt"><p class="eyebrow">Night MVP</p><span class="igname">${escH(mvp)}</span><p class="igsub"><b class="${pmCls(t[mvp].pm)}">${fmt(t[mvp].pm)}</b> on the night</p></section>`;
+    $('#rsBody').innerHTML=heroHtml('Your record',`${s.w}–${s.l}`,`Won ${s.w} of ${s.gp} game${s.gp===1?'':'s'}`,s.pm,`${ord(rank)} of ${ps.length} that night`,true)+`<div class="duo">${a}${b}</div>`+(st?mvpRow:'');
+  } else {
+    $('#rsBody').innerHTML=heroHtml('Night MVP',escH(mvp),`Won ${t[mvp].w} of ${t[mvp].gp} games`,t[mvp].pm,`${N.games.length} games · ${ps.length} players`)+gameTile(F.blow===F.close?'Game of the night':'Closest game',F,F.close,true);
+  }
+  $('#rsHint').textContent=`Shown once. It stays in History under ${dateShort(N.date)}.`; showSheet('#recapSheet'); }
+$('#rsClose').onclick=()=>hideSheet('#recapSheet');
+$('#rsGo').onclick=()=>{ hideSheet('#recapSheet'); if(recapIdx==null||!state.nights[recapIdx]) return; haptic(); state.night=recapIdx; nightFor=null; nightWant='me'; show('history','night'); };
 
 // ---------- long press ----------
 // 450ms hold, light haptic, then an action sheet. Every action here is also reachable another way or is a power-user fix;
@@ -1672,7 +1837,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='383fd51b';
+const BUILD='a9630545';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
