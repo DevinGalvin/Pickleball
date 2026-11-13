@@ -425,7 +425,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .pbar i{display:block;height:14px}.pbar .l i{background:var(--bad);border-radius:7px 0 0 7px}.pbar .r i{background:var(--ball);border-radius:0 7px 7px 0}
 .prow .wl{width:30px;flex:none;text-align:right;color:var(--mute);font-size:13px}
 .prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:20px}
-.sharebox{display:flex;flex-direction:column;gap:8px}
+.sharebox{display:flex;flex-direction:column;gap:8px}.sharebox[hidden]{display:none}
 .bc{display:flex;flex-direction:column;justify-content:center;gap:12px;width:100%}
 .bct{display:flex;flex-direction:column;gap:7px}
 .bch{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
@@ -1451,7 +1451,7 @@ function renderNight(){
   if(!mine) nightMode='all'; const meMode=nightMode==='me';
   $('#nightTitle').textContent=dateLong(N.date); $('#nightEyebrow').textContent=`${N.po?'Playoffs recap':'Night recap'} · ${N.games.length} game${N.games.length===1?'':'s'} · ${ps.length} players${N.live?' · in progress':''}`;
   $('#nightSeg').hidden=!mine; document.querySelectorAll('#nightSeg button').forEach(b=>b.classList.toggle('on',b.dataset.n===nightMode));
-  $('#recap').hidden=meMode; $('#recapMe').hidden=!meMode; $('#nightGames').hidden=meMode;
+  $('#recap').hidden=meMode; $('#recapMe').hidden=!meMode; $('#nightGames').hidden=meMode; $('#v-night .sharebox').hidden=meMode; // sharing is for the group's night, so it only sits under The night
   // ----- the night -----
   const pairs={}; N.games.forEach(g=>{ const d=g.sa-g.sb; const add=(pr,v)=>{const k=pr.slice().sort().join(' & '); pairs[k]=pairs[k]||{pm:0,n:0}; pairs[k].pm+=v; pairs[k].n++;}; add(g.a,d); add(g.b,-d); });
   const bp=Object.entries(pairs).sort((a,b)=>b[1].pm-a[1].pm)[0];

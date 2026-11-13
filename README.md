@@ -28,7 +28,7 @@ With 8 or more checked in, the check-in screen offers a second court. It is neve
 
 - Tapping a night in History opens its recap. "The night" is the same for everyone: Night MVP, the final board, the closest game and the biggest win, best pair (3+ games together), beat the spread, standings movers, then every game. "Your night" shows only when the name on this phone played: record, games in order, best partner, +/- next to each partner, and the standings move.
 - Nothing is stored for the recap. It is worked out from the saved scores, so a corrected score corrects it.
-- Share to the group sends one picture of the night (never the personal half). Where a phone can't share pictures it copies the night as text.
+- Share to the group sits under "The night" only and sends one picture of the night. "Your night" has no share button. Where a phone can't share pictures it copies the night as text.
 - The recap sheet: the first time a phone opens the app after a night ends, it shows that night once, then "See full recap". Only the latest night, only if that name played (a phone with no name gets the night's MVP), never once the next night has started or after 3 days (`RECAP_DAYS`), never for a playoff night, and never twice (`pickle-recap-seen` on the phone). The phone that ends the night lands on the full recap instead.
 
 ## Stats
