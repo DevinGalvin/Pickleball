@@ -936,6 +936,10 @@ longPress($('#v-checkin'),'#startBtn',b=>{ if(b.disabled) return; if(!b.classLis
   confirmSheet('Not league night',`Start a night for today, ${dateLong(todayISO())}? It counts toward the season like any other.`,'Start it',()=>startNight(todayISO())); });
 
 // ---------- court ----------
+// A long win streak is called out where it matters: next to his name when he is drawn, and when somebody ends it.
+// Wins only, STREAK_MIN or more, this season, carried across nights. Losing streaks stay in Records.
+const STREAK_MIN=5;
+function winStreak(p){ const G=allGames().filter(g=>inGame(g,p)&&!gOf(g,p)); let n=0; for(let i=G.length-1;i>=0&&diffs(G[i])[p]>0;i--) n++; return n; }
 function nameHtml(p){ const t=tally(state.tonight.games,true)[p]; return `${p}<small class="num">${isGuest(p)?'Guest · ':''}${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
 const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
   <rect x="0" y="0" width="210" height="110" fill="var(--surround)"/>
@@ -974,7 +978,10 @@ class ServeCue{
     this.svg=svg; const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
     const nm=(k,name,side)=>`<text class="cn ${side}" x="${BOX[k].x}" y="${BOX[k].y+3.6}">${esc(name)}</text>`;
     this.home={x:10,y:85}; this.ctl={x:96,y:93}; this.to={x:160,y:31};
-    svg.innerHTML=nm('a0',g.a[0],'a')+nm('a1',g.a[1],'a')+nm('b0',g.b[0],'b')+nm('b1',g.b[1],'b')
+    // a long win streak rides under the name as a small lime tag (see STREAK_MIN)
+    const stk=(k,name)=>{ const n=state.tonight.po?0:winStreak(name); if(n<STREAK_MIN) return ''; const x=BOX[k].x, y=BOX[k].y+7.5, w=n>9?15.5:13;
+      return `<g class="stk"><rect x="${x-w/2}" y="${y}" width="${w}" height="6.6" rx="2.2" fill="#d6f23a"/><text x="${x}" y="${y+5.1}" text-anchor="middle" style="font-family:var(--display);font-weight:800;font-size:5.6px;letter-spacing:.2px" fill="#1a2200">W${n}</text><title>${esc(name)} has won ${n} in a row</title></g>`; };
+    svg.innerHTML=nm('a0',g.a[0],'a')+nm('a1',g.a[1],'a')+nm('b0',g.b[0],'b')+nm('b1',g.b[1],'b')+stk('a0',g.a[0])+stk('a1',g.a[1])+stk('b0',g.b[0])+stk('b1',g.b[1])
       +`<path class="trail" d="" fill="none" stroke="#d6f23a" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="1 3.2" opacity="0"/>`
       +`<circle class="pop" r="0" fill="none" stroke="#fff" stroke-width="1" opacity="0"/><ellipse class="land" rx="0" ry="0" fill="none" stroke="#d6f23a" stroke-width=".9" opacity="0"/><ellipse class="bshadow" rx="2.6" ry="1" fill="#000" opacity=".3"/><g class="ball"><circle r="3" fill="#d6f23a" stroke="#9fb52a" stroke-width=".35"/><circle r=".55" cx="-.9" cy=".6" fill="#5a6a12"/><circle r=".55" cx="1" cy="-.8" fill="#5a6a12"/><circle r=".55" cx="1.1" cy="1.3" fill="#5a6a12"/></g>`;
     this.ballEl=svg.querySelector('.ball'); this.shadowEl=svg.querySelector('.bshadow'); this.trail=svg.querySelector('.trail'); this.pop=svg.querySelector('.pop'); this.land=svg.querySelector('.land');
@@ -1117,6 +1124,7 @@ $('#sheetClose').onclick=()=>{ hideSheet('#sheet'); state.pending=null; $('#save
 $('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const sc=pendingScore(p); if(!sc) return; haptic(20);
   if(p.edit){ const g=p.edit.games[p.edit.i]; if(g.sa!==sc.sa||g.sb!==sc.sb) g.ed={by:adminName(),at:Date.now(),was:(g.ed&&g.ed.was)||`${g.sa}–${g.sb}`}; g.sa=sc.sa; g.sb=sc.sb; hideSheet('#sheet'); state.pending=null; $('#saveScore').textContent='Save & next game'; p.edit.after(); persist(); toast('Score updated'); return; }
   const cur=normCur(T.current)||[]; const g=cur[p.idx]; if(!g) return;
+  const lost=sc.sa>sc.sb?g.b:g.a, won=sc.sa>sc.sb?g.a:g.b; const snap=T.po?null:lost.map(x=>({p:x,n:winStreak(x)})).filter(x=>x.n>=STREAK_MIN).sort((a,b)=>b.n-a.n)[0];
   g.sa=sc.sa; g.sb=sc.sb; g.at=Date.now();
   // playoff night: every game is saved the moment it is scored, because two courts run two separate matches
   if(T.po&&g.m!=null){ T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r:nextR(T.games),m:g.m,...(hasLine(g)?{line:g.line}:{})}); const rest=cur.filter(x=>x!==g); T.current=rest.length?rest:null; }
@@ -1124,7 +1132,8 @@ $('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const sc=pe
   else if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{}),...guTag(x)})); T.current=null; }
   hideSheet('#sheet'); persist();
   // play the result on the board that just finished, then draw what comes next
-  playResult(p.idx, sc.sa, sc.sb); setTimeout(renderCourt, 1500); };
+  playResult(p.idx, sc.sa, sc.sb); setTimeout(renderCourt, 1500);
+  if(snap) toast(`${won.join(' & ')} ended ${snap.p}'s ${snap.n}-game streak`,4000); };
 function playResult(i,sa,sb){
   const wrap=document.querySelectorAll('#courts .courtwrap')[i]; if(!wrap) return;
   wrap.classList.add('result'); const aw=sa>sb; if(sims[i]) sims[i].finish(aw?'a':'b');
@@ -2064,11 +2073,11 @@ function tryPin(){
 $('#pinGo').onclick=tryPin; $('#pinInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryPin(); });
 
 // ---------- misc ----------
-let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,1800); }
+let toastT; function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,ms||1800); }
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='289ae04e';
+const BUILD='ffef225f';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
