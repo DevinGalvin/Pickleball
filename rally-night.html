@@ -82,8 +82,10 @@ header.top .date{white-space:nowrap}
 .pk.a{border-color:var(--ball)}.pk.a .tg{color:var(--ball)}
 .pk.b{border-color:#ff7a59}.pk.b .tg{color:#ff7a59}
 .chip.add{border-style:dashed;color:var(--mute);justify-content:center}
-.addrow{display:flex;gap:8px}
-.addrow input{flex:1;min-width:0;box-sizing:border-box;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px;-webkit-appearance:none;appearance:none}
+.addrow{display:flex;flex-wrap:wrap;gap:8px}.addrow .ghost{flex:1 1 auto;white-space:nowrap}
+.chip.guest{border-style:dashed;border-color:#f5b942}.chip.guest.on{border-color:#f5b942}.chip.guest.on .dot{background:#f5b942;border-color:#f5b942}.chip.guest .sub{color:#f5b942}
+.gst{font-family:var(--body);font-style:normal;font-size:11px;font-weight:700;letter-spacing:1px;color:#f5b942;border:1px dashed #f5b942;border-radius:6px;padding:1px 6px}
+.addrow input{flex:1 1 100%;min-width:0;box-sizing:border-box;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);padding:0 12px;-webkit-appearance:none;appearance:none}
 .addrow input:focus,.addrow input:focus-visible{outline:none;border-color:var(--ball)} /* the ring version overflowed the left edge of the scroll area */
 .addrow[hidden]{display:none}
 
@@ -316,6 +318,9 @@ header.top .tro{width:26px;height:26px;flex:none;fill:none;stroke:currentColor;s
 .nights{display:flex;flex-direction:column;gap:8px}
 .night{display:grid;grid-template-columns:1fr auto 18px;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--panel);text-align:left;width:100%}
 .night .d{font-weight:600}
+.ignum.plain{font-family:var(--body);font-weight:600;font-size:18px}
+.chip.add{text-align:center}
+.night.wrap{background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}.nights[hidden]{display:none}
 .night .m{font-size:12px;color:var(--mute)}
 .night .c{font-family:var(--display);font-weight:800;font-size:22px;text-align:right}
 .night .c small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute)}
@@ -453,7 +458,8 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <section class="view" id="v-checkin">
       <div><p class="eyebrow" id="ciEyebrow">Tonight</p><h2 id="ciTitle">Who's here?</h2></div>
       <div class="roster" id="roster"></div>
-      <div class="addrow" id="addrow" hidden><input id="newName" placeholder="New player's name" maxlength="20" autocomplete="off" autocapitalize="words"><button class="ghost" id="addConfirm">Add</button><button class="ghost" id="addCancel">Cancel</button></div>
+      <div class="addrow" id="addrow" hidden><input id="newName" placeholder="Name" maxlength="20" autocomplete="off" autocapitalize="words"><button class="ghost" id="addConfirm">Joining the league</button><button class="ghost" id="addGuest">Guest, just tonight</button><button class="ghost" id="addCancel">Cancel</button></div>
+      <p class="hint" id="guestHint" hidden></p>
       <button class="ghost latelink" id="lateBtn" hidden></button>
       <div class="seg" id="courtsSeg" hidden><button data-c="1" class="on">One court</button><button data-c="2">Two courts</button></div>
       <div class="panel" id="poPanel" hidden><p class="eyebrow">Tonight's teams</p><div id="poTeamList"></div></div>
@@ -506,8 +512,18 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <section class="view" id="v-history" hidden>
       <div><p class="eyebrow">All seasons</p><h2>History</h2></div>
       <div class="seg" id="histSeg"><button class="on" data-h="records">Records</button><button data-h="nights">Nights</button></div>
+      <div class="nights" id="wrapLinks" hidden></div>
       <div class="nights" id="nights"></div>
       <div id="records" hidden></div>
+    </section>
+
+    <!-- HISTORY: a finished season, wrapped -->
+    <section class="view" id="v-wrapped" hidden>
+      <button class="back" id="wrapBack"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>History</button>
+      <div><p class="eyebrow" id="wrapEyebrow"></p><h2 id="wrapTitle"></h2></div>
+      <div class="seg" id="wrapSeg" hidden><button class="on" data-w="all">The season</button><button data-w="me">Your season</button></div>
+      <div class="igwrap" id="wrapBody"></div>
+      <div class="sharebox" id="wrapShareBox"><button class="cta" id="wrapShare">Share to the group</button><p class="hint" style="text-align:center">Sends the season's results as text to your group chat.</p></div>
     </section>
 
     <!-- HISTORY: night detail -->
@@ -560,6 +576,14 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <div class="igwrap" id="rsBody"></div>
     <button class="cta" id="rsGo">See full recap</button>
     <p class="hint" id="rsHint" style="text-align:center"></p>
+  </div>
+</div>
+<div class="sheet" id="wrapSheet" hidden>
+  <div class="card">
+    <div class="row"><div><p class="eyebrow lime" id="wsEyebrow"></p><h2 id="wsTitle"></h2></div><button class="ghost" id="wsClose">Close</button></div>
+    <div class="igwrap" id="wsBody"></div>
+    <button class="cta" id="wsGo">See the full season</button>
+    <p class="hint" id="wsHint" style="text-align:center"></p>
   </div>
 </div>
 <div class="sheet" id="whoSheet" hidden>
@@ -642,10 +666,10 @@ const lateSet=()=>{ const T=state.tonight; if(!(T.late instanceof Set)) T.late=n
 const active=()=>[...state.tonight.present].filter(p=>!lateSet().has(p));
 const credits=()=>state.tonight.credit||(state.tonight.credit=[]);
 function arrive(p){ const T=state.tonight; if(T.po){ lateSet().delete(p); poAdd(p); return; } const A=active(); lateSet().delete(p);
-  const t=tally(T.games), cr={}; credits().forEach(c=>cr[c.p]=c.n); const gp=x=>t[x]?t[x].gp:0;
+  const t=tally(T.games,true), cr={}; credits().forEach(c=>cr[c.p]=c.n); const gp=x=>t[x]?t[x].gp:0;
   const min=A.length?Math.min(...A.map(x=>gp(x)+(cr[x]||0))):0; T.credit=credits().filter(c=>c.p!==p); if(min>gp(p)) T.credit.push({p,n:min-gp(p)}); }
 // Done for the night: out of the draw from here on; his games stay. If he's in a game that hasn't been scored, that game is redrawn.
-function leave(p){ const T=state.tonight; if(T.po){ poLeave(p); return; } T.present.delete(p); lateSet().delete(p); T.credit=credits().filter(c=>c.p!==p);
+function leave(p){ const T=state.tonight; if(T.po){ poLeave(p); return; } if(isGuest(p)&&!tally(T.games,true)[p]) dropGuest(p); T.present.delete(p); lateSet().delete(p); T.credit=credits().filter(c=>c.p!==p);
   const cur=normCur(T.current)||[]; const g=cur.find(x=>!scored(x)&&inGame(x,p));
   if(g){ const others=cur.filter(x=>x!==g); const pool=active().filter(q=>!others.some(x=>inGame(x,q))); const n=nextGame(pool,T.games);
     if(n){ g.a=n.a; g.b=n.b; const L=lineFor(g); if(L!==null) g.line=L; else delete g.line; } else { T.current=others.length?others:null; flushScored(); } }
@@ -661,7 +685,16 @@ const dateShort = d => new Date(d+'T12:00').toLocaleDateString(undefined,{weekda
 function diffs(g){ const d=g.sa-g.sb; const m={}; g.a.forEach(p=>m[p]=d); g.b.forEach(p=>m[p]=-d); return m; }
 // Night MVP: best +/- of the night; ties go to more wins, then fewer games. One rule for the night page, History and the MVP count.
 function mvpOf(t){ return Object.keys(t).sort((a,b)=>t[b].pm-t[a].pm||t[b].w-t[a].w||t[a].gp-t[b].gp||a.localeCompare(b))[0]; }
-function tally(games){ const t={}; games.forEach(g=>{ const d=diffs(g); for(const p in d){ t[p]=t[p]||{pm:0,gp:0,w:0,l:0}; t[p].pm+=d[p]; t[p].gp++; d[p]>0?t[p].w++:t[p].l++; } }); return t; }
+// Guests: a one-night sub. He sits in tonight.guests (never in PLAYERS) and every game he plays is stamped gu:[his name].
+// tally() leaves a guest out, so the standings, Night MVP, records and the line never see him, while everyone else's
+// games with him count as usual. Pass all=true for the night's own board, where he does show.
+const guests=()=>state.tonight.guests||(state.tonight.guests=[]);
+const isGuest=p=>guests().includes(p);
+const gOf=(g,p)=>!!(g.gu&&g.gu.includes(p));
+const guTag=g=>{ const G=guests().filter(p=>inGame(g,p)); return G.length?{gu:G}:{}; };
+const nightGuests=N=>[...new Set((N.games||[]).flatMap(g=>g.gu||[]))];
+function dropGuest(p){ state.tonight.guests=guests().filter(x=>x!==p); }
+function tally(games,all){ const t={}; games.forEach(g=>{ const d=diffs(g); for(const p in d){ if(!all&&gOf(g,p)) continue; t[p]=t[p]||{pm:0,gp:0,w:0,l:0}; t[p].pm+=d[p]; t[p].gp++; d[p]>0?t[p].w++:t[p].l++; } }); return t; }
 const season = ()=>state.seasons[state.seasons.length-1];
 // every night ever, including the one in progress
 function allNightsEver(){ return state.tonight.games.length? state.nights.concat([{date:state.tonight.date,games:state.tonight.games,season:season().id,live:true,...(state.tonight.po?{po:state.tonight.po}:{})}]) : state.nights; }
@@ -727,7 +760,7 @@ const scored=g=>g.sa!=null&&g.sb!=null;
 function flushScored(){
   const T=state.tonight; const cur=normCur(T.current); T.current=null; if(!cur) return;
   const done=cur.filter(scored); if(!done.length) return;
-  const r=nextR(T.games); done.forEach(g=>T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r,...(hasLine(g)?{line:g.line}:{}),...(g.m!=null?{m:g.m}:{})}));
+  const r=nextR(T.games); done.forEach(g=>T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r,...(hasLine(g)?{line:g.line}:{}),...(g.m!=null?{m:g.m}:{}),...guTag(g)}));
 }
 
 // ---------- navigation ----------
@@ -747,7 +780,8 @@ function show(tab, sub){
     'v-standings': tab==='season' && state.sub!=='player',
     'v-player':  tab==='season' && state.sub==='player',
     'v-bracket': tab==='bracket',
-    'v-history': tab==='history' && state.sub!=='night',
+    'v-history': tab==='history' && state.sub!=='night' && state.sub!=='wrapped',
+    'v-wrapped': tab==='history' && state.sub==='wrapped',
     'v-night':   tab==='history' && state.sub==='night'
   };
   for(const id in pages) document.getElementById(id).hidden=!pages[id];
@@ -757,20 +791,25 @@ function show(tab, sub){
   $('#hdrDate').textContent = tab==='tonight'&&(state.tonight.games.length||state.tonight.started||!isEarly())? dateShort(state.tonight.games.length||state.tonight.started? state.tonight.date : nightDate()) : season().name;
   if(pages['v-checkin']) renderCheckin(); if(pages['v-court']) renderCourt();
   if(pages['v-standings']) renderStandings(); if(pages['v-player']) renderPlayer();
-  if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-bracket']) renderPlayoffs();
+  if(pages['v-history']) renderHistory(); if(pages['v-night']) renderNight(); if(pages['v-wrapped']) renderWrapped(); if(pages['v-bracket']) renderPlayoffs();
   document.querySelector('main').scrollTop=0;
-  roleUI(); firstOpen(); recapCheck();
+  roleUI(); firstOpen(); recapCheck(); wrappedCheck();
   if(tab==='tonight') staleCheck();
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
 
 // ---------- check-in ----------
 function renderCheckin(){
-  const t=tally(state.nights.flatMap(n=>n.games)); const tn=tally(state.tonight.games);
+  const t=tally(state.nights.flatMap(n=>n.games)); const tn=tally(state.tonight.games,true);
   // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
   $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const s=t[p]; const tg=tn[p]?tn[p].gp:0;
     return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
-    + (adding?'':`<button class="chip add" id="addBtn">+ Add a new player</button>`);
+    + guests().slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const tg=tn[p]?tn[p].gp:0;
+    return `<button class="chip guest pressable ${on?'on':''} ${late?'late':''}" data-p="${escH(p)}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${escH(p)}</span><br><span class="sub num">${late?'Guest · running late':!on&&tg?`Guest · ${tg} game${tg===1?'':'s'} kept`:'Guest tonight'}</span></span></button>`; }).join('')
+    + (adding?'':`<button class="chip add" id="addBtn">+ Add a player or guest</button>`);
+  const GH=guests().filter(p=>state.tonight.present.has(p)); $('#guestHint').hidden=!GH.length;
+  if(GH.length) $('#guestHint').textContent=`${GH.join(' and ')} ${GH.length>1?'are guests':'is a guest'}: in the rotation tonight, not in the standings. Everyone else's games with ${GH.length>1?'them':'him'} still count.`;
+  $('#addGuest').hidden=poSetup||!!state.tonight.po;
   $('#addrow').hidden=!adding;
   const T=state.tonight; const np=T.present.size; const LATE=[...lateSet()].filter(p=>T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const n=np-LATE.length; // n = at the court now
   $('#lateBtn').hidden=np===0; $('#lateBtn').textContent=LATE.length?`Late: ${LATE.join(', ')} · Change`:'Anyone running late?';
@@ -821,20 +860,27 @@ $('#roster').addEventListener('click',e=>{
   const b=e.target.closest('.chip'); if(!b||!b.dataset.p) return; const p=b.dataset.p;
   if(state.tonight.present.has(p)) checkOut(p); else { state.tonight.present.add(p); haptic(); flushScored(); renderCheckin(); persist(); } });
 // Taking a name off mid-night only stops him being drawn. Say so, because it looks like it might wipe his games.
-function checkOut(p){ const T=state.tonight; T.present.delete(p); lateSet().delete(p); haptic(); flushScored(); const tg=(tally(T.games)[p]||{}).gp||0; renderCheckin(); persist();
+function checkOut(p){ const T=state.tonight; T.present.delete(p); lateSet().delete(p); haptic(); flushScored(); const tg=(tally(T.games,true)[p]||{}).gp||0; const gone=isGuest(p)&&!tg; if(gone) dropGuest(p); renderCheckin(); persist(); if(gone) toast(`${p} is off tonight's list`);
   if(tg) toast(`${p} is done. His ${tg} game${tg===1?'':'s'} tonight still count${tg===1?'s':''}.`); }
 $('#courtsSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const c=+b.dataset.c; if(c===state.tonight.courts) return;
   state.tonight.courts=c; flushScored(); renderCheckin(); persist(); });
 function addPlayer(){ const n=$('#newName').value.trim(); if(!n) return;
   if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return; }
+  if(guests().some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is here as a guest tonight. Take him off first.`); return; }
   PLAYERS.push(n); state.tonight.present.add(n); flushScored(); $('#newName').value=''; adding=false; renderCheckin(); persist(); toast(`${n} added and checked in`); }
 // Running late: one quiet link under the roster, so the chips stay a plain in/out tap
 $('#lateBtn').onclick=()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
   actionSheet('Running late',"Who isn't here yet?",P.map(p=>{ const late=lateSet().has(p); return {label:late?`${p} is here now`:p,run:()=>{ haptic(); if(late) arrive(p); else lateSet().add(p); flushScored(); renderCheckin(); persist(); toast(late?`${p} is in the draw`:`${p} sits out until he arrives`); }}; })); };
 // the add row replaces the chip while it's open; Cancel or Escape brings the chip back
 let adding=false;
+// A guest fills out the court for one night. Returns false (with a toast) if the name can't be used.
+function guestOk(n){ if(!n) return false; if(state.tonight.po||poSetup){ toast('Playoffs are for league players.'); return false; }
+  if(PLAYERS.some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already on the roster`); return false; }
+  if(guests().some(p=>p.toLowerCase()===n.toLowerCase())){ toast(`${n} is already a guest tonight`); return false; } return true; }
+function addGuest(){ const n=$('#newName').value.trim().slice(0,20); if(!guestOk(n)) return;
+  guests().push(n); state.tonight.present.add(n); haptic(); flushScored(); $('#newName').value=''; adding=false; renderCheckin(); persist(); toast(`${n} is in as a guest. Tonight only.`); }
 function cancelAdd(){ $('#newName').value=''; adding=false; renderCheckin(); }
-$('#addConfirm').onclick=addPlayer; $('#addCancel').onclick=cancelAdd; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); if(e.key==='Escape') cancelAdd(); });
+$('#addConfirm').onclick=addPlayer; $('#addGuest').onclick=addGuest; $('#addCancel').onclick=cancelAdd; $('#newName').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); if(e.key==='Escape') cancelAdd(); });
 const todayISO=()=>{ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
 // League night is Tuesday. Every date the app shows or saves is a Tuesday: the coming one before a night starts,
 // the one after that once a night is saved. Open the app on Monday and it says Tuesday, not Monday.
@@ -848,7 +894,7 @@ longPress($('#v-checkin'),'#startBtn',b=>{ if(b.disabled) return; if(!b.classLis
   confirmSheet('Not league night',`Start a night for today, ${dateLong(todayISO())}? It counts toward the season like any other.`,'Start it',()=>startNight(todayISO())); });
 
 // ---------- court ----------
-function nameHtml(p){ const t=tally(state.tonight.games)[p]; return `${p}<small class="num">${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
+function nameHtml(p){ const t=tally(state.tonight.games,true)[p]; return `${p}<small class="num">${isGuest(p)?'Guest · ':''}${t?fmt(t.pm)+' tonight':'first game'}</small>`; }
 const COURT_SVG=`<svg viewBox="0 0 210 110" aria-hidden="true">
   <rect x="0" y="0" width="210" height="110" fill="var(--surround)"/>
   <rect x="17" y="16" width="176" height="80" fill="var(--court)"/>
@@ -950,11 +996,12 @@ function logHtml(games,reverse){ const arr=games.map((x,i)=>({x,i})); if(reverse
 // Who's here is read-only: the view is shared, so looking must never reset everyone's screen. Edit (inside) does the reset.
 function editPresent(){ state.tonight.started=false; flushScored(); $('#startBtn').textContent='Back to the court'; show('tonight'); persist(); }
 $('#editPresent').onclick=()=>{ const T=state.tonight; const here=[...T.present].sort((x,y)=>x.localeCompare(y)); const P=here.map(p=>lateSet().has(p)?p+' (late)':p); const c=T.courts===2?' · two courts':'';
-  const out=PLAYERS.filter(p=>!T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const lateNow=here.filter(p=>lateSet().has(p));
+  const out=PLAYERS.concat(guests()).filter(p=>!T.present.has(p)).sort((x,y)=>x.localeCompare(y)); const lateNow=here.filter(p=>lateSet().has(p));
   // leaving and arriving happen here, so the common mid-night changes never reset anyone's screen; the full check-in is the last resort
   actionSheet(`${P.length} playing${c}`, P.join(', '), [
     {label:"Someone's done for the night",gated:true,run:()=>actionSheet('Done for the night',"Who's leaving?",here.map(p=>({label:p,run:()=>{ haptic(); leave(p); }})))},
     ...(out.length||lateNow.length?[{label:'Someone just got here',gated:true,run:()=>actionSheet('Just got here',"Who's joining?",lateNow.map(p=>({label:`${p} · was late`,run:()=>{ haptic(15); arrive(p); renderCourt(); persist(); toast(`${p} is in the next draw`); }})).concat(out.map(p=>({label:p,run:()=>{ haptic(15); join(p); }}))))}]:[]),
+    ...(T.po?[]:[{label:'A guest just got here',gated:true,run:()=>actionSheet('Guest, just tonight',"What's his name? He plays tonight and isn't in the standings.",[{label:'Add him to the next draw',run:v=>{ const n=(v||'').slice(0,20); if(!guestOk(n)) return; haptic(15); guests().push(n); join(n); }}],{placeholder:'Name'})}]),
     ...(T.po?[]:[{label:'Edit everyone (back to check-in)',gated:true,run:editPresent}])]); };
 // Undo peels back one score: first any score saved in the round in progress, otherwise the whole last round comes back onto the courts unscored.
 $('#undoBtn').onclick=()=>asScorer(()=>{ haptic();
@@ -1032,7 +1079,7 @@ $('#saveScore').onclick=()=>{ const p=state.pending,T=state.tonight; const sc=pe
   // playoff night: every game is saved the moment it is scored, because two courts run two separate matches
   if(T.po&&g.m!=null){ T.games.push({a:g.a,b:g.b,sa:g.sa,sb:g.sb,r:nextR(T.games),m:g.m,...(hasLine(g)?{line:g.line}:{})}); const rest=cur.filter(x=>x!==g); T.current=rest.length?rest:null; }
   // the round is over once every court has a score; then it goes into the log as one round and the next one is drawn
-  else if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{})})); T.current=null; }
+  else if(cur.every(scored)){ const r=nextR(T.games); cur.forEach(x=>T.games.push({a:x.a,b:x.b,sa:x.sa,sb:x.sb,r,...(hasLine(x)?{line:x.line}:{}),...guTag(x)})); T.current=null; }
   hideSheet('#sheet'); persist();
   // play the result on the board that just finished, then draw what comes next
   playResult(p.idx, sc.sa, sc.sb); setTimeout(renderCourt, 1500); };
@@ -1095,7 +1142,8 @@ $('#endSeason').onclick=()=>{
   if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent='Tap again to confirm'; $('#endHint').hidden=false; return; }
   const s=season(); s.name=$('#seasonName').value.trim()||s.name; s.end=state.tonight.date;
   state.seasons.push({id:s.id+1,name:`Season ${s.id+1}`,start:state.tonight.date,end:null});
-  hideSheet('#seasonSheet'); renderStandings(); persist(); toast(`${s.name} ended. ${season().name} starts with the next night.`);
+  hideSheet('#seasonSheet'); persist(); toast(`${s.name} ended. ${season().name} starts with the next night.`);
+  if(seasonFacts(s.id)){ markWrapped(s.id); state.wrapped=s.id; show('history','wrapped'); } else renderStandings();
 };
 
 // ---------- bracket ----------
@@ -1210,6 +1258,7 @@ function renderCourtPO(){
 }
 // start: teams from who is at the court, schedule from how many teams and courts
 function poInit(){ const T=state.tonight; if(T.started||T.games.length){ toast("End tonight's night first."); return false; }
+  if(guests().some(p=>T.present.has(p))){ toast('Playoffs are for league players. Take the guest off first.'); return false; } T.guests=[];
   const A=active(); if(A.length<4){ toast('Need 4 to play.'); return false; }
   const teams=poSeed(A); T.po={teams,...poSchedule(teams.length,T.courts||1)}; T.current=null; poSetup=false; return true; }
 function poHint(n,two,LATE){ if(n<4) return `Need 4 to play (${n} ${LATE.length?'here now':'checked in'}).`; const t=Math.floor(n/2);
@@ -1270,11 +1319,11 @@ function renderPlayer(){
   const p=state.player; $('#plName').textContent=p;
   const nights=allNights(); const games=allGames().filter(g=>inGame(g,p)); const t=tally(games)[p];
   if(!t){ $('#plStats').innerHTML=`<div class="stat big"><div class="d">${p} hasn't played a game yet.</div></div>`; $('#plLine').innerHTML=''; $('#plBars').innerHTML=''; return; }
-  const partners={}; games.forEach(g=>{ const team=g.a.includes(p)?g.a:g.b; const mate=team.find(x=>x!==p); const d=diffs(g)[p]; partners[mate]=partners[mate]||{pm:0,n:0}; partners[mate].pm+=d; partners[mate].n++; });
+  const partners={}; games.forEach(g=>{ const team=g.a.includes(p)?g.a:g.b; const mate=team.find(x=>x!==p); if(!mate||gOf(g,mate)) return; const d=diffs(g)[p]; partners[mate]=partners[mate]||{pm:0,n:0}; partners[mate].pm+=d; partners[mate].n++; });
   // partner stats need a real sample: 3+ games together, else they're noise
   const pl=Object.entries(partners).filter(x=>x[1].n>=3).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n); const bp=pl[0];
   // rivals: his record against each opponent. Same sample rule as partners (3+ games), and only a losing / winning record counts.
-  const opp={}; games.forEach(g=>{ const w=diffs(g)[p]>0; (g.a.includes(p)?g.b:g.a).forEach(o=>{ const r=opp[o]=opp[o]||{w:0,l:0}; w?r.w++:r.l++; }); });
+  const opp={}; games.forEach(g=>{ const w=diffs(g)[p]>0; (g.a.includes(p)?g.b:g.a).forEach(o=>{ if(gOf(g,o)) return; const r=opp[o]=opp[o]||{w:0,l:0}; w?r.w++:r.l++; }); });
   const ol=Object.entries(opp).map(([o,r])=>({o,...r,n:r.w+r.l,pct:r.w/(r.w+r.l)})).filter(r=>r.n>=3);
   const nem=ol.filter(r=>r.l>r.w).sort((a,b)=>a.pct-b.pct||b.l-a.l||a.o.localeCompare(b.o))[0];
   const vic=ol.filter(r=>r.w>r.l).sort((a,b)=>b.pct-a.pct||b.w-a.w||a.o.localeCompare(b.o))[0];
@@ -1352,7 +1401,7 @@ function records(){
   if(!games.length) return null;
   const day=d=>dateShort(d).replace(/^\w+,\s*/,''); const top=(o,f)=>Object.keys(o).sort((a,b)=>f(o[b])-f(o[a])||a.localeCompare(b))[0];
   // streaks: longest run of wins and of losses, and the run each player is on now
-  const seq={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d)(seq[p]=seq[p]||[]).push({w:d[p]>0,i:x.i,date:x.date}); });
+  const seq={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d) if(!gOf(x.g,p)) (seq[p]=seq[p]||[]).push({w:d[p]>0,i:x.i,date:x.date}); });
   const best={w:null,l:null}, cur={};
   for(const p in seq){ let run=0,kind=null,start=null; seq[p].forEach(r=>{ if(r.w===kind) run++; else { kind=r.w; run=1; start=r; } const k=kind?'w':'l'; if(!best[k]||run>best[k].n) best[k]={p,n:run,from:start.date,to:r.date,i:r.i}; }); cur[p]={n:run,w:kind}; }
   R.winStreak=best.w; R.loseStreak=best.l; const hp=Object.keys(cur).filter(p=>cur[p].w).sort((a,b)=>cur[b].n-cur[a].n||a.localeCompare(b))[0]; R.hot=hp?{p:hp,n:cur[hp].n}:null;
@@ -1361,7 +1410,7 @@ function records(){
     for(const p in t){ if(!bn||t[p].pm>bn.pm) bn={p,pm:t[p].pm,date:n.date,i}; if(!wn||t[p].pm<wn.pm) wn={p,pm:t[p].pm,date:n.date,i}; } });
   const mp=top(mv,v=>v); R.mvp={p:mp,n:mv[mp]}; R.mvpRace=Object.keys(mv).sort((a,b)=>mv[b]-mv[a]||a.localeCompare(b)).slice(0,4).map(p=>({p,n:mv[p]})); R.bestNight=bn; R.worstNight=wn;
   // pairs with a real sample
-  const pr={}; games.forEach(x=>{ [[x.g.a,x.g.sa-x.g.sb],[x.g.b,x.g.sb-x.g.sa]].forEach(([t,d])=>{ const k=t.slice().sort().join(' & '); pr[k]=pr[k]||{pm:0,n:0,w:0}; pr[k].pm+=d; pr[k].n++; if(d>0) pr[k].w++; }); });
+  const pr={}; games.forEach(x=>{ [[x.g.a,x.g.sa-x.g.sb],[x.g.b,x.g.sb-x.g.sa]].forEach(([t,d])=>{ if(t.some(p=>gOf(x.g,p))) return; const k=t.slice().sort().join(' & '); pr[k]=pr[k]||{pm:0,n:0,w:0}; pr[k].pm+=d; pr[k].n++; if(d>0) pr[k].w++; }); });
   // best and worst record together (3+ games); ties go to the better +/- per game, then the pair with more games
   const PAIR_MIN=3, pct=k=>pr[k].w/pr[k].n, avg=k=>pr[k].pm/pr[k].n, mk=k=>k?{k,w:pr[k].w,l:pr[k].n-pr[k].w,n:pr[k].n}:null;
   const ql=Object.keys(pr).filter(k=>pr[k].n>=PAIR_MIN).sort((a,b)=>pct(b)-pct(a)||avg(b)-avg(a)||pr[b].n-pr[a].n||a.localeCompare(b));
@@ -1372,9 +1421,9 @@ function records(){
   // single games
   const line=x=>{ const aw=x.g.sa>x.g.sb; return {win:aw?x.g.a:x.g.b,lose:aw?x.g.b:x.g.a,ws:Math.max(x.g.sa,x.g.sb),ls:Math.min(x.g.sa,x.g.sb),score:`${Math.max(x.g.sa,x.g.sb)}–${Math.min(x.g.sa,x.g.sb)}`,who:`${(aw?x.g.a:x.g.b).join(' & ')} over ${(aw?x.g.b:x.g.a).join(' & ')}`,date:x.date,i:x.i}; };
   const mar=x=>Math.abs(x.g.sa-x.g.sb), tot=x=>x.g.sa+x.g.sb;
-  R.marathon=line(games.slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]);
+  const lg=games.filter(x=>!x.g.gu); R.marathon=line((lg.length?lg:games).slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]); // a game with a guest in it is never the record
   // bagels and games played
-  const gave={}, ate={}, gp={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d) gp[p]=(gp[p]||0)+1; if(Math.min(x.g.sa,x.g.sb)===0){ const aw=x.g.sa>x.g.sb; (aw?x.g.a:x.g.b).forEach(p=>gave[p]=(gave[p]||0)+1); (aw?x.g.b:x.g.a).forEach(p=>ate[p]=(ate[p]||0)+1); } });
+  const gave={}, ate={}, gp={}; games.forEach(x=>{ const d=diffs(x.g); const reg=p=>!gOf(x.g,p); for(const p in d) if(reg(p)) gp[p]=(gp[p]||0)+1; if(Math.min(x.g.sa,x.g.sb)===0){ const aw=x.g.sa>x.g.sb; (aw?x.g.a:x.g.b).filter(reg).forEach(p=>gave[p]=(gave[p]||0)+1); (aw?x.g.b:x.g.a).filter(reg).forEach(p=>ate[p]=(ate[p]||0)+1); } });
   const gv=top(gave,v=>v), at=top(ate,v=>v), ir=top(gp,v=>v); R.gave=gv?{p:gv,n:gave[gv]}:null; R.ate=at?{p:at,n:ate[at]}:null; R.iron={p:ir,n:gp[ir]};
   R.day=day; R.nights=nights.length; R.games=games.length; return R; }
 // Records as an infographic: each kind of record gets the picture that suits it (pips for a streak, bars for a race, a scoreboard
@@ -1419,14 +1468,20 @@ function renderRecords(){ const R=records(); const el=$('#records');
 function renderHistory(){
   if(histMode===null) histMode='records';
   document.querySelectorAll('#histSeg button').forEach(b=>b.classList.toggle('on',b.dataset.h===histMode)); $('#nights').hidden=histMode!=='nights'; $('#records').hidden=histMode!=='records';
+  // a finished season's wrap: the latest one sits above Records, and each one sits above its own nights in the list
+  const wrapBtn=S=>`<button class="night wrap" data-s="${S.id}"><div><div class="d">${escH(S.name)} Wrapped</div><div class="m">Champions, awards and the final standings</div></div><span></span><span class="chev" style="color:var(--mute)">›</span></button>`;
+  const ended=state.seasons.filter(S=>S.end&&seasonFacts(S.id)); const LE=ended[ended.length-1];
+  $('#wrapLinks').hidden=histMode!=='records'||!LE; $('#wrapLinks').innerHTML=LE?wrapBtn(LE):'';
   if(histMode==='records'){ renderRecords(); return; }
-  const nights=allNightsEver(); const multi=state.seasons.length>1;
-  $('#nights').innerHTML = nights.length? nights.slice().reverse().map((n,ri)=>{ const idx=nights.length-1-ri; const t=tally(n.games); const mvp=mvpOf(t);
+  const nights=allNightsEver(); const multi=state.seasons.length>1; let lastS=null;
+  $('#nights').innerHTML = nights.length? nights.slice().reverse().map((n,ri)=>{ const W=n.season!==lastS&&ended.find(S=>S.id===n.season); lastS=n.season; return (W?wrapBtn(W):'')+(()=>{ const idx=nights.length-1-ri; const t=tally(n.games); const mvp=mvpOf(t); const np=Object.keys(tally(n.games,true)).length;
     const sn=state.seasons.find(s=>s.id===n.season);
-    return `<button class="night" data-i="${idx}"><div><div class="d">${dateLong(n.date)}${n.live?' <span class="hint">(in progress)</span>':''}</div><div class="m">${n.po?'Playoffs · ':''}${multi&&sn?sn.name+' · ':''}${Object.keys(t).length} players · MVP ${mvp} ${fmt(t[mvp].pm)}</div></div><div class="c num">${n.games.length}<small>games</small></div><span class="chev" style="color:var(--mute)">›</span></button>`; }).join('')
+    return `<button class="night" data-i="${idx}"><div><div class="d">${dateLong(n.date)}${n.live?' <span class="hint">(in progress)</span>':''}</div><div class="m">${n.po?'Playoffs · ':''}${multi&&sn?sn.name+' · ':''}${np} players${mvp?` · MVP ${mvp} ${fmt(t[mvp].pm)}`:''}</div></div><div class="c num">${n.games.length}<small>games</small></div><span class="chev" style="color:var(--mute)">›</span></button>`; })(); }).join('')
     : '<p class="hint">No nights yet.</p>';
 }
-$('#nights').addEventListener('click',e=>{ const b=e.target.closest('.night'); if(!b) return; state.night=+b.dataset.i; show('history','night'); });
+const openWrapPage=e=>{ const b=e.target.closest('.night.wrap'); if(!b) return false; haptic(); state.wrapped=+b.dataset.s; show('history','wrapped'); return true; };
+$('#wrapLinks').addEventListener('click',openWrapPage);
+$('#nights').addEventListener('click',e=>{ if(openWrapPage(e)) return; const b=e.target.closest('.night'); if(!b) return; state.night=+b.dataset.i; show('history','night'); });
 // ---------- night recap ----------
 // One page per night, two halves. "The night" is the same for everyone: MVP, the final board, the two games worth
 // retelling, who moved in the standings, then every game. "Your night" is the same night for the name on this phone;
@@ -1454,10 +1509,10 @@ function myNight(N,p){ const games=N.games.filter(g=>inGame(g,p)); const mates={
   const list=Object.keys(mates).map(k=>({p:k,...mates[k]})).sort((a,b)=>b.pm-a.pm||b.n-a.n||a.p.localeCompare(b.p));
   return {rows,list,best:list[0]&&list[0].pm>0?list[0]:null}; }
 function nightFacts(idx){ const N=allNightsEver()[idx]; if(!N||!N.games.length) return null;
-  const t=tally(N.games), ps=nightOrder(t), mvp=ps[0]; const mar=g=>Math.abs(g.sa-g.sb), tot=g=>g.sa+g.sb;
+  const t=tally(N.games,true), G=new Set(nightGuests(N)), ps=nightOrder(t), mvp=ps.find(p=>!G.has(p))||ps[0]; const mar=g=>Math.abs(g.sa-g.sb), tot=g=>g.sa+g.sb;
   const blow=N.games.slice().sort((a,b)=>mar(b)-mar(a)||tot(b)-tot(a))[0], close=N.games.slice().sort((a,b)=>mar(a)-mar(b)||tot(b)-tot(a))[0];
   const wn=g=>(g.sa>g.sb?g.a:g.b).join(' & '), ln=g=>(g.sa>g.sb?g.b:g.a).join(' & '), sc=g=>`${Math.max(g.sa,g.sb)}–${Math.min(g.sa,g.sb)}`;
-  return {N,t,ps,mvp,blow,close,wn,ln,sc,moves:nightMoves(idx)}; }
+  return {N,t,ps,mvp,G,blow,close,wn,ln,sc,moves:nightMoves(idx)}; }
 const heroHtml=(eyebrow,big,sub,num,numSub,xxl)=>`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">${eyebrow}</p><span class="igname ${xxl?'xxl num':'lg pn'}">${big}</span><span class="igsub">${sub}</span></span><span class="igside"><span class="ignum ${xxl?'xl':'lg'} ${pmCls(num)}">${fmt(num)}</span><span class="igsub">${numSub}</span></span></div></section>`;
 const gameTile=(label,F,g,alt)=>`<section class="ig tile${alt?' alt':''}"><p class="eyebrow">${label}</p><div class="sc num">${F.sc(g)}</div><p class="who">${escH(F.wn(g))}</p><p class="igsub">over ${escH(F.ln(g))}</p></section>`;
 function standingLine(m){ if(!m) return null; const d=m.was?m.was-m.now:0;
@@ -1475,7 +1530,7 @@ function renderNight(){
   const bp=Object.entries(pairs).sort((a,b)=>b[1].pm-a[1].pm)[0];
   // biggest cover of the night, from either side of the line
   let beat=null; N.games.forEach(g=>{ const c=cover(g); if(c===null||Math.abs(g.line)<1) return; const by=Math.abs(c); if(by>0&&(!beat||by>beat.by)) beat={g,by,team:(c>0?g.a:g.b).join(' & ')}; });
-  const board=`<section class="ig"><p class="eyebrow">Final board</p><div class="rb">${ps.map((p,i)=>`<div class="rbrow ${p===mine?'me':''}"><span class="k num">${i+1}</span><span class="nm">${escH(p)}${p===mine?'<em>YOU</em>':''}</span><span class="wl num">${t[p].w}–${t[p].l}</span><span class="pm num ${pmCls(t[p].pm)}">${fmt(t[p].pm)}</span></div>`).join('')}</div></section>`;
+  const board=`<section class="ig"><p class="eyebrow">Final board</p><div class="rb">${ps.map((p,i)=>`<div class="rbrow ${p===mine?'me':''}"><span class="k num">${i+1}</span><span class="nm">${escH(p)}${p===mine?'<em>YOU</em>':''}${F.G.has(p)?'<span class="gst">GUEST</span>':''}</span><span class="wl num">${t[p].w}–${t[p].l}</span><span class="pm num ${pmCls(t[p].pm)}">${fmt(t[p].pm)}</span></div>`).join('')}</div>${F.G.size?`<p class="igsub">${escH([...F.G].join(' and '))} played as a guest: on this night only, not in the standings, the records or the MVP.</p>`:''}</section>`;
   const same=F.blow===F.close;
   const games=same?gameTile('Game of the night',F,F.blow):`<div class="duo">${gameTile('Closest game',F,F.close)}${gameTile('Biggest win',F,F.blow)}</div>`;
   const mv=(F.moves||[]).filter(m=>t[m.p]&&m.was&&m.was!==m.now).sort((a,b)=>Math.abs(b.was-b.now)-Math.abs(a.was-a.now)||a.now-b.now).slice(0,3).sort((a,b)=>a.now-b.now);
@@ -1507,7 +1562,7 @@ function renderNight(){
   // only opens the share sheet straight from a tap. Where pictures can't be shared, it copies the recap as text.
   const key=state.night+':'+JSON.stringify(N.games); prepShare(F,key); const pic=canSharePic();
   $('#shareHint').textContent=pic?'Sends one picture of the night to your group text.':'Copies the night as text to paste in the group chat.';
-  const asText=()=>{ const lines=[`Pickle · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
+  const asText=()=>{ const lines=[`Pickle · ${dateLong(N.date)}`,`MVP: ${mvp} (${fmt(t[mvp].pm)})`,...(bp&&bp[1].n>=3?[`Best pair: ${bp[0]} (${fmt(bp[1].pm)})`]:[]),'',...ps.map(p=>`${p}${F.G.has(p)?' (guest)':''} ${fmt(t[p].pm)} (${t[p].w}–${t[p].l})`)].join('\n');
     navigator.clipboard?.writeText(lines).then(()=>toast('Copied. Paste it in the group chat.')).catch(()=>toast('Copy blocked here')); };
   $('#copyRecap').onclick=()=>{ haptic(); if(!pic){ asText(); return; }
     let blob=shareKey===key?shareBlob:null; if(!blob){ try{ blob=cardBlobNow(F); }catch(e){} } // not drawn yet: draw it now, inside the tap
@@ -1521,7 +1576,7 @@ function prepShare(F,key){ if(shareKey===key&&shareBlob) return; shareBlob=null;
   const go=()=>{ try{ recapCard(F).toBlob(b=>{ if(shareKey===key) shareBlob=b; },'image/png'); }catch(e){} };
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(go,go); }
 function cardBlobNow(F){ const d=recapCard(F).toDataURL('image/png').split(',')[1], b=atob(d), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return new Blob([u],{type:'image/png'}); }
-function recapCard(F){ const {N,t,ps,mvp}=F; const rest=ps.slice(1), W=390, PAD=20, ROW=34;
+function recapCard(F){ const {N,t,ps,mvp}=F; const rest=ps.filter(p=>p!==mvp), W=390, PAD=20, ROW=34;
   const H=PAD+28+14+92+14+(rest.length?rest.length*ROW+20+14:0)+64+PAD; const S=3;
   const c=document.createElement('canvas'); c.width=W*S; c.height=H*S; const x=c.getContext('2d'); x.scale(S,S);
   const css=getComputedStyle(document.documentElement), v=k=>css.getPropertyValue(k).trim();
@@ -1540,7 +1595,7 @@ function recapCard(F){ const {N,t,ps,mvp}=F; const rest=ps.slice(1), W=390, PAD=
   tx(fmt(t[mvp].pm),W-PAD-14,y+40,`800 44px ${D}`,col(t[mvp].pm),'right'); tx(`${t[mvp].w}–${t[mvp].l}`,W-PAD-14,y+72,`400 13px ${B}`,C.mute,'right'); y+=92+14;
   // the rest of the board
   if(rest.length){ const h=rest.length*ROW+20; box(PAD,y,W-2*PAD,h,16,C.panel); rest.forEach((p,i)=>{ const cy=y+10+i*ROW+ROW/2;
-      tx(String(i+2),PAD+14,cy,`600 13px ${B}`,C.mute); tx(up(p),PAD+38,cy+1,`800 19px ${D}`,C.fg,'left',170); tx(`${t[p].w}–${t[p].l}`,W-PAD-64,cy,`400 13px ${B}`,C.mute,'right'); tx(fmt(t[p].pm),W-PAD-14,cy+1,`800 20px ${D}`,col(t[p].pm),'right'); }); y+=h+14; }
+      tx(String(ps.indexOf(p)+1),PAD+14,cy,`600 13px ${B}`,C.mute); tx(up(p)+(F.G.has(p)?' (GUEST)':''),PAD+38,cy+1,`800 19px ${D}`,C.fg,'left',170); tx(`${t[p].w}–${t[p].l}`,W-PAD-64,cy,`400 13px ${B}`,C.mute,'right'); tx(fmt(t[p].pm),W-PAD-14,cy+1,`800 20px ${D}`,col(t[p].pm),'right'); }); y+=h+14; }
   // one game worth retelling
   const cg=F.close, same=F.blow===F.close; box(PAD,y,W-2*PAD,64,16,C.panel); tx(same?'GAME OF THE NIGHT':'CLOSEST GAME',PAD+14,y+22,`600 12px ${B}`,C.mute);
   tx(`${F.wn(cg)} over ${F.ln(cg)}`,PAD+14,y+43,`600 14px ${B}`,C.fg,'left',W-2*PAD-28-78); tx(F.sc(cg),W-PAD-14,y+33,`800 30px ${D}`,C.fg,'right');
@@ -1579,6 +1634,91 @@ function openRecap(i){ const F=nightFacts(i); if(!F) return; const {N,t,ps,mvp}=
   $('#rsHint').textContent=`Shown once. It stays in History under ${dateShort(N.date)}.`; showSheet('#recapSheet'); }
 $('#rsClose').onclick=()=>hideSheet('#recapSheet');
 $('#rsGo').onclick=()=>{ hideSheet('#recapSheet'); if(recapIdx==null||!state.nights[recapIdx]) return; haptic(); state.night=recapIdx; nightFor=null; nightWant='me'; show('history','night'); };
+
+// ---------- season wrapped ----------
+// The night recap, for a whole season. Nothing is stored: it is worked out from that season's saved nights, so a corrected
+// score corrects it. Regular nights feed the standings and the awards; the playoff night names the champions. Guests never appear.
+// Type: player names are in the body face. The display face is kept for the page title and the numbers.
+const WRAP_DAYS=14;
+const dayOf=d=>dateShort(d).replace(/^\w+,\s*/,'');
+function seasonFacts(id){
+  const S=state.seasons.find(x=>x.id===id); if(!S) return null;
+  const all=state.nights.filter(n=>n.season===id), reg=all.filter(n=>!n.po), games=reg.flatMap(n=>n.games); if(!games.length) return null;
+  const t=tally(games), order=rankFrom(games); if(!order.length) return null; const rt=p=>t[p].pm/(t[p].gp+SHRINK), inL=p=>order.includes(p);
+  let champ=null; all.forEach(n=>{ const P=poNorm(n.po); if(!P) return; const st=poState(P,n.games); if(st.champ==null||!st.final) return; const f=st.final, li=f.t.find(i=>i!==st.champ);
+    champ={win:P.teams[st.champ].p,lose:(P.teams[li]||{p:[]}).p,score:f.wo?null:`${Math.max(f.wa,f.wb)}–${Math.min(f.wa,f.wb)}`}; });
+  // Night MVPs; a tie goes to the higher finish
+  const mv={}; reg.forEach(n=>{ const m=mvpOf(tally(n.games)); if(m&&inL(m)) mv[m]=(mv[m]||0)+1; });
+  const kp=Object.keys(mv).sort((a,b)=>mv[b]-mv[a]||order.indexOf(a)-order.indexOf(b))[0]; const king=kp?{p:kp,n:mv[kp]}:null;
+  // most improved: the biggest climb from the halfway point to the end. Needs four nights and a climb of two spots to mean anything.
+  let improved=null; if(reg.length>=4){ const before=rankFrom(reg.slice(0,Math.floor(reg.length/2)).flatMap(n=>n.games));
+    order.forEach((p,i)=>{ const was=before.indexOf(p)+1, d=was?was-(i+1):0; if(d>1&&(!improved||d>improved.d)) improved={p,d,was,now:i+1}; }); }
+  const ip=order.slice().sort((a,b)=>t[b].gp-t[a].gp||order.indexOf(a)-order.indexOf(b))[0]; const iron={p:ip,n:t[ip].gp,nights:reg.filter(n=>n.games.some(g=>inGame(g,ip))).length};
+  // best pair with a real sample, guests left out
+  const pr={}; games.forEach(g=>{ [[g.a,g.sa-g.sb],[g.b,g.sb-g.sa]].forEach(([tm,d])=>{ if(tm.length!==2||tm.some(p=>gOf(g,p)||!inL(p))) return; const k=tm.slice().sort().join('|'); const r=pr[k]=pr[k]||{pm:0,n:0,w:0}; r.pm+=d; r.n++; if(d>0) r.w++; }); });
+  const dk=Object.keys(pr).filter(k=>pr[k].n>=3).sort((a,b)=>pr[b].w/pr[b].n-pr[a].w/pr[a].n||pr[b].pm/pr[b].n-pr[a].pm/pr[a].n||pr[b].n-pr[a].n||a.localeCompare(b))[0];
+  const dream=dk?{p:dk.split('|'),w:pr[dk].w,l:pr[dk].n-pr[dk].w}:null;
+  // longest win streak
+  let hot=null; const run={}; games.forEach(g=>{ const d=diffs(g); for(const p in d){ if(gOf(g,p)||!inL(p)) continue; run[p]=d[p]>0?(run[p]||0)+1:0; if(run[p]>1&&(!hot||run[p]>hot.n)) hot={p,n:run[p]}; } });
+  let bestNight=null; reg.forEach(n=>{ const x=tally(n.games); for(const p in x) if(inL(p)&&(!bestNight||x[p].pm>bestNight.pm)) bestNight={p,pm:x[p].pm,date:n.date}; });
+  return {S,all,reg,games,t,order,rt,champ,mv,king,improved,iron,dream,hot,bestNight,from:all[0].date,to:all[all.length-1].date};
+}
+// one player's season, from the same games
+function seasonMe(F,p){ const s=F.t[p], rank=F.order.indexOf(p)+1; if(!s||!rank) return null; const games=F.games.filter(g=>inGame(g,p));
+  const mates={}, opp={}; games.forEach(g=>{ const mine=g.a.includes(p)?g.a:g.b, them=g.a.includes(p)?g.b:g.a, d=diffs(g)[p]; const m=mine.find(x=>x!==p);
+    if(m&&!gOf(g,m)){ const r=mates[m]=mates[m]||{pm:0,n:0}; r.pm+=d; r.n++; } them.forEach(o=>{ if(gOf(g,o)) return; const r=opp[o]=opp[o]||{w:0,l:0}; d>0?r.w++:r.l++; }); });
+  const bp=Object.entries(mates).filter(x=>x[1].n>=3).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n)[0];
+  const ol=Object.entries(opp).map(([o,r])=>({o,...r,pct:r.w/(r.w+r.l)})).filter(r=>r.w+r.l>=3);
+  const nem=ol.filter(r=>r.l>r.w).sort((a,b)=>a.pct-b.pct||b.l-a.l)[0], vic=ol.filter(r=>r.w>r.l).sort((a,b)=>b.pct-a.pct||b.w-a.w)[0];
+  let best=null, nights=0; F.reg.forEach(n=>{ const x=tally(n.games)[p]; if(!x) return; nights++; if(!best||x.pm>best.pm) best={pm:x.pm,date:n.date}; });
+  return {p,s,rank,of:F.order.length,bp:bp?{p:bp[0],avg:bp[1].pm/bp[1].n,n:bp[1].n}:null,nem,vic,best,nights,mvps:F.mv[p]||0}; }
+const amp=a=>a.map(escH).join(' <span style="color:var(--mute);font-weight:400">&amp;</span> ');
+function wrapHero(F){ const c=F.champ, top=F.order[0];
+  return c?`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">Champions</p><span class="igname lg pn">${amp(c.win)}</span><span class="igsub">${c.lose.length?`Beat ${escH(c.lose.join(' & '))} in the final`:'Won the playoffs'}</span></span>${c.score?`<span class="igside"><span class="ignum lg num">${c.score}</span><span class="igsub">The final</span></span>`:''}</div></section>`
+    :`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">Season winner</p><span class="igname lg pn">${escH(top)}</span><span class="igsub num">${F.t[top].w}–${F.t[top].l} · first in the final standings</span></span><span class="igside"><span class="ignum lg num ${pmCls(F.rt(top))}">${fmt(r1(F.rt(top)))}</span><span class="igsub">rating</span></span></div></section>`; }
+const awardRow=(label,name,val,sub,cls)=>`<div class="igrow"><span class="igmain"><p class="eyebrow">${label}</p><span class="igname pn">${name}</span><span class="igsub">${sub}</span></span><span class="ignum plain num ${cls||''}">${val}</span></div>`;
+let wrapMode='all', wrapFor=null;
+$('#wrapBack').onclick=()=>{ wrapFor=null; show('history',null); };
+$('#wrapSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b||b.dataset.w===wrapMode) return; wrapMode=b.dataset.w; haptic(); renderWrapped(); document.querySelector('main').scrollTop=0; });
+function renderWrapped(){
+  const F=seasonFacts(state.wrapped); if(!F){ show('history',null); return; } const n=me(), M=n?seasonMe(F,n):null;
+  if(wrapFor!==state.wrapped){ wrapFor=state.wrapped; wrapMode='all'; } if(!M) wrapMode='all'; const meMode=wrapMode==='me';
+  $('#wrapTitle').textContent=`${F.S.name} Wrapped`; $('#wrapEyebrow').textContent=`${dayOf(F.from)} to ${dayOf(F.to)} · ${F.reg.length} night${F.reg.length===1?'':'s'} · ${F.games.length} games`;
+  $('#wrapSeg').hidden=!M; document.querySelectorAll('#wrapSeg button').forEach(b=>b.classList.toggle('on',b.dataset.w===wrapMode)); $('#wrapShareBox').hidden=meMode;
+  if(meMode){ const s=M.s;
+    $('#wrapBody').innerHTML=`<section class="ig hero"><div class="igrow"><span class="igmain"><p class="eyebrow lime">Your season, ${escH(M.p)}</p><span class="igname lg num">${ord(M.rank)}</span><span class="igsub">of ${M.of} in the final standings</span></span><span class="igside"><span class="ignum lg num ${pmCls(s.pm)}">${fmt(s.pm)}</span><span class="igsub num">${s.w}–${s.l} · ${s.gp} games</span></span></div></section>`
+      +`<div class="duo"><section class="ig tile alt"><p class="eyebrow">Best night</p><span class="igname num ${pmCls(M.best.pm)}">${fmt(M.best.pm)}</span><p class="igsub">${dayOf(M.best.date)}</p></section><section class="ig tile alt"><p class="eyebrow">Night MVP</p><span class="igname num">${M.mvps}</span><p class="igsub">of ${M.nights} night${M.nights===1?'':'s'} played</p></section></div>`
+      +(M.bp||M.nem||M.vic?`<section class="ig">${[M.bp?awardRow('Best partner',escH(M.bp.p),fmt(r1(M.bp.avg)),`a game, over ${M.bp.n} together`,pmCls(M.bp.avg)):'',M.nem?awardRow('Nemesis',escH(M.nem.o),`${M.nem.w}–${M.nem.l}`,'against him'):'',M.vic?awardRow('Favorite victim',escH(M.vic.o),`${M.vic.w}–${M.vic.l}`,'against him'):''].filter(Boolean).join('<div class="igdiv"></div>')}</section>`:'');
+    return; }
+  const board=`<section class="ig"><p class="eyebrow">Final standings</p><div class="rb">${F.order.map((p,i)=>`<div class="rbrow ${p===n?'me':''}"><span class="k num">${i+1}</span><span class="nm">${escH(p)}${p===n?'<em>YOU</em>':''}</span><span class="wl num">${F.t[p].w}–${F.t[p].l}</span><span class="pm num ${pmCls(F.rt(p))}">${fmt(r1(F.rt(p)))}</span></div>`).join('')}</div></section>`;
+  const aw=[F.king?awardRow('Most Night MVPs',escH(F.king.p),F.king.n,`of ${F.reg.length} night${F.reg.length===1?'':'s'}`):'',
+    F.improved?awardRow('Most improved',escH(F.improved.p),'▲'+F.improved.d,`${ord(F.improved.was)} to ${ord(F.improved.now)} since the halfway point`,'pos'):'',
+    awardRow('Iron man',escH(F.iron.p),F.iron.n,`games, over ${F.iron.nights} of ${F.reg.length} night${F.reg.length===1?'':'s'}`),
+    F.dream?awardRow('Dream team',amp(F.dream.p),`${F.dream.w}–${F.dream.l}`,'together'):'',
+    F.hot?awardRow('Hot hand',escH(F.hot.p),'W'+F.hot.n,'longest win streak'):'',
+    F.bestNight?awardRow('Best night',escH(F.bestNight.p),fmt(F.bestNight.pm),dayOf(F.bestNight.date),pmCls(F.bestNight.pm)):''].filter(Boolean);
+  $('#wrapBody').innerHTML=wrapHero(F)+board+`<section class="ig">${aw.join('<div class="igdiv"></div>')}</section>`;
+  $('#wrapShare').onclick=()=>{ haptic(); const c=F.champ; poShare([`Pickle · ${F.S.name} Wrapped`,...(c?[`Champions: ${c.win.join(' & ')}${c.score?` (${c.score} in the final)`:''}`]:[]),'',...F.order.map((p,i)=>`${i+1}. ${p} ${fmt(r1(F.rt(p)))} (${F.t[p].w}–${F.t[p].l})`),'',
+    ...(F.king?[`Most Night MVPs: ${F.king.p} (${F.king.n})`]:[]),...(F.improved?[`Most improved: ${F.improved.p} (up ${F.improved.d})`]:[]),`Iron man: ${F.iron.p} (${F.iron.n} games)`,...(F.dream?[`Dream team: ${F.dream.p.join(' & ')} (${F.dream.w}–${F.dream.l})`]:[]),...(F.hot?[`Hot hand: ${F.hot.p} (${F.hot.n} straight wins)`]:[])].join('\n')); };
+}
+// The wrap sheet: the first time a phone opens the app after a season ends, it shows that season once (same rules as the
+// recap sheet: not during a night, never on top of another sheet, never twice, and not after WRAP_DAYS). The phone that
+// ends the season lands on the full page instead.
+let wrapSeen=0; try{ wrapSeen=+localStorage.getItem('pickle-wrapped-seen')||0; }catch(e){}
+function markWrapped(id){ if(id>wrapSeen){ wrapSeen=id; try{ localStorage.setItem('pickle-wrapped-seen',String(id)); }catch(e){} } }
+let wrapIdx=null;
+function wrappedCheck(){
+  if(ME===null) return; const T=state.tonight; if(T.started||T.games.length) return;
+  const S=state.seasons.slice().reverse().find(x=>x.end); if(!S||S.id<=wrapSeen) return;
+  if(Date.now()>new Date(S.end+'T12:00').getTime()+WRAP_DAYS*86400000) return;
+  if(state.tab==='history'&&state.sub==='wrapped'&&state.wrapped===S.id){ markWrapped(S.id); return; }
+  if([...document.querySelectorAll('.sheet')].some(el=>!el.hidden&&!el.classList.contains('out'))) return;
+  const F=seasonFacts(S.id); if(!F) return; markWrapped(S.id); wrapIdx=S.id; const n=me(), M=n?seasonMe(F,n):null;
+  $('#wsEyebrow').textContent=`${F.S.name} is in the books`; $('#wsTitle').textContent='Season Wrapped';
+  $('#wsBody').innerHTML=wrapHero(F)+(M?`<div class="duo"><section class="ig tile alt"><p class="eyebrow">You finished</p><span class="igname num">${ord(M.rank)}</span><p class="igsub">of ${M.of}</p></section><section class="ig tile alt"><p class="eyebrow">Your record</p><span class="igname num">${M.s.w}–${M.s.l}</span><p class="igsub"><b class="${pmCls(M.s.pm)}">${fmt(M.s.pm)}</b> on the season</p></section></div>`:'');
+  $('#wsHint').textContent='Shown once. It stays in History.'; showSheet('#wrapSheet'); }
+$('#wsClose').onclick=()=>hideSheet('#wrapSheet');
+$('#wsGo').onclick=()=>{ hideSheet('#wrapSheet'); if(wrapIdx==null) return; haptic(); state.wrapped=wrapIdx; wrapFor=null; show('history','wrapped'); };
 
 // ---------- long press ----------
 // 450ms hold, light haptic, then an action sheet. Every action here is also reachable another way or is a power-user fix;

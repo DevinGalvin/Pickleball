@@ -24,6 +24,22 @@ With 8 or more checked in, the check-in screen offers a second court. It is neve
 - Leaving or arriving mid-night: "Who's here" on the court screen has "Someone's done for the night" and "Someone just got here". Neither sends anyone back to check-in. Tapping a name in the Sitting panel also offers "Done for the night".
 - A night nobody ended: from 6am the next morning, the first phone to open the app is asked to save it to History (or clear it if nothing was scored).
 
+## Guests
+
+- A guest is a one-night sub. On check-in, "+ Add a player or guest" asks for a name, then "Joining the league" or "Guest, just tonight". Mid-night, "Who's here" has "A guest just got here". Anyone with the group PIN can add one.
+- He plays in the rotation like anyone else and shows on that night's board with a GUEST tag. He is never in the standings, Night MVP, the records, partners, rivals or Season Wrapped. Everyone else's games with him count as usual.
+- How: guests live in `tonight.guests` (never in the roster) and each game one plays is stamped `gu:[name]`. `tally()` skips a stamped player unless asked for the whole night. The list empties when the night ends.
+- No guests on playoff night. A game with a guest in it can't be the Longest game record.
+
+## Season Wrapped
+
+- The night recap for a whole season: champions (from the playoff night), final standings, then awards: most Night MVPs, most improved (rank at the halfway point against the final rank; needs 4 nights and a climb of 2+ spots), iron man, dream team (3+ games together), hot hand, best night. "Your season" shows when the name on this phone played: finish, record, best night, MVP nights, best partner, nemesis, favorite victim.
+- Nothing is stored. It is worked out from that season's saved nights, so a corrected score corrects it. With no playoff night the top card is the season winner.
+- Where: ending a season lands the organizer on it. Every other phone gets a sheet once, the next time it opens the app (`pickle-wrapped-seen` on the phone; not during a night, not after 14 days, `WRAP_DAYS`). It stays in History: the latest one above Records, each one above its own nights under Nights.
+- Play the playoffs before ending the season, or the wrap has no champions.
+- Share to the group sends the results as text.
+- Type: names in the body face, award values too. The display face is only on the page title, the hero number and the standings column.
+
 ## Night recap
 
 - Tapping a night in History opens its recap. "The night" is the same for everyone: Night MVP, the final board, the closest game and the biggest win, best pair (3+ games together), beat the spread, standings movers, then every game. "Your night" shows only when the name on this phone played: record, games in order, best partner, +/- next to each partner, and the standings move.
