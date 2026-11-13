@@ -527,7 +527,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
     <!-- SEASON: standings -->
     <section class="view" id="v-standings" hidden>
-      <div class="row"><div style="min-width:0"><p class="eyebrow" id="stEyebrow">Season 1</p><h2>Standings</h2></div><button class="ghost" id="seasonBtn">Season</button></div>
+      <div class="row"><div style="min-width:0"><p class="eyebrow" id="stEyebrow">Season 1</p><h2>Standings</h2></div><button class="ghost" id="seasonBtn" aria-label="Season settings">Settings</button></div>
       <div class="segrow"><div class="seg" id="scopeSeg"><button class="on" data-scope="season">Season</button><button data-scope="tonight">Tonight</button></div>
       <div class="seg" id="sortSeg" aria-label="Sort by"><button class="on" data-sort="rating">Rating</button><button data-sort="win">Win %</button></div></div>
       <div class="table" id="standings"></div>
@@ -2102,7 +2102,7 @@ let toastT; function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.hidden
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='33c0512b';
+const BUILD='c8575ec5';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
