@@ -8,6 +8,14 @@
   --fg:#eef4f6; --mute:#8ea4b1;
   --surround:#2f7d4f; --court:#2563a8; --kitchen:#3b7bc4; --paint:#f2f6f8;
   --ball:#d6f23a; --ball-ink:#1a2200; --good:#5ad38a; --bad:#ff6b6b;
+  /* Type standard. The heavy display face comes in four sizes and no others:
+     hero  = the one big number on a screen (the hero card only)
+     title = page titles and a card's main number
+     num   = numbers in rows, tiles and lists; buttons
+     tag   = small caps tags
+     Player names are never in the heavy face. The exception is scoring on Game Night (the court, the score sheet and pad),
+     which is sized to be read at arm's length. */
+  --t-hero:34px; --t-title:24px; --t-num:20px; --t-tag:13px;
   --display:"Barlow Condensed",system-ui,sans-serif; --body:"Barlow",system-ui,sans-serif;
   color-scheme:dark;
 }
@@ -31,14 +39,14 @@ main{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;oversc
 .view{display:flex;flex-direction:column;gap:14px}
 .view[hidden]{display:none}
 .eyebrow{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--mute);font-weight:600;margin:0}
-h2{font-family:var(--display);font-weight:800;font-size:24px;margin:0;text-transform:uppercase;letter-spacing:.3px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:800;font-size:var(--t-title);margin:0;text-transform:uppercase;letter-spacing:.3px;text-wrap:balance}
 .panel{background:var(--panel);border-radius:14px;padding:14px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .num{font-variant-numeric:tabular-nums}
 .hint{color:var(--mute);font-size:13px;margin:0}
 .back{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-weight:600;font-size:14px;min-height:40px;align-self:flex-start}
 .back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;background:var(--ball);color:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:14px;background:var(--ball);color:var(--ball-ink);font-family:var(--display);font-weight:800;font-size:var(--t-num);text-transform:uppercase;letter-spacing:.6px}
 .cta:disabled{opacity:.4;cursor:not-allowed}
 .cta.locked{opacity:.4} /* not disabled: it still takes the long-press override and explains itself on tap */
 .ghost{min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);color:var(--fg);font-weight:600;font-size:14px;background:none}
@@ -91,7 +99,7 @@ header.top .date{white-space:nowrap}
 
 /* court board */
 .gamebar{display:flex;justify-content:space-between;align-items:center}
-.gamebar .g{font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase}
+.gamebar .g{font-family:var(--display);font-weight:800;font-size:var(--t-title);text-transform:uppercase}
 .courtwrap{position:relative;max-width:100%;aspect-ratio:21/11;border-radius:14px;overflow:hidden;background:var(--surround)}
 .courtwrap svg{position:absolute;inset:0;width:100%;height:100%}
 .courtwrap .teams{position:absolute;inset:0;z-index:2;pointer-events:none}
@@ -107,7 +115,7 @@ header.top .date{white-space:nowrap}
 .courts.multi{gap:22px}.courts.multi .board{background:var(--panel);border-radius:18px;padding:12px;gap:10px}
 .courts.multi .board .matchup .tm{background:var(--panel-2)}
 .boardhdr{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
-.boardhdr .ct{font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.8px;color:var(--ball)}
+.boardhdr .ct{font-family:var(--display);font-weight:800;font-size:var(--t-num);text-transform:uppercase;letter-spacing:.8px;color:var(--ball)}
 .boardhdr .st{font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.6px;text-transform:uppercase}
 .courts.multi .board.done{opacity:.6}
 /* the matchup bar is the answer to "who's playing, which side"; the court under it is the show */
@@ -116,7 +124,7 @@ header.top .date{white-space:nowrap}
 .matchup .tm.a{border-left:5px solid var(--ball)}.matchup .tm.b{border-right:5px solid #ff7a59;text-align:right}
 .matchup .lbl{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
 .matchup .tm.a .lbl{color:var(--ball)}.matchup .tm.b .lbl{color:#ff7a59}
-.matchup b{font-family:var(--display);font-weight:800;font-size:19px;line-height:1.05;text-transform:uppercase;letter-spacing:.3px;overflow-wrap:anywhere}
+.matchup b{font-family:var(--display);font-weight:800;font-size:var(--t-num);line-height:1.05;text-transform:uppercase;letter-spacing:.3px;overflow-wrap:anywhere}
 .matchup .vsx{align-self:center;color:var(--mute);font-weight:600;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:2px}
 .matchup .vsx svg{width:16px;height:16px;fill:none;stroke:var(--ball);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
 .courtlbl{position:absolute;z-index:3;top:4px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.4px;color:var(--ball-ink);background:var(--ball);padding:2px 10px;border-radius:999px}
@@ -124,9 +132,9 @@ header.top .date{white-space:nowrap}
 .linelbl{position:absolute;z-index:3;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ball);background:rgba(5,10,14,.6);padding:3px 10px;border-radius:999px}
 .linelbl.none{color:var(--mute);font-family:var(--body);font-weight:600;font-size:11px;text-transform:none;letter-spacing:.3px}
 .queue .line{display:block;font-size:12px;color:var(--ball);font-weight:600;margin-top:1px}
-.board .saved{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;padding:0 16px;border-radius:14px;border:1.5px solid var(--good);color:var(--good);font-family:var(--display);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.6px;cursor:default;text-align:center}
+.board .saved{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;padding:0 16px;border-radius:14px;border:1.5px solid var(--good);color:var(--good);font-family:var(--display);font-weight:800;font-size:var(--t-num);text-transform:uppercase;letter-spacing:.6px;cursor:default;text-align:center}
 .winrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:.5px}
+.winbtn{min-height:50px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:800;font-size:var(--t-num);text-transform:uppercase;letter-spacing:.5px}
 .winbtn:hover{background:var(--ball);color:var(--ball-ink);border-color:var(--ball)}
 .queue{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .queue .panel{padding:12px;display:flex;flex-direction:column;justify-content:center}
@@ -138,7 +146,7 @@ header.top .date{white-space:nowrap}
 .ghost.sm{min-height:32px;padding:0 10px;font-size:13px;border-radius:10px}
 
 .log .item .n{color:var(--mute);font-size:12px}
-.log .item .sc{font-family:var(--display);font-weight:800;font-size:20px;white-space:nowrap;text-align:center}
+.log .item .sc{font-family:var(--display);font-weight:800;font-size:var(--t-num);white-space:nowrap;text-align:center}
 .log .item .sc small{display:block;font-family:var(--body);font-weight:500;font-size:10px;color:var(--mute);letter-spacing:.3px}
 .log .item .t{min-width:0;overflow-wrap:anywhere}
 .log .item .t.r{text-align:right}
@@ -172,13 +180,13 @@ header.top .date{white-space:nowrap}
 /* standings */
 .table{display:flex;flex-direction:column;gap:6px}
 .trow{display:grid;grid-template-columns:28px 1fr 52px auto 18px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel);width:100%;text-align:left}
-.trow .rk{font-family:var(--display);font-weight:800;font-size:22px;color:var(--mute)}
+.trow .rk{font-family:var(--display);font-weight:800;font-size:var(--t-num);color:var(--mute)}
 .trow.q1 .rk{color:var(--ball)}
 .trow .rk{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .trow .rk .mv{font-family:var(--body);font-weight:700;font-size:10px;letter-spacing:.2px;margin-top:3px;white-space:nowrap}
 .trow .nm{font-weight:600;min-width:0}
 .trow .meta{font-size:12px;color:var(--mute)}
-.trow .pm{font-family:var(--display);font-weight:800;font-size:26px;text-align:right;line-height:1}
+.trow .pm{font-family:var(--display);font-weight:800;font-size:var(--t-title);text-align:right;line-height:1}
 .trow .pm small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute);letter-spacing:.5px}
 .trow .chev{color:var(--mute)}
 .trow .spk{width:52px;height:20px;display:block;overflow:visible}.trow .spk path{fill:none;stroke:var(--mute);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.7}
@@ -197,17 +205,17 @@ header.top .date{white-space:nowrap}
 .ig .eyebrow{margin:0}
 .igrow{display:flex;align-items:center;gap:12px;width:100%;min-height:44px}
 .igmain{display:flex;flex-direction:column;justify-content:center;gap:5px;flex:1;min-width:0}
-.igname{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;text-transform:uppercase;letter-spacing:.3px}
-.igname.sm{font-size:20px}.igname em{font-family:var(--body);font-style:normal;font-weight:500;font-size:14px;text-transform:none;letter-spacing:0;color:var(--mute);margin-left:2px}
+.igname{font-family:var(--display);font-weight:800;font-size:var(--t-title);line-height:1;text-transform:uppercase;letter-spacing:.3px}
+.igname.sm{font-size:var(--t-num)}.igname em{font-family:var(--body);font-style:normal;font-weight:500;font-size:14px;text-transform:none;letter-spacing:0;color:var(--mute);margin-left:2px}
 .igsub{font-size:13px;color:var(--mute);margin:0}
-.ignum{font-family:var(--display);font-weight:800;font-size:38px;line-height:1;white-space:nowrap}
-.ignum.sm{font-size:24px}.ignum small{font-family:var(--body);font-size:13px;font-weight:600;color:var(--mute);margin-left:4px}
+.ignum{font-family:var(--display);font-weight:800;font-size:var(--t-title);line-height:1;white-space:nowrap}
+.ignum.sm{font-size:var(--t-num)}.ignum small{font-family:var(--body);font-size:13px;font-weight:600;color:var(--mute);margin-left:4px}
 .pips{display:flex;align-items:center;gap:4px}.pips i{width:13px;height:13px;border-radius:50%;flex:none}
 .pips.w i{background:var(--ball)}.pips.l i{background:var(--bad)}.pips.sm i{width:9px;height:9px}.pips b{font-size:12px;color:var(--mute);margin-left:2px}
 .racename{width:64px;flex:none;font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .track{flex:1;height:14px;border-radius:7px;background:var(--panel-2);overflow:hidden}
 .fill{display:block;height:100%;border-radius:7px;background:var(--mute)}.fill.lead{background:var(--ball)}
-.racen{width:18px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:22px}
+.racen{width:18px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:var(--t-num)}
 .swing{display:flex;align-items:stretch}
 .swl,.swr{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:6px}
 .swl{align-items:flex-end;text-align:right}.swr{align-items:flex-start}
@@ -216,7 +224,7 @@ header.top .date{white-space:nowrap}
 .swaxis{width:2px;background:var(--line);flex:none}
 #records .igname,#records .igname.sm{font-family:var(--body);font-weight:600;font-size:20px;line-height:1.15;text-transform:none;letter-spacing:0}
 #records .igname .amp{color:var(--mute);font-weight:400}
-.swing .ignum{font-size:30px}
+.swing .ignum{font-size:var(--t-title)}
 .pips i.w{background:var(--ball)}.pips i.l{background:var(--bad)}.pips i.o{box-sizing:border-box;border:1.5px dashed var(--mute)}
 .prbar{display:flex;gap:2px;width:120px;height:9px}.prbar span{display:block;height:100%;border-radius:5px}.prbar .w{background:var(--ball)}.prbar .l{background:var(--bad)}
 .ignum.mute{color:var(--mute)}
@@ -227,7 +235,7 @@ header.top .date{white-space:nowrap}
 .sbteam{flex:1;min-width:0;font-size:14px;font-weight:600;line-height:1.25}.sbteam.r{text-align:right}
 .sbdig{display:flex;align-items:center;justify-content:center;width:54px;height:54px;flex:none;border-radius:10px;background:#0b141a;border:1.5px solid var(--line);font-family:var(--display);font-weight:800;font-size:34px;color:var(--mute)}
 .sbdig.win{color:var(--ball);border-color:var(--ball)}
-.duo{display:flex;flex:none}.duo i{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;border:2px solid var(--ball);background:var(--panel);font-style:normal;font-family:var(--display);font-weight:800;font-size:24px;color:var(--ball)}.duo i+i{margin-left:-12px}
+.duo{display:flex;flex:none}.duo i{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;border:2px solid var(--ball);background:var(--panel);font-style:normal;font-family:var(--display);font-weight:800;font-size:var(--t-title);color:var(--ball)}.duo i+i{margin-left:-12px}
 .rings{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.rings i{width:16px;height:16px;border-radius:50%;border:4px solid var(--ball);flex:none}.rings.l i{border-color:var(--bad)}.rings b{font-size:12px;color:var(--mute)}
 .donut{flex:none}.donut text{font-family:var(--display);font-weight:800;font-size:13px;fill:var(--fg)}
 .rec .v small{font-family:var(--body,inherit);font-size:15px;font-weight:600;color:var(--mute);margin-left:6px}
@@ -238,7 +246,8 @@ header.top .date{white-space:nowrap}
 .stat{background:var(--panel);border-radius:14px;padding:12px;min-width:0;display:flex;flex-direction:column;justify-content:center}
 .stat.big{grid-column:1/-1;background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}
 .stat.big.down{background:linear-gradient(135deg,#3b2426,#16242e);border-color:#5a2f33}
-.stat .v{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
+.stat .v{font-family:var(--display);font-weight:800;font-size:var(--t-title);line-height:1.05;margin-top:4px;overflow-wrap:anywhere}
+.stat .v.pn{font-family:var(--body);font-weight:600;font-size:20px;line-height:1.15}
 .stat .d{font-size:13px;color:var(--mute);margin-top:4px}
 .chart{background:var(--panel);border-radius:14px;padding:12px;position:relative}
 .chart svg{display:block;width:100%;height:auto;max-width:100%}
@@ -254,7 +263,7 @@ header.top .date{white-space:nowrap}
 
 /* playoffs tab */
 .teamrow{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;min-height:48px;padding:6px 12px;border-radius:12px;background:var(--panel)}
-.teamrow .sd{font-family:var(--display);font-weight:800;font-size:22px;color:var(--ball)}
+.teamrow .sd{font-family:var(--display);font-weight:800;font-size:var(--t-num);color:var(--ball)}
 .teamrow .nm{font-weight:600;min-width:0}
 .teamrow .meta{font-size:13px;color:var(--mute);font-weight:400}
 .polist{display:flex;flex-direction:column;gap:10px}
@@ -279,13 +288,13 @@ header.top .date{white-space:nowrap}
 .pcard .tm.r{text-align:right}
 .pcard .tm.w{color:var(--ball)}
 .pcard .tm.q{color:var(--mute)}
-.pcard .sc{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:1px;min-width:52px;text-align:center}
+.pcard .sc{font-family:var(--display);font-weight:800;font-size:var(--t-title);letter-spacing:1px;min-width:52px;text-align:center}
 .pcard .sc.dim{color:var(--mute)}
 .pcard .gs{font-size:13px;color:var(--mute);text-align:center}
 .pochamp{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px;padding:16px 14px;border-radius:14px;background:var(--panel);border:2px solid var(--ball)}
 .pochamp svg{width:44px;height:44px;fill:none;stroke:var(--ball);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .pochamp .eyebrow{color:var(--ball)}
-.pochamp .nm{font-family:var(--display);font-weight:800;font-size:36px;line-height:1;text-transform:uppercase;overflow-wrap:anywhere}
+.pochamp .nm{font-family:var(--body);font-weight:600;font-size:20px;line-height:1;overflow-wrap:anywhere}
 .pochamp .d{font-size:14px;color:var(--mute)}
 .ponote{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 12px;border-radius:12px;background:var(--panel-2);font-size:14px;text-align:center}
 /* playoff night on Game Night: lime header, progress strip. Everything under the header is the regular court. */
@@ -304,7 +313,7 @@ header.top .tro{width:26px;height:26px;flex:none;fill:none;stroke:currentColor;s
 .postrip .done{color:var(--fg)}.postrip .done i{background:var(--ball)}
 .postrip .now{color:var(--ball)}.postrip .now i{background:var(--ball);box-shadow:0 0 0 3px rgba(214,242,58,.22)}
 .gamebar .posub{font-size:13px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;color:var(--ball);margin:0 0 2px}
-.matchup .vsx.ser{color:var(--fg);font-family:var(--display);font-weight:800;font-size:26px;line-height:1;gap:2px}
+.matchup .vsx.ser{color:var(--fg);font-family:var(--display);font-weight:800;font-size:var(--t-title);line-height:1;gap:2px}
 .matchup .vsx.ser small{font:600 13px/1.2 var(--body);color:var(--mute);text-transform:uppercase;letter-spacing:.8px}
 #poTeamList{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 #poTeamList .teamrow{background:var(--panel-2);min-height:44px}
@@ -325,7 +334,7 @@ header.top .tro{width:26px;height:26px;flex:none;fill:none;stroke:currentColor;s
 .rafters button{flex:none;display:block;border-radius:6px}.rafters button:active{transform:scale(.98)}.rafters svg{display:block}
 .night.wrap{background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}.nights[hidden]{display:none}
 .night .m{font-size:12px;color:var(--mute)}
-.night .c{font-family:var(--display);font-weight:800;font-size:22px;text-align:right}
+.night .c{font-family:var(--display);font-weight:800;font-size:var(--t-num);text-align:right}
 .night .c small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute)}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
@@ -401,12 +410,12 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
 /* night recap: The night / Your night, the share box and the first-open sheet. Every box centers its content. */
 .eyebrow.lime{color:var(--ball)}
-.igname.lg{font-size:32px;overflow-wrap:anywhere}
-.igname.pn{font-family:var(--body);font-weight:600;font-size:20px;line-height:1.15;text-transform:none;letter-spacing:0}.igname.lg.pn{font-size:24px}.igname.xxl{font-size:60px}.ignum.xl{font-size:48px}.ignum.lg{font-size:34px}
+.igname.lg{font-size:var(--t-title);overflow-wrap:anywhere}
+.igname.pn{font-family:var(--body);font-weight:600;font-size:20px;line-height:1.15;text-transform:none;letter-spacing:0}.igname.lg.pn{font-size:24px}.igname.xxl{font-size:var(--t-hero)}.ignum.xl{font-size:var(--t-title)}.ignum.lg{font-size:var(--t-hero)}
 .igside{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:4px;text-align:right}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ig.tile{justify-content:center;gap:6px;min-width:0}.ig.tile.alt{background:var(--panel-2);border-radius:14px;padding:12px;min-height:92px}
-.ig.tile .sc{font-family:var(--display);font-weight:800;font-size:36px;line-height:1}
+.ig.tile .sc{font-family:var(--display);font-weight:800;font-size:var(--t-title);line-height:1}
 .ig.tile .igname{overflow-wrap:anywhere;max-width:100%}
 .ig.tile .who{font-size:14px;font-weight:600;margin:0;overflow-wrap:anywhere}
 .rb{display:flex;flex-direction:column;gap:6px}
@@ -418,14 +427,14 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .rbrow .nm em{font-family:var(--body);font-style:normal;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ball)}
 .rbrow .wl{color:var(--mute);font-size:13px;white-space:nowrap}
 .rbrow .mv{font-size:13px;font-weight:600;white-space:nowrap}
-.rbrow .pm{min-width:40px;text-align:right;font-family:var(--display);font-weight:800;font-size:22px;white-space:nowrap}
+.rbrow .pm{min-width:40px;text-align:right;font-family:var(--display);font-weight:800;font-size:var(--t-num);white-space:nowrap}
 .rbrow svg.arw,.igrow>svg.arw,.igname.ic svg.arw{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .igrow>svg.arw{width:26px;height:26px}.igname.ic svg.arw{width:20px;height:20px}
 .mygames{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .myg{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;min-width:0;padding:6px 4px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);text-align:center}
 .myg.w{background:#22382a;border-color:#2f5a3a}
 .myg b{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--bad)}.myg.w b{color:var(--ball)}
-.myg .s{font-family:var(--display);font-weight:800;font-size:24px;line-height:1;color:var(--mute)}.myg.w .s{color:var(--fg)}
+.myg .s{font-family:var(--display);font-weight:800;font-size:var(--t-num);line-height:1;color:var(--mute)}.myg.w .s{color:var(--fg)}
 .myg small{font-size:12px;color:var(--mute);overflow-wrap:anywhere}
 .igdiv{height:1px;background:var(--line)}
 .prow{display:flex;align-items:center;gap:10px;min-height:36px}
@@ -435,13 +444,13 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .pbar .ax{width:2px;height:22px;flex:none;background:var(--mute)}
 .pbar i{display:block;height:14px}.pbar .l i{background:var(--bad);border-radius:7px 0 0 7px}.pbar .r i{background:var(--ball);border-radius:0 7px 7px 0}
 .prow .wl{width:30px;flex:none;text-align:right;color:var(--mute);font-size:13px}
-.prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:20px}
+.prow .pm{width:36px;flex:none;text-align:right;font-family:var(--display);font-weight:800;font-size:var(--t-num)}
 .sharebox{display:flex;flex-direction:column;gap:8px}.sharebox[hidden]{display:none}
 .bc{display:flex;flex-direction:column;justify-content:center;gap:12px;width:100%}
 .bct{display:flex;flex-direction:column;gap:7px}
 .bch{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
 .bct .nm{font-weight:600;font-size:15px;min-width:0;overflow-wrap:anywhere}.bct.l .nm{color:var(--mute);font-weight:500}
-.bct .sc{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;flex:none}.bct.l .sc{color:var(--mute)}
+.bct .sc{font-family:var(--display);font-weight:800;font-size:var(--t-title);line-height:1;flex:none}.bct.l .sc{color:var(--mute)}
 .balls{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-height:22px}
 .balls svg{width:18px;height:18px;flex:none;fill:var(--ball)}.bct.l .balls svg{fill:#4d6270}
 .balls.many{gap:3px}.balls.many svg{width:14px;height:14px}
@@ -449,7 +458,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .balls.many svg.ot{box-shadow:0 0 0 1.5px var(--bg),0 0 0 3px var(--fg)}
 .bct .zero{font-size:13px;color:var(--mute);font-style:italic}
 .ebrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-.otb{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:6px;background:var(--fg);color:var(--bg);font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:.6px}
+.otb{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:6px;background:var(--fg);color:var(--bg);font-family:var(--display);font-weight:800;font-size:var(--t-tag);letter-spacing:.6px}
 .igname.ic{display:flex;align-items:center;gap:6px}
 </style>
 
@@ -1366,7 +1375,7 @@ function renderPlayer(){
   const ol=Object.entries(opp).map(([o,r])=>({o,...r,n:r.w+r.l,pct:r.w/(r.w+r.l)})).filter(r=>r.n>=3);
   const nem=ol.filter(r=>r.l>r.w).sort((a,b)=>a.pct-b.pct||b.l-a.l||a.o.localeCompare(b.o))[0];
   const vic=ol.filter(r=>r.w>r.l).sort((a,b)=>b.pct-a.pct||b.w-a.w||a.o.localeCompare(b.o))[0];
-  const rival=(label,r)=>`<div class="stat half"><p class="eyebrow">${label}</p><div class="v">${r?r.o:'–'}</div><div class="d num">${r?`${r.w}–${r.l} against him`:label==='Nemesis'?'Nobody has your number':'Nobody yet'}</div></div>`;
+  const rival=(label,r)=>`<div class="stat half"><p class="eyebrow">${label}</p><div class="v pn">${r?r.o:'–'}</div><div class="d num">${r?`${r.w}–${r.l} against him`:label==='Nemesis'?'Nobody has your number':'Nobody yet'}</div></div>`;
   const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
   const rating=t.pm/(t.gp+SHRINK); const np=nightsPlayed(p); const avg=t.pm/t.gp;
   // Lead with rank: that's what the rating is for. The rating itself is a formula (total ÷ games+SHRINK), so it gets one plain line.
@@ -1383,7 +1392,7 @@ function renderPlayer(){
     <div class="stat"><p class="eyebrow">Night MVP</p><div class="v num">${mvps}</div><div class="d">of ${done.length} night${done.length===1?'':'s'}</div></div>
     <div class="stat half"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
     <div class="stat half"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
-    ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}
+    ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v pn">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}
     ${nem||vic?rival('Nemesis',nem)+rival('Favorite victim',vic):''}`;
   // cumulative +/- line, one point per game played
   let run=0; const pts=games.map((g,i)=>{ run+=diffs(g)[p]; return {i:i+1,v:run,g}; });

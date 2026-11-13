@@ -12,6 +12,21 @@ Weekly pickleball league app: check-in, court rotation, tap-to-score, standings,
 
 `rally-night.html` is the source (the Claude artifact is a stale copy). `build-live.py` adds the Firebase sync, the group and admin PIN gates and the PWA head and writes `index.html`. Edit the source, run `python3 build-live.py`, commit both, push.
 
+## Type standard
+
+The heavy display face (Barlow Condensed 800) comes in four sizes, set as variables at the top of the stylesheet. Use these and no others:
+
+| Token | Size | For |
+|---|---|---|
+| `--t-hero` | 34px | The one big number on a screen, in the hero card only |
+| `--t-title` | 24px | Page titles and a card's main number |
+| `--t-num` | 20px | Numbers in rows, tiles and lists; buttons |
+| `--t-tag` | 13px | Small caps tags |
+
+- Player names are never in the heavy face: body face, weight 600, 15 to 24px.
+- At most one hero-size number per screen.
+- Exception: scoring on Game Night (names on the court, the score sheet and its pad, the result stamp) is sized to be read at arm's length, and the header logo is the logo.
+
 ## Courts
 
 With 8 or more checked in, the check-in screen offers a second court. It is never on by default because that court isn't always free. Two courts play as rounds: both scores go in, then the next round is drawn. Flip it on or off mid-night from the Players screen; any score already saved in the round is kept.
