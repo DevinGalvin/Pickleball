@@ -1541,6 +1541,12 @@ function nightMoves(idx){ const all=allNightsEver(), N=all[idx]; if(!N||N.po) re
   const sn=all.map((n,i)=>({n,i})).filter(x=>x.n.season===N.season&&!x.n.po); const k=sn.findIndex(x=>x.i===idx); if(k<0) return null;
   const g=m=>sn.slice(0,m).flatMap(x=>x.n.games); const before=rankFrom(g(k)), after=rankFrom(g(k+1));
   return after.map((p,j)=>({p,now:j+1,was:before.indexOf(p)+1})); }
+// long win streaks as that night left them: the ones that got ended (and who ended them) and the ones still going.
+// Same rule as the court tag: wins only, STREAK_MIN or more, within the season, guests left out.
+function nightStreaks(idx){ const all=allNightsEver(), N=all[idx]; if(!N||N.po) return {snapped:[],alive:[]};
+  const run={}, snapped=[], here=new Set(); all.forEach((n,i)=>{ if(i>idx||n.season!==N.season||n.po) return; n.games.forEach(g=>{ const d=diffs(g), aw=g.sa>g.sb;
+    for(const p in d){ if(gOf(g,p)) continue; if(i===idx) here.add(p); if(d[p]>0) run[p]=(run[p]||0)+1; else { if(i===idx&&(run[p]||0)>=STREAK_MIN) snapped.push({p,n:run[p],by:(aw?g.a:g.b).join(' & ')}); run[p]=0; } } }); });
+  return {snapped:snapped.sort((a,b)=>b.n-a.n),alive:[...here].filter(p=>run[p]>=STREAK_MIN).map(p=>({p,n:run[p]})).sort((a,b)=>b.n-a.n||a.p.localeCompare(b.p))}; }
 // one player's night: his games in order, and how he did next to each partner
 function myNight(N,p){ const games=N.games.filter(g=>inGame(g,p)); const mates={};
   const rows=games.map(g=>{ const onA=g.a.includes(p); const team=onA?g.a:g.b; const mate=team.find(x=>x!==p)||null; const mine=onA?g.sa:g.sb, theirs=onA?g.sb:g.sa; const d=mine-theirs;
@@ -1574,10 +1580,12 @@ function renderNight(){
   const games=same?gameTile('Game of the night',F,F.blow):`<div class="duo">${gameTile('Closest game',F,F.close)}${gameTile('Biggest win',F,F.blow)}</div>`;
   const mv=(F.moves||[]).filter(m=>t[m.p]&&m.was&&m.was!==m.now).sort((a,b)=>Math.abs(b.was-b.now)-Math.abs(a.was-a.now)||a.now-b.now).slice(0,3).sort((a,b)=>a.now-b.now);
   const movers=mv.length?`<section class="ig"><p class="eyebrow">Standings movers</p><div class="rb">${mv.map(m=>{ const d=m.was-m.now; return `<div class="rbrow">${d>0?ARROW.up:ARROW.down}<span class="nm pl">${escH(m.p)}</span><span class="mv ${d>0?'pos':'neg'}">${d>0?'Up':'Down'} ${Math.abs(d)}</span><span class="pm num">${ord(m.now)}</span></div>`; }).join('')}</div></section>`:'';
+  const SK=nightStreaks(state.night);
+  const streaks=SK.snapped.length||SK.alive.length?`<section class="ig"><p class="eyebrow">Win streaks</p><div class="rb">${SK.alive.map(x=>`<div class="rbrow"><span class="nm pl">${escH(x.p)}</span><span class="mv pos">Still going</span><span class="pm num">W${x.n}</span></div>`).join('')}${SK.snapped.map(x=>`<div class="rbrow"><span class="nm pl">${escH(x.p)}</span><span class="mv" style="color:var(--mute);white-space:normal;text-align:right">Ended by ${escH(x.by)}</span><span class="pm num" style="color:var(--mute)">W${x.n}</span></div>`).join('')}</div></section>`:'';
   $('#recap').innerHTML=heroHtml('Night MVP',escH(mvp),`Won ${t[mvp].w} of ${t[mvp].gp} games`,t[mvp].pm,'on the night')+board+games
     +(bp&&bp[1].n>=3?`<section class="ig"><p class="eyebrow">Best pair</p><div class="igrow"><span class="igmain"><span class="igname pn">${escH(bp[0])}</span><span class="igsub">${bp[1].n} games together</span></span><span class="ignum sm num ${pmCls(bp[1].pm)}">${fmt(bp[1].pm)}</span></div></section>`:'')
     +(beat?`<section class="ig"><p class="eyebrow">Beat the spread</p><div class="igrow"><span class="igmain"><span class="igname pn">${escH(beat.team)}</span><span class="igsub num">${escH(lineText(beat.g))} · final ${beat.g.sa}–${beat.g.sb}</span></span><span class="ignum sm num pos">+${beat.by}</span></div></section>`:'')
-    +movers;
+    +movers+streaks;
   // ----- your night -----
   if(mine){ const M=myNight(N,mine), s=t[mine], rank=ps.indexOf(mine)+1; const mx=Math.max(1,...M.list.map(x=>Math.abs(x.pm)));
     const st=standingLine((F.moves||[]).find(m=>m.p===mine)), now=((F.moves||[]).find(m=>m.p===mine)||{}).now;
