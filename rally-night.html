@@ -192,6 +192,7 @@ header.top .date{white-space:nowrap}
 .trow .spk{width:52px;height:20px;display:block;overflow:visible}.trow .spk path{fill:none;stroke:var(--mute);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.7}
 .seg{display:flex;background:var(--panel);border-radius:12px;padding:4px;gap:4px}
 .seg button{flex:1;min-height:38px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mute)}
+.segrow{display:flex;gap:8px}.segrow .seg{flex:1;min-width:0}.seg[hidden]{display:none}
 .seg button.on{background:var(--panel-2);color:var(--fg)}
 
 /* player detail */
@@ -500,7 +501,8 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <!-- SEASON: standings -->
     <section class="view" id="v-standings" hidden>
       <div class="row"><div style="min-width:0"><p class="eyebrow" id="stEyebrow">Season 1</p><h2>Standings</h2></div><button class="ghost" id="seasonBtn">Season</button></div>
-      <div class="seg" id="scopeSeg"><button class="on" data-scope="season">Season</button><button data-scope="tonight">Tonight</button></div>
+      <div class="segrow"><div class="seg" id="scopeSeg"><button class="on" data-scope="season">Season</button><button data-scope="tonight">Tonight</button></div>
+      <div class="seg" id="sortSeg" aria-label="Sort by"><button class="on" data-sort="rating">Rating</button><button data-sort="win">Win %</button></div></div>
       <div class="table" id="standings"></div>
       <p class="hint" id="qualHint"></p>
     </section>
@@ -651,7 +653,7 @@ const state = {
   organizers:['Devin','Evan'],
   nights:[NIGHT1],
   tonight:{date:'2026-11-10', present:new Set(['Devin','Kevin','Tom','Evan','Ben']), started:false, games:[], current:null, courts:1},
-  scope:'season', pending:null, tab:'tonight', sub:null, player:null, night:null
+  scope:'season', sort:'rating', pending:null, tab:'tonight', sub:null, player:null, night:null
 };
 
 // ---------- helpers ----------
@@ -1128,7 +1130,11 @@ function renderStandings(){
   const hasTonight=state.tonight.games.length>0; $('#scopeSeg').hidden=!hasTonight; if(!hasTonight) state.scope='season';
   document.querySelectorAll('#scopeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.scope===state.scope));
   const tonight=state.scope==='tonight'; const games=tonight?state.tonight.games:allGames();
-  const rows=ranking(tonight);
+  // Sort: Rating is the standings (it seeds the playoffs) and what the page opens on. Win % is another way to look at the same
+  // table; the number on the left stays the rating rank in both, so nobody reads a playoff seed off the Win % view.
+  const byWin=state.sort==='win'; document.querySelectorAll('#sortSeg button').forEach(x=>x.classList.toggle('on',(x.dataset.sort==='win')===byWin));
+  const rated=ranking(tonight); const rk={}; let rn=0; rated.forEach(r=>{ if(r.s) rk[r.p]=++rn; });
+  const wp=r=>r.s.w/r.s.gp; const rows=byWin?rated.filter(r=>r.s).sort((x,y)=>wp(y)-wp(x)||y.s.w-x.s.w||rk[x.p]-rk[y.p]).concat(rated.filter(r=>!r.s)):rated;
   // movement since the last night: where each player stood in the season before it. Needs a night to compare against.
   const was={}; if(!tonight){ const N=allNights(); if(N.length>1) rankFrom(N.slice(0,-1).flatMap(n=>n.games)).forEach((p,i)=>was[p]=i+1); }
   const mv=(p,now)=>{ const d=was[p]?was[p]-now:0; return d?`<span class="mv num ${d>0?'pos':'neg'}" aria-label="${d>0?'Up':'Down'} ${Math.abs(d)}">${d>0?'▲':'▼'}${Math.abs(d)}</span>`:''; };
@@ -1141,18 +1147,20 @@ function renderStandings(){
   const before={}; document.querySelectorAll('#standings .trow').forEach(el=>before[el.dataset.p]=el.getBoundingClientRect().top);
   $('#standings').innerHTML=rows.map(r=>{
     if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><span></span><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
-    rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
+    rank=rk[r.p]; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
     return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}${mv(r.p,rank)}</div>
       <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l}${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>${spark(r.p)}
-      <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
+      ${byWin?`<div class="pm num">${Math.round(wp(r)*100)}%<small>wins</small></div>`:`<div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div>`}<span class="chev">›</span></button>`; }).join('');
   const had=Object.keys(before).length;
   document.querySelectorAll('#standings .trow').forEach((el,i)=>{
     if(!had){ el.style.setProperty('--i',i); el.classList.add('in'); return; }
     const dy=(before[el.dataset.p]??el.getBoundingClientRect().top)-el.getBoundingClientRect().top; if(!dy) return;
     el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; el.getBoundingClientRect(); el.style.transition=''; el.style.transform=''; });
+  if(byWin){ $('#qualHint').textContent=`Sorted by win %. The number on the left is still the ${tonight?"night's":'rating'} rank${tonight?'':', which is what seeds the playoffs'}.`; return; }
   $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games.${Object.keys(was).length?' ▲▼ is the move since the last night. The line is your last '+SPARK_GAMES+' games.':''} Tap a name for details.`;
 }
 document.querySelectorAll('#scopeSeg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; renderStandings(); });
+document.querySelectorAll('#sortSeg button').forEach(b=>b.onclick=()=>{ if(state.sort===b.dataset.sort) return; haptic(); state.sort=b.dataset.sort; renderStandings(); });
 $('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow'); if(!b) return; state.player=b.dataset.p; show('season','player'); });
 $('#playerBack').onclick=()=>show('season',null);
 
