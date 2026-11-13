@@ -344,6 +344,9 @@ header.top .tro{width:26px;height:26px;flex:none;fill:none;stroke:currentColor;s
 .night .d{font-weight:600}
 .ignum.plain{font-family:var(--body);font-weight:600;font-size:18px}
 .chip.add{text-align:center}
+.rafters{display:flex;gap:14px;justify-content:center;margin:0 -16px;padding:0 16px 8px;border-top:3px solid #2a3a46;background:linear-gradient(180deg,#0a1218,var(--bg));overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.rafters::-webkit-scrollbar{display:none}.rafters[hidden]{display:none}.rafters.many{justify-content:flex-start}
+.rafters button{flex:none;display:block;border-radius:6px}.rafters button:active{transform:scale(.98)}.rafters svg{display:block}
 .night.wrap{background:linear-gradient(135deg,#223b2a,#16242e);border:1px solid #2f5a3a}.nights[hidden]{display:none}
 .night .m{font-size:12px;color:var(--mute)}
 .night .c{font-family:var(--display);font-weight:800;font-size:22px;text-align:right}
@@ -531,6 +534,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
     <!-- PLAYOFFS: preview all season, the night's matches while it runs, the champion after. Scoring happens on Game Night. -->
     <section class="view" id="v-bracket" hidden>
+      <div class="rafters" id="rafters" hidden></div>
       <div><p class="eyebrow" id="poEyebrow">Playoffs preview</p><h2 id="poTitle">If the playoffs started today</h2></div>
       <div class="polist" id="poBody"></div>
     </section>
@@ -1325,7 +1329,33 @@ function poCards(P,S,live,finalFirst){ const out=S.matches.map(m=>poMatchCard(P,
   const fin=S.final?poMatchCard(P,S,S.final,live):poCard('The final','Winner takes all','Top two',S.tb?'after the tiebreak':P.ms.length?`after Match ${P.ms.length}`:'','','','','tbd');
   if(finalFirst){ out.reverse(); out.unshift(fin); } else out.push(fin); return out.join(''); }
 function poShare(text){ if(navigator.share){ navigator.share({text}).catch(()=>{}); return; } navigator.clipboard?.writeText(text).then(()=>toast('Copied. Paste it in the group chat.')).catch(()=>toast('Could not copy')); }
-function renderPlayoffs(){
+// Champions banners: one per finished season that crowned champions, hung at the top of Playoffs, newest first. One banner
+// hangs centered; more sit side by side and scroll. Drawn like a gym banner (rod, pointed bottom, stitched trim) with the app's
+// own ball as the emblem. Tapping one opens that season's wrap. Hidden on playoff night so the matches stay on top.
+function bannerSvg(F,w){ const c=F.champ, n=c.win.map(escH); const l1=n.length>2?n.slice(0,-1).join(', '):n[0]||'', l2=n.length>1?'&amp; '+n[n.length-1]:'';
+  const y1=F.from.slice(0,4), y2=F.to.slice(0,4), yr=y1===y2?y1:`${y1}–${y2.slice(2)}`; const fit=t=>t.replace(/&amp;/g,'&').length>13?' textLength="150" lengthAdjust="spacingAndGlyphs"':'';
+  const D="font-family:var(--display)", Bf="font-family:var(--body);font-weight:600";
+  return `<svg role="img" aria-label="${escH(F.S.name)} champions: ${n.join(' and ')}, ${yr}" viewBox="-10 0 220 312" width="${w}" height="${Math.round(w*1.42)}">
+    <defs><linearGradient id="bnF${F.S.id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".18" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset=".82" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>
+    <path d="M30 0v8M170 0v8" stroke="#6f8494" stroke-width="2"/>
+    <path d="M6 12H194V262L100 298L6 262Z" fill="var(--court)" style="filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))"/><path d="M6 12H194V262L100 298L6 262Z" fill="url(#bnF${F.S.id})"/>
+    <rect x="-6" y="6" width="212" height="9" rx="4.5" fill="#c9d3d9"/><rect x="-6" y="11" width="212" height="4" rx="2" fill="#000" opacity=".18"/>
+    <path d="M15 24H185V256L100 288L15 256Z" fill="none" stroke="var(--paint)" stroke-width="2.5"/>
+    <path d="M21 30H179V252L100 281L21 252Z" fill="none" stroke="var(--paint)" stroke-width="1" stroke-dasharray="4 3" opacity=".7"/>
+    <svg x="82" y="34" width="36" height="36" viewBox="0 0 100 100">${BALL_INNER}</svg>
+    <text x="100" y="93" text-anchor="middle" fill="#fff" style="${Bf};font-size:12px;letter-spacing:4px">PICKLE</text>
+    <text x="100" y="121" text-anchor="middle" fill="#fff" style="${D};font-weight:600;font-size:22px;letter-spacing:2px"${fit(F.S.name)}>${escH(F.S.name.toUpperCase())}</text>
+    <text x="100" y="158" text-anchor="middle" fill="var(--ball)" style="${D};font-weight:800;font-size:31px;letter-spacing:1px">CHAMPIONS</text>
+    <path d="M52 171H148" stroke="var(--paint)" stroke-width="1.5"/>
+    <text x="100" y="${l2?197:209}" text-anchor="middle" fill="#fff" style="${Bf};font-size:19px"${fit(l1)}>${l1}</text>
+    ${l2?`<text x="100" y="221" text-anchor="middle" fill="#fff" style="${Bf};font-size:19px"${fit(l2)}>${l2}</text>`:''}
+    <text x="100" y="250" text-anchor="middle" fill="var(--paint)" style="${D};font-weight:600;font-size:17px;letter-spacing:3px">${yr}</text></svg>`; }
+const BALL_INNER=document.querySelector('header.top h1 .ball').innerHTML; // the app's own ball, so the banner emblem is the real icon
+function renderRafters(){ const el=$('#rafters'); const L=state.tonight.po?[]:state.seasons.filter(S=>S.end).map(S=>seasonFacts(S.id)).filter(F=>F&&F.champ).reverse();
+  el.hidden=!L.length; el.classList.toggle('many',L.length>1); const w=L.length>1?150:200;
+  el.innerHTML=L.map(F=>`<button data-s="${F.S.id}" aria-label="Open ${escH(F.S.name)} Wrapped">${bannerSvg(F,w)}</button>`).join(''); el.scrollLeft=0; }
+$('#rafters').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; haptic(); state.wrapped=+b.dataset.s; wrapFor=null; show('history','wrapped'); });
+function renderPlayoffs(){ renderRafters();
   const T=state.tonight, E=$('#poEyebrow'), H=$('#poTitle'), B=$('#poBody');
   // 1. playoff night in progress: the night as a list. Scores are entered on Game Night.
   if(T.po){ const P=T.po, S=poState(P,T.games); const live=S.champ!=null?[]:(normCur(T.current)||poWant().games).map(g=>g.m);
@@ -2038,7 +2068,7 @@ let toastT; function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=fa
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='459a653a';
+const BUILD='289ae04e';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }

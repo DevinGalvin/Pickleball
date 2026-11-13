@@ -40,6 +40,12 @@ With 8 or more checked in, the check-in screen offers a second court. It is neve
 - Share to the group sends the results as text.
 - Type: names in the body face, award values too. The display face is only on the page title, the hero number and the standings column.
 
+## Champions banners
+
+- Every finished season that crowned champions gets a banner at the top of Playoffs, newest first. One banner hangs centered; with more they sit side by side and scroll. Tap one to open that season's wrap.
+- Drawn in the page (no image): rod, pointed bottom, stitched trim, court blue, with the header's own ball as the emblem. Only CHAMPIONS is in the heavy face.
+- Hidden while a playoff night is running. Nothing is stored: it comes from the same season facts as the wrap.
+
 ## Night recap
 
 - Tapping a night in History opens its recap. "The night" is the same for everyone: Night MVP, the final board, the closest game and the biggest win, best pair (3+ games together), beat the spread, standings movers, then every game. "Your night" shows only when the name on this phone played: record, games in order, best partner, +/- next to each partner, and the standings move.
