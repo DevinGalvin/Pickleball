@@ -172,6 +172,8 @@ header.top .date{white-space:nowrap}
 .trow{display:grid;grid-template-columns:28px 1fr auto 18px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel);width:100%;text-align:left}
 .trow .rk{font-family:var(--display);font-weight:800;font-size:22px;color:var(--mute)}
 .trow.q1 .rk{color:var(--ball)}
+.trow .rk{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.trow .rk .mv{font-family:var(--body);font-weight:700;font-size:10px;letter-spacing:.2px;margin-top:3px;white-space:nowrap}
 .trow .nm{font-weight:600;min-width:0}
 .trow .meta{font-size:12px;color:var(--mute)}
 .trow .pm{font-family:var(--display);font-weight:800;font-size:26px;text-align:right;line-height:1}
@@ -1056,13 +1058,16 @@ function renderStandings(){
   document.querySelectorAll('#scopeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.scope===state.scope));
   const tonight=state.scope==='tonight'; const games=tonight?state.tonight.games:allGames();
   const rows=ranking(tonight);
+  // movement since the last night: where each player stood in the season before it. Needs a night to compare against.
+  const was={}; if(!tonight){ const N=allNights(); if(N.length>1) rankFrom(N.slice(0,-1).flatMap(n=>n.games)).forEach((p,i)=>was[p]=i+1); }
+  const mv=(p,now)=>{ const d=was[p]?was[p]-now:0; return d?`<span class="mv num ${d>0?'pos':'neg'}" aria-label="${d>0?'Up':'Down'} ${Math.abs(d)}">${d>0?'▲':'▼'}${Math.abs(d)}</span>`:''; };
   let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
   // FLIP: remember where each row was so rank changes slide instead of jump; first paint staggers in
   const before={}; document.querySelectorAll('#standings .trow').forEach(el=>before[el.dataset.p]=el.getBoundingClientRect().top);
   $('#standings').innerHTML=rows.map(r=>{
     if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
     rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
-    return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}</div>
+    return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}${mv(r.p,rank)}</div>
       <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l}${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>
       <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
   const had=Object.keys(before).length;
@@ -1070,7 +1075,7 @@ function renderStandings(){
     if(!had){ el.style.setProperty('--i',i); el.classList.add('in'); return; }
     const dy=(before[el.dataset.p]??el.getBoundingClientRect().top)-el.getBoundingClientRect().top; if(!dy) return;
     el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; el.getBoundingClientRect(); el.style.transition=''; el.style.transform=''; });
-  $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games. Tap a name for details.`;
+  $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games.${Object.keys(was).length?' ▲▼ is the move since the last night.':''} Tap a name for details.`;
 }
 document.querySelectorAll('#scopeSeg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; renderStandings(); });
 $('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow'); if(!b) return; state.player=b.dataset.p; show('season','player'); });
@@ -1262,6 +1267,12 @@ function renderPlayer(){
   const partners={}; games.forEach(g=>{ const team=g.a.includes(p)?g.a:g.b; const mate=team.find(x=>x!==p); const d=diffs(g)[p]; partners[mate]=partners[mate]||{pm:0,n:0}; partners[mate].pm+=d; partners[mate].n++; });
   // partner stats need a real sample: 3+ games together, else they're noise
   const pl=Object.entries(partners).filter(x=>x[1].n>=3).sort((a,b)=>b[1].pm/b[1].n-a[1].pm/a[1].n); const bp=pl[0];
+  // rivals: his record against each opponent. Same sample rule as partners (3+ games), and only a losing / winning record counts.
+  const opp={}; games.forEach(g=>{ const w=diffs(g)[p]>0; (g.a.includes(p)?g.b:g.a).forEach(o=>{ const r=opp[o]=opp[o]||{w:0,l:0}; w?r.w++:r.l++; }); });
+  const ol=Object.entries(opp).map(([o,r])=>({o,...r,n:r.w+r.l,pct:r.w/(r.w+r.l)})).filter(r=>r.n>=3);
+  const nem=ol.filter(r=>r.l>r.w).sort((a,b)=>a.pct-b.pct||b.l-a.l||a.o.localeCompare(b.o))[0];
+  const vic=ol.filter(r=>r.w>r.l).sort((a,b)=>b.pct-a.pct||b.w-a.w||a.o.localeCompare(b.o))[0];
+  const rival=(label,r)=>`<div class="stat half"><p class="eyebrow">${label}</p><div class="v">${r?r.o:'–'}</div><div class="d num">${r?`${r.w}–${r.l} against him`:label==='Nemesis'?'Nobody has your number':'Nobody yet'}</div></div>`;
   const bestN=Math.max(...nights.map(n=>tally(n.games.filter(g=>inGame(g,p)))[p]?.pm??-Infinity));
   const rating=t.pm/(t.gp+SHRINK); const np=nightsPlayed(p); const avg=t.pm/t.gp;
   // Lead with rank: that's what the rating is for. The rating itself is a formula (total ÷ games+SHRINK), so it gets one plain line.
@@ -1278,7 +1289,8 @@ function renderPlayer(){
     <div class="stat"><p class="eyebrow">Night MVP</p><div class="v num">${mvps}</div><div class="d">of ${done.length} night${done.length===1?'':'s'}</div></div>
     <div class="stat half"><p class="eyebrow">Win %</p><div class="v num">${Math.round(t.w/t.gp*100)}%</div></div>
     <div class="stat half"><p class="eyebrow">Best night</p><div class="v num">${fmt(bestN)}</div></div>
-    ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}`;
+    ${bp?`<div class="stat big" style="background:var(--panel);border:0"><p class="eyebrow">Best partner</p><div class="v">${bp[0]}</div><div class="d num">${fmt(r1(bp[1].pm/bp[1].n))} avg · ${bp[1].n} games together</div></div>`:''}
+    ${nem||vic?rival('Nemesis',nem)+rival('Favorite victim',vic):''}`;
   // cumulative +/- line, one point per game played
   let run=0; const pts=games.map((g,i)=>{ run+=diffs(g)[p]; return {i:i+1,v:run,g}; });
   $('#plLine').innerHTML=lineChart(pts,'Running +/− across the season');
