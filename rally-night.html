@@ -169,7 +169,7 @@ header.top .date{white-space:nowrap}
 
 /* standings */
 .table{display:flex;flex-direction:column;gap:6px}
-.trow{display:grid;grid-template-columns:28px 1fr auto 18px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel);width:100%;text-align:left}
+.trow{display:grid;grid-template-columns:28px 1fr 52px auto 18px;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--panel);width:100%;text-align:left}
 .trow .rk{font-family:var(--display);font-weight:800;font-size:22px;color:var(--mute)}
 .trow.q1 .rk{color:var(--ball)}
 .trow .rk{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
@@ -179,6 +179,7 @@ header.top .date{white-space:nowrap}
 .trow .pm{font-family:var(--display);font-weight:800;font-size:26px;text-align:right;line-height:1}
 .trow .pm small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--mute);letter-spacing:.5px}
 .trow .chev{color:var(--mute)}
+.trow .spk{width:52px;height:20px;display:block;overflow:visible}.trow .spk path{fill:none;stroke:var(--mute);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.7}
 .seg{display:flex;background:var(--panel);border-radius:12px;padding:4px;gap:4px}
 .seg button{flex:1;min-height:38px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mute)}
 .seg button.on{background:var(--panel-2);color:var(--fg)}
@@ -1061,14 +1062,18 @@ function renderStandings(){
   // movement since the last night: where each player stood in the season before it. Needs a night to compare against.
   const was={}; if(!tonight){ const N=allNights(); if(N.length>1) rankFrom(N.slice(0,-1).flatMap(n=>n.games)).forEach((p,i)=>was[p]=i+1); }
   const mv=(p,now)=>{ const d=was[p]?was[p]-now:0; return d?`<span class="mv num ${d>0?'pos':'neg'}" aria-label="${d>0?'Up':'Down'} ${Math.abs(d)}">${d>0?'▲':'▼'}${Math.abs(d)}</span>`:''; };
+  // sparkline: his running +/- game by game across the season. Gray line, the end dot carries the color.
+  const spark=p=>{ if(tonight) return '<span></span>'; let run=0; const v=[0].concat(games.filter(g=>inGame(g,p)).map(g=>run+=diffs(g)[p])); if(v.length<4) return '<span></span>';
+    const lo=Math.min(...v), hi=Math.max(...v), W=52, H=20, x=i=>2+i/(v.length-1)*(W-6), y=n=>hi===lo?H/2:2+(hi-n)/(hi-lo)*(H-4);
+    return `<svg class="spk" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${v.map((n,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(n).toFixed(1)).join('')}"/><circle cx="${x(v.length-1).toFixed(1)}" cy="${y(run).toFixed(1)}" r="2.5" fill="var(--${run>0?'good':run<0?'bad':'mute'})"/></svg>`; };
   let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
   // FLIP: remember where each row was so rank changes slide instead of jump; first paint staggers in
   const before={}; document.querySelectorAll('#standings .trow').forEach(el=>before[el.dataset.p]=el.getBoundingClientRect().top);
   $('#standings').innerHTML=rows.map(r=>{
-    if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
+    if(!r.s) return `<button class="trow" data-p="${r.p}"><div class="rk">–</div><div class="nm">${r.p}<div class="meta">${tonight?'Not playing tonight':"Hasn't played yet"}</div></div><span></span><div class="pm num" style="color:var(--mute)">–</div><span class="chev">›</span></button>`;
     rank++; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
     return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}${mv(r.p,rank)}</div>
-      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l}${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>
+      <div class="nm">${r.p}<div class="meta num">${r.s.w}–${r.s.l}${tonight?'':' · '+r.np+' night'+(r.np===1?'':'s')}</div></div>${spark(r.p)}
       <div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div><span class="chev">›</span></button>`; }).join('');
   const had=Object.keys(before).length;
   document.querySelectorAll('#standings .trow').forEach((el,i)=>{
