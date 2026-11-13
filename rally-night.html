@@ -1047,6 +1047,7 @@ function playResult(i,sa,sb){
 // ---------- standings ----------
 // Season rating = total +/- divided by (games + SHRINK): a hot 4-game night can't outrank 40 solid games, but nobody is excluded.
 const SHRINK=5;
+const SPARK_GAMES=20; // games in the standings sparkline
 const GAME_TO=11; // games are to 11, win by 2
 function ranking(tonight){
   const games=tonight?state.tonight.games:allGames(); const t=tally(games);
@@ -1062,8 +1063,8 @@ function renderStandings(){
   // movement since the last night: where each player stood in the season before it. Needs a night to compare against.
   const was={}; if(!tonight){ const N=allNights(); if(N.length>1) rankFrom(N.slice(0,-1).flatMap(n=>n.games)).forEach((p,i)=>was[p]=i+1); }
   const mv=(p,now)=>{ const d=was[p]?was[p]-now:0; return d?`<span class="mv num ${d>0?'pos':'neg'}" aria-label="${d>0?'Up':'Down'} ${Math.abs(d)}">${d>0?'▲':'▼'}${Math.abs(d)}</span>`:''; };
-  // sparkline: his running +/- game by game across the season. Gray line, the end dot carries the color.
-  const spark=p=>{ if(tonight) return '<span></span>'; let run=0; const v=[0].concat(games.filter(g=>inGame(g,p)).map(g=>run+=diffs(g)[p])); if(v.length<4) return '<span></span>';
+  // sparkline: recent form. His running +/- over his last SPARK_GAMES games; gray line, the end dot is green or red for the net over that stretch.
+  const spark=p=>{ if(tonight) return '<span></span>'; let run=0; const v=[0].concat(games.filter(g=>inGame(g,p)).slice(-SPARK_GAMES).map(g=>run+=diffs(g)[p])); if(v.length<4) return '<span></span>';
     const lo=Math.min(...v), hi=Math.max(...v), W=52, H=20, x=i=>2+i/(v.length-1)*(W-6), y=n=>hi===lo?H/2:2+(hi-n)/(hi-lo)*(H-4);
     return `<svg class="spk" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${v.map((n,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(n).toFixed(1)).join('')}"/><circle cx="${x(v.length-1).toFixed(1)}" cy="${y(run).toFixed(1)}" r="2.5" fill="var(--${run>0?'good':run<0?'bad':'mute'})"/></svg>`; };
   let rank=0; $('#stEyebrow').textContent=tonight?'Tonight':`${allNights().length} night${allNights().length===1?'':'s'} · ${games.length} games`;
@@ -1080,7 +1081,7 @@ function renderStandings(){
     if(!had){ el.style.setProperty('--i',i); el.classList.add('in'); return; }
     const dy=(before[el.dataset.p]??el.getBoundingClientRect().top)-el.getBoundingClientRect().top; if(!dy) return;
     el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; el.getBoundingClientRect(); el.style.transition=''; el.style.transform=''; });
-  $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games.${Object.keys(was).length?' ▲▼ is the move since the last night.':''} Tap a name for details.`;
+  $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games.${Object.keys(was).length?' ▲▼ is the move since the last night. The line is your last '+SPARK_GAMES+' games.':''} Tap a name for details.`;
 }
 document.querySelectorAll('#scopeSeg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; renderStandings(); });
 $('#standings').addEventListener('click',e=>{ const b=e.target.closest('.trow'); if(!b) return; state.player=b.dataset.p; show('season','player'); });
