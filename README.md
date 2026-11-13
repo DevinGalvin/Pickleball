@@ -34,5 +34,5 @@ With 8 or more checked in, the check-in screen offers a second court. It is neve
 ## Stats
 
 - Player page: current streak, record over the last ten games, and nights finished as Night MVP.
-- History opens on Records once two nights are saved (Nights is the other half of the toggle). Records is an infographic of seven panels: streaks (win, hot hand, cold spell), the Night MVP race, best and worst night, a scoreboard for the biggest blowout and the longest game, best pair (3+ games together), the bagel shop (11-0s served and eaten) and iron man. It covers all seasons and only finished nights. Shapes and type only: no player faces.
+- History always opens on Records (Nights is the other half of the toggle). Records is an infographic of seven panels: streaks (win, hot hand, cold spell), the Night MVP race, best and worst night, partners (Dream team and Bad chemistry: the best and worst win record for a pair with 3+ games together; before any pair has 3, the pair closest to it), the longest game, the bagel shop (11-0s served and eaten) and iron man. It covers all seasons and only finished nights. Shapes and type only: no player faces. Player names are in the body face; the display face is for numbers.
 - Night MVP is the best +/- of the night; ties go to more wins, then fewer games. There is no minimum number of games.

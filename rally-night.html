@@ -209,6 +209,12 @@ header.top .date{white-space:nowrap}
 .swtrack{display:flex;width:100%;height:16px}.swl .swtrack{justify-content:flex-end}
 .swbar{display:block;height:100%}.swbar.neg{background:var(--bad);border-radius:8px 0 0 8px}.swbar.pos{background:var(--good);border-radius:0 8px 8px 0}
 .swaxis{width:2px;background:var(--line);flex:none}
+#records .igname,#records .igname.sm{font-family:var(--body);font-weight:600;font-size:20px;line-height:1.15;text-transform:none;letter-spacing:0}
+#records .igname .amp{color:var(--mute);font-weight:400}
+.swing .ignum{font-size:30px}
+.pips i.w{background:var(--ball)}.pips i.l{background:var(--bad)}.pips i.o{box-sizing:border-box;border:1.5px dashed var(--mute)}
+.prbar{display:flex;gap:2px;width:120px;height:9px}.prbar span{display:block;height:100%;border-radius:5px}.prbar .w{background:var(--ball)}.prbar .l{background:var(--bad)}
+.ignum.mute{color:var(--mute)}
 .swl .igsub{padding-right:8px}.swr .igsub{padding-left:8px}.swl .ignum{padding-right:8px}.swr .ignum{padding-left:8px}
 .sb{display:flex;flex-direction:column;gap:6px;width:100%}
 .sbcap{font-size:13px;color:var(--mute);text-align:center}
@@ -1317,7 +1323,7 @@ function barChart(bars,title){
 
 // ---------- history ----------
 // ---------- league records: all seasons, finished nights only ----------
-let histMode=null; // Records leads once there are two saved nights; with one, the records are just that night's recap, so the list leads
+let histMode=null; // History always opens on Records; Nights is the other half of the toggle
 $('#histSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; histMode=b.dataset.h; haptic(); renderHistory(); document.querySelector('main').scrollTop=0; });
 $('#records').addEventListener('click',e=>{ const b=e.target.closest('.rec'); if(!b) return; haptic();
   if(b.dataset.night){ state.night=+b.dataset.night; show('history','night'); } else if(b.dataset.player){ state.player=decodeURIComponent(b.dataset.player); show('season','player'); } });
@@ -1336,12 +1342,18 @@ function records(){
     for(const p in t){ if(!bn||t[p].pm>bn.pm) bn={p,pm:t[p].pm,date:n.date,i}; if(!wn||t[p].pm<wn.pm) wn={p,pm:t[p].pm,date:n.date,i}; } });
   const mp=top(mv,v=>v); R.mvp={p:mp,n:mv[mp]}; R.mvpRace=Object.keys(mv).sort((a,b)=>mv[b]-mv[a]||a.localeCompare(b)).slice(0,4).map(p=>({p,n:mv[p]})); R.bestNight=bn; R.worstNight=wn;
   // pairs with a real sample
-  const pr={}; games.forEach(x=>{ [[x.g.a,x.g.sa-x.g.sb],[x.g.b,x.g.sb-x.g.sa]].forEach(([t,d])=>{ const k=t.slice().sort().join(' & '); pr[k]=pr[k]||{pm:0,n:0}; pr[k].pm+=d; pr[k].n++; }); });
-  const pk=Object.keys(pr).filter(k=>pr[k].n>=3).sort((a,b)=>pr[b].pm/pr[b].n-pr[a].pm/pr[a].n)[0]; R.pair=pk?{k:pk,avg:pr[pk].pm/pr[pk].n,n:pr[pk].n}:null;
+  const pr={}; games.forEach(x=>{ [[x.g.a,x.g.sa-x.g.sb],[x.g.b,x.g.sb-x.g.sa]].forEach(([t,d])=>{ const k=t.slice().sort().join(' & '); pr[k]=pr[k]||{pm:0,n:0,w:0}; pr[k].pm+=d; pr[k].n++; if(d>0) pr[k].w++; }); });
+  // best and worst record together (3+ games); ties go to the better +/- per game, then the pair with more games
+  const PAIR_MIN=3, pct=k=>pr[k].w/pr[k].n, avg=k=>pr[k].pm/pr[k].n, mk=k=>k?{k,w:pr[k].w,l:pr[k].n-pr[k].w,n:pr[k].n}:null;
+  const ql=Object.keys(pr).filter(k=>pr[k].n>=PAIR_MIN).sort((a,b)=>pct(b)-pct(a)||avg(b)-avg(a)||pr[b].n-pr[a].n||a.localeCompare(b));
+  const wk=ql.length>1?ql.slice().sort((a,b)=>pct(a)-pct(b)||avg(a)-avg(b)||pr[b].n-pr[a].n||a.localeCompare(b))[0]:null;
+  R.dream=mk(ql[0]); R.chem=wk&&wk!==ql[0]&&pr[wk].w<pr[wk].n-pr[wk].w?mk(wk):null; R.pairMin=PAIR_MIN;
+  // nobody has 3 together yet: the pair closest to it
+  R.near=ql.length?null:mk(Object.keys(pr).sort((a,b)=>pr[b].n-pr[a].n||pct(b)-pct(a)||avg(b)-avg(a)||a.localeCompare(b))[0]);
   // single games
   const line=x=>{ const aw=x.g.sa>x.g.sb; return {win:aw?x.g.a:x.g.b,lose:aw?x.g.b:x.g.a,ws:Math.max(x.g.sa,x.g.sb),ls:Math.min(x.g.sa,x.g.sb),score:`${Math.max(x.g.sa,x.g.sb)}–${Math.min(x.g.sa,x.g.sb)}`,who:`${(aw?x.g.a:x.g.b).join(' & ')} over ${(aw?x.g.b:x.g.a).join(' & ')}`,date:x.date,i:x.i}; };
   const mar=x=>Math.abs(x.g.sa-x.g.sb), tot=x=>x.g.sa+x.g.sb;
-  R.blowout=line(games.slice().sort((a,b)=>mar(b)-mar(a))[0]); R.avgLose=games.reduce((t,x)=>t+Math.min(x.g.sa,x.g.sb),0)/games.length; R.marathon=line(games.slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]);
+  R.marathon=line(games.slice().sort((a,b)=>tot(b)-tot(a)||mar(a)-mar(b))[0]);
   // bagels and games played
   const gave={}, ate={}, gp={}; games.forEach(x=>{ const d=diffs(x.g); for(const p in d) gp[p]=(gp[p]||0)+1; if(Math.min(x.g.sa,x.g.sb)===0){ const aw=x.g.sa>x.g.sb; (aw?x.g.a:x.g.b).forEach(p=>gave[p]=(gave[p]||0)+1); (aw?x.g.b:x.g.a).forEach(p=>ate[p]=(ate[p]||0)+1); } });
   const gv=top(gave,v=>v), at=top(ate,v=>v), ir=top(gp,v=>v); R.gave=gv?{p:gv,n:gave[gv]}:null; R.ate=at?{p:at,n:ate[at]}:null; R.iron={p:ir,n:gp[ir]};
@@ -1369,21 +1381,24 @@ function renderRecords(){ const R=records(); const el=$('#records');
   const BALL='<circle cx="10" cy="10" r="9"/><g fill="rgba(0,0,0,.35)"><circle cx="6" cy="7" r="1.4"/><circle cx="11" cy="5" r="1.4"/><circle cx="14" cy="10" r="1.4"/><circle cx="8" cy="12" r="1.4"/><circle cx="12" cy="15" r="1.4"/></g>';
   const balls=(n,ot,many)=>n?`<span class="balls${many?' many':''}" aria-hidden="true">${Array.from({length:n},(_,j)=>`<svg viewBox="0 0 20 20" class="${ot!=null&&j>=ot?'ot':''}">${BALL}</svg>`).join('')}</span>`:'<span class="zero">No points</span>';
   const side=(names,n,cls,ot,many)=>`<span class="bct ${cls}"><span class="bch"><span class="nm">${names.map(escH).join(' &amp; ')}</span><span class="sc num">${n}</span></span>${balls(n,ot,many)}</span>`;
-  const blowout=x=>{ const many=x.ws>14, avg=Math.round(R.avgLose), who=x.lose.map(escH).join(' &amp; ');
-    return `<section class="ig"><p class="eyebrow">Biggest blowout · ${R.day(x.date)}</p><button class="rec bc" ${ni(x.i)}>${side(x.win,x.ws,'w',null,many)}${side(x.lose,x.ls,'l',null,many)}</button>${avg>x.ls?`<p class="igsub">Losing teams average ${avg}. ${who} ${x.ls?`got ${x.ls}`:'didn’t score'}.</p>`:''}</section>`; };
   const marathon=x=>{ const ot=x.ls>=GAME_TO-1&&x.ws>GAME_TO, many=x.ws>14, extra=x.ws+x.ls-2*(GAME_TO-1);
     return `<section class="ig"><p class="eyebrow ebrow">Longest game · ${R.day(x.date)}${ot?'<span class="otb">Overtime</span>':''}</p><button class="rec bc" ${ni(x.i)}>${side(x.win,x.ws,'w',ot?GAME_TO-1:null,many)}${side(x.lose,x.ls,'l',ot?GAME_TO-1:null,many)}</button><p class="igsub">${ot?`Tied at ${GAME_TO-1}, then ${extra} more point${extra===1?'':'s'} to settle it. Circled balls are overtime.`:`${x.ws+x.ls} points, the most in one game.`}</p></section>`; };
-  const boards=blowout(R.blowout)+marathon(R.marathon);
-  const pair=R.pair?(()=>{ const [a,b]=R.pair.k.split(' & '); return `<section class="ig"><p class="eyebrow">Best pair</p><div class="igrow"><span class="duo"><i>${escH(a[0])}</i><i>${escH(b[0])}</i></span><span class="igmain"><span class="igname sm">${escH(a)} &amp; ${escH(b)}</span><span class="igsub">${R.pair.n} games together</span></span><span class="ignum pos num">${fmt(r1(R.pair.avg))}<small>avg</small></span></div></section>`; })():'';
+  const boards=marathon(R.marathon);
+  // partners: the best and the worst record together, a dot per game (lime won, red lost)
+  const duo=k=>k.split(' & ').map(escH).join(' <span class="amp">&amp;</span> ');
+  const recpips=(w,l,need)=>w+l+need>12?`<span class="prbar" role="img" aria-label="${w} won, ${l} lost">${w?`<span class="w" style="flex:${w}"></span>`:''}${l?`<span class="l" style="flex:${l}"></span>`:''}</span>`:`<span class="pips sm" role="img" aria-label="${w} won, ${l} lost">${'<i class="w"></i>'.repeat(w)}${'<i class="l"></i>'.repeat(l)}${'<i class="o"></i>'.repeat(need)}</span>`;
+  const prow=(x,cls,sub,need)=>`<div class="igrow"><span class="igmain"><span class="igname">${duo(x.k)}</span>${recpips(x.w,x.l,need||0)}<span class="igsub">${sub}</span></span><span class="ignum ${cls} num">${x.w}-${x.l}</span></div>`;
+  const pair=R.dream?`<section class="ig"><p class="eyebrow">Partners</p>${prow(R.dream,'pos','Dream team · best record together')}${R.chem?`<span class="igdiv"></span>${prow(R.chem,'neg','Bad chemistry · worst record together')}`:''}<p class="igsub">Pairs with ${R.pairMin} or more games together</p></section>`
+    :R.near?(()=>{ const need=R.pairMin-R.near.n; return `<section class="ig"><p class="eyebrow">Partners</p>${prow(R.near,'mute',`Closest to qualifying · ${need} more game${need===1?'':'s'}`,need)}<p class="igsub">Dream team and Bad chemistry unlock once a pair has played ${R.pairMin} games together</p></section>`; })():'';
   const rings=(n,c)=>`<span class="rings ${c}">${'<i></i>'.repeat(Math.min(n,10))}${n>10?`<b>+${n-10}</b>`:''}</span>`;
   const bagels=R.gave||R.ate?`<section class="ig"><p class="eyebrow">Bagel shop · 11–0 games</p>
     ${R.gave?`<button class="rec igrow" ${pl(R.gave.p)}><span class="igmain"><span class="igname sm">${escH(R.gave.p)} <em>served</em></span>${rings(R.gave.n,'w')}</span><span class="ignum sm pos num">${R.gave.n}</span></button>`:''}
     ${R.ate?`<button class="rec igrow" ${pl(R.ate.p)}><span class="igmain"><span class="igname sm">${escH(R.ate.p)} <em>ate</em></span>${rings(R.ate.n,'l')}</span><span class="ignum sm neg num">${R.ate.n}</span></button>`:''}</section>`:'';
   const pct=R.iron.n/R.games, C=2*Math.PI*20;
   const iron=`<section class="ig"><p class="eyebrow">Iron man</p><button class="rec igrow" ${pl(R.iron.p)}><svg class="donut" width="60" height="60" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="var(--panel-2)" stroke-width="6"/><circle cx="24" cy="24" r="20" fill="none" stroke="var(--ball)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(C*pct).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 24 24)"/><text x="24" y="28.5" text-anchor="middle">${Math.round(pct*100)}%</text></svg><span class="igmain"><span class="igname sm">${escH(R.iron.p)}</span><span class="igsub">Played ${R.iron.n} of the league's ${R.games} games</span></span></button></section>`;
-  el.innerHTML=`<div class="igwrap">${streaks}${race}${swing}${boards}${pair}${bagels}${iron}</div>`; }
+  el.innerHTML=`<div class="igwrap">${streaks}${race}${swing}${pair}${boards}${bagels}${iron}</div>`; }
 function renderHistory(){
-  if(histMode===null) histMode=state.nights.length>=2?'records':'nights';
+  if(histMode===null) histMode='records';
   document.querySelectorAll('#histSeg button').forEach(b=>b.classList.toggle('on',b.dataset.h===histMode)); $('#nights').hidden=histMode!=='nights'; $('#records').hidden=histMode!=='records';
   if(histMode==='records'){ renderRecords(); return; }
   const nights=allNightsEver(); const multi=state.seasons.length>1;
