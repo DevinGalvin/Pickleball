@@ -123,6 +123,7 @@ header.top .date{white-space:nowrap}
 
 /* court board */
 .gamebar{display:flex;justify-content:space-between;align-items:center}
+.gamebar .scorerline{margin:2px 0 0;font-size:13px;color:var(--mute)}.gamebar .scorerline b{color:var(--fg);font-weight:600}
 .gamebar .g{font-family:var(--display);font-weight:800;font-size:var(--t-title);text-transform:uppercase}
 .courtwrap{position:relative;max-width:100%;aspect-ratio:21/11;border-radius:14px;overflow:hidden;background:var(--surround)}
 .courtwrap svg{position:absolute;inset:0;width:100%;height:100%}
@@ -519,7 +520,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
     <!-- TONIGHT: court -->
     <section class="view" id="v-court" hidden>
       <div class="postrip" id="poStrip" hidden></div>
-      <div class="gamebar"><div><p class="posub" id="poSub" hidden></p><div class="g" id="gameNum">Game 1</div></div>
+      <div class="gamebar"><div><p class="posub" id="poSub" hidden></p><div class="g" id="gameNum">Game 1</div><p class="scorerline" id="scorerLine" hidden></p></div>
         <div class="row" style="gap:8px"><button class="ghost" id="editPresent">Who's here</button><button class="ghost" id="undoBtn">Undo</button></div></div>
       <!-- one board per court in play; rendered by renderCourt -->
       <div class="courts" id="courts"></div>
@@ -711,13 +712,19 @@ function haptic(ms=10){ try{ if(navigator.vibrate){ navigator.vibrate(ms); retur
 function deviceId(){ try{ let id=localStorage.getItem('pickle-device'); if(!id){ id=Math.random().toString(36).slice(2,10)+Date.now().toString(36); localStorage.setItem('pickle-device',id); } return id; }catch(_){ return 'nostorage'; } }
 const scorer=()=>state.tonight.scorer||null;
 const iAmScorer=()=>{ const sc=scorer(); return !!sc && sc.id===deviceId(); };
-// run fn if this phone holds the pen; otherwise claim it (nobody has it) or offer to take it over
+// run fn if this phone holds the pen; otherwise claim it (nobody has it) or offer to take it over.
+// The phone already knows who it is ("Who are you?"), so the name comes from there; the roster picker is only a fallback.
+function claimPen(then){ const set=p=>{ state.tonight.scorer={id:deviceId(),name:p}; haptic(15); persist(); renderCourt(); then(p); };
+  const n=me(); if(n){ set(n); return; }
+  const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
+  actionSheet('Scorekeeper','Who are you?',P.map(p=>({label:p,run:()=>set(p)}))); }
 function asScorer(fn){ const sc=scorer();
-  if(!sc){ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
-    actionSheet('Scorekeeper',"Who's scoring tonight?",P.map(p=>({label:p,run:()=>{ state.tonight.scorer={id:deviceId(),name:p}; haptic(15); persist(); renderCourt(); fn(); }}))); return; }
+  if(!sc){ claimPen(()=>fn()); return; }
   if(sc.id===deviceId()){ fn(); return; }
-  confirmSheet('Scorekeeper',`${sc.name} is scoring tonight on another phone. Take over?`,'Take over',()=>{ const P=[...state.tonight.present].sort((x,y)=>x.localeCompare(y));
-    actionSheet('Scorekeeper','Who are you?',P.map(p=>({label:p,run:()=>{ state.tonight.scorer={id:deviceId(),name:p}; haptic(15); persist(); renderCourt(); toast(`${p} is scoring now`); }}))); }); }
+  confirmSheet('Scorekeeper',`${sc.name} is scoring tonight on another phone. Take over?`,'Take over',()=>claimPen(p=>toast(`${p} is scoring now`))); }
+// who holds the pen, under the game number, so nobody has to ask
+function renderScorer(){ const el=$('#scorerLine'), sc=scorer(); el.hidden=!sc; if(!sc) return;
+  el.innerHTML=iAmScorer()?'You\'re scoring tonight':`<b>${escH(sc.name)}</b> is scoring tonight`; }
 // ---- running late ----
 // Checked in but not at the court yet: counts as coming, never drawn into a game until someone marks them here.
 // credit = games a late arrival is treated as having played, so the draw doesn't run them every game to catch up.
@@ -1030,6 +1037,7 @@ class ServeCue{
   }
 }
 function renderCourt(){
+  renderScorer();
   if(state.tonight.po){ renderCourtPO(); return; }
   $('#poStrip').hidden=true; $('#poSub').hidden=true; $('#queue').hidden=false;
   const T=state.tonight; T.current=normCur(T.current); let fresh=false;
@@ -2129,7 +2137,7 @@ let toastT; function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.hidden
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='9c634168';
+const BUILD='1eb55e1b';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
