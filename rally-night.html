@@ -55,7 +55,7 @@ h2{font-family:var(--display);font-weight:800;font-size:var(--t-title);margin:0;
 
 /* check-in */
 .roster{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.roster .rsec{grid-column:1/-1;margin:6px 0 0}.roster .rsec:first-child{margin-top:0}.roster .rsec.in{color:var(--ball)}
+.roster .rsec{grid-column:1/-1;margin:6px 0 0}.roster .rsec:first-child{margin-top:0}.roster .rsec.in{color:var(--ball);display:flex;justify-content:space-between;align-items:center;gap:8px}.roster .rsec .rsit{color:var(--mute);letter-spacing:.4px;text-transform:none;font-size:13px;font-weight:500}
 .chip{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);text-align:left;min-height:56px}
 .chip .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--mute);flex:none}
 .chip.on{border-color:var(--ball);background:#22323c}
@@ -839,7 +839,7 @@ function renderCheckin(){
     if(isG.has(p)) return `<button class="chip guest pressable ${on?'on':''} ${late?'late':''}" data-p="${escH(p)}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${escH(p)}</span><br><span class="sub num">${late?'Guest · running late':!on&&tg?`Guest · ${tg} game${tg===1?'':'s'} kept`:'Guest tonight'}</span></span></button>`;
     const s=t[p]; return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; };
   const nIn=all.filter(p=>state.tonight.present.has(p)).length, sec=(c,l)=>`<p class="eyebrow rsec ${c}">${l}</p>`;
-  $('#roster').innerHTML = (inn.length&&out.length ? sec('in',`In · ${nIn}`)+inn.map(chip).join('')+sec('',`Not yet · ${all.length-nIn}`)+out.map(chip).join('') : [...inn,...out].map(chip).join(''))
+  $('#roster').innerHTML = (inn.length&&out.length ? `<p class="eyebrow rsec in" id="rsecIn"><span>In · ${nIn}</span><span class="rsit" id="rsit"></span></p>`+inn.map(chip).join('')+sec('',`Not yet · ${all.length-nIn}`)+out.map(chip).join('') : [...inn,...out].map(chip).join(''))
     + (adding?'':`<button class="chip add" id="addBtn">+ Add a player or guest</button>`);
   const GH=guests().filter(p=>state.tonight.present.has(p)); $('#guestHint').hidden=!GH.length;
   if(GH.length) $('#guestHint').textContent=`${GH.join(' and ')} ${GH.length>1?'are guests':'is a guest'}: in the rotation tonight, not in the standings. Everyone else's games with ${GH.length>1?'them':'him'} still count.`;
@@ -852,7 +852,13 @@ function renderCheckin(){
   $('#courtsSeg').hidden=np<8; document.querySelectorAll('#courtsSeg button').forEach(b=>b.classList.toggle('on',+b.dataset.c===(two?2:1)));
   $('#checkinHint').textContent = (LATE.length?`${LATE.join(', ')} ${LATE.length>1?'join':'joins'} the draw on arrival. `:'') + (n<4?`Need 4 to play (${n} ${LATE.length?'here now':'checked in'}).`: n===4?'4 players: partners rotate every game.': n===5?'5 players: one sits each game.': n===6?'6 players: two sit each game.': n===7?'7 players: three sit each game.'
     : two ? (n===8?'Two courts: everyone plays every round.':`Two courts: ${n-8} sit each round.`) : `${n} players: ${n-4} sit each game.${np>=8&&!two?' Is court 2 open tonight?':''}`);
+  // the headcount line rides in the "In" header when there is one; the bottom hint keeps only late arrivals and the court 2 question
+  const rs=$('#rsit');
+  if(rs&&!poSetup){ rs.textContent = n<4?'need 4 to play': n===4?'partners rotate': two?(n===8?'2 courts · everyone plays':`2 courts · ${n-8} sit each round`): `${n-4} sit${n-4===1?'s':''} each game`;
+    $('#checkinHint').textContent=(LATE.length?`${LATE.join(', ')} ${LATE.length>1?'join':'joins'} the draw on arrival. `:'')+(np>=8&&!two?'Is court 2 open tonight?':''); }
+  else if(rs) rs.textContent='';
   if(poSetup) $('#checkinHint').textContent=poHint(n,two,LATE);
+  $('#checkinHint').hidden=!$('#checkinHint').textContent;
   $('#v-checkin').classList.toggle('posetup',poSetup); $('#poPanel').hidden=!poSetup||n<4; $('#poBack').hidden=!poSetup; if(poSetup&&n>=4) $('#poTeamList').innerHTML=poSeed(active()).map(poRow).join('');
   $('#startBtn').disabled=n<4;
   // Before league night, check-in is a sign-up, not a headcount, and the court stays shut. Anyone can tap Start
