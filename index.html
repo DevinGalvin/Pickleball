@@ -485,6 +485,12 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 .ebrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .otb{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:6px;background:var(--fg);color:var(--bg);font-family:var(--display);font-weight:800;font-size:var(--t-tag);letter-spacing:.6px}
 .igname.ic{display:flex;align-items:center;gap:6px}
+.pinwrap{position:relative;display:block}
+.field.digits .pinwrap input{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;font-size:16px;border:0;padding:0;z-index:1}
+.pinboxes{display:none}
+.field.digits .pinboxes{display:flex;gap:8px}
+.pinboxes span{flex:1;height:58px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-size:40px;line-height:1;color:var(--fg)}
+.field.digits .pinwrap:focus-within .pinboxes span.cur{border-color:var(--ball)}
 .updatebar{position:fixed;left:16px;width:calc(100% - 32px);bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:60;min-height:44px;border-radius:12px;border:0;background:var(--ball);color:var(--ball-ink);font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:updateIn .3s both}
 @keyframes updateIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .updatescrim{position:fixed;inset:0;z-index:59;background:rgba(6,12,16,.72);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:fadeIn .25s both}
@@ -665,10 +671,10 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 <div class="sheet" id="pinSheet" hidden>
   <div class="card">
     <div class="row"><h2 id="pinTitle">Group PIN</h2><button class="ghost" id="pinClose">Cancel</button></div>
-    <p class="hint" id="pinHint">Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don't have it? Ask the group.</p>
-    <label class="field"><span class="eyebrow" id="pinLabel">PIN</span><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits"></label>
+    <p class="hint" id="pinHint">Anyone with the link can watch. Checking in, scoring and edits need the group PIN, once per phone. Don't have it? Ask the group.</p>
+    <label class="field digits" id="pinField"><span class="eyebrow" id="pinLabel">PIN</span><span class="pinwrap"><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="5" autocomplete="one-time-code" placeholder="5 digits" aria-label="Group PIN, 5 digits"><span class="pinboxes" id="pinBoxes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span></span></label>
     <p class="err" id="pinErr"></p>
-    <button class="cta" id="pinGo">Unlock scoring</button>
+    <button class="cta" id="pinGo">Unlock</button>
   </div>
 </div>
 <div class="sheet" id="connecting"><div class="card" style="border-radius:20px;margin:auto;text-align:center"><h2>Connecting…</h2><p class="hint" id="connHint">Loading the league.</p></div></div>
@@ -2049,13 +2055,13 @@ let pinOnServer=undefined; pinRef.once('value').then(s=>{ pinOnServer=s.val()||n
 if(ADMIN) unlocked=true; else if(!PIN) unlocked=false; // an admin can do everything the group can; an old "unlocked" flag without a PIN is not enough
 document.addEventListener('click', e=>{
   if(unlocked) return; const t=e.target.closest(EDIT_SEL); if(!t) return;
-  e.stopPropagation(); e.preventDefault(); openPin();
+  e.stopPropagation(); e.preventDefault(); openPin(null, e.target);
 }, true);
-document.addEventListener('focusin', e=>{ if(!unlocked && e.target.closest(EDIT_SEL)){ e.target.blur(); openPin(); } }, true);
+document.addEventListener('focusin', e=>{ const t=!unlocked&&e.target.closest(EDIT_SEL); if(t){ e.target.blur(); openPin(null, e.target); } }, true);
 document.addEventListener('pointerdown', e=>{ if(!unlocked && e.target.closest('#courts .matchup')){ e.stopPropagation(); } }, true);
 let pinMode='group';
 // one sheet, two inputs: digits for the group PIN, a word for the admin code (not case sensitive)
-function pinField(adminMode){ const i=$('#pinInput'); $('#pinLabel').textContent=adminMode?'Code':'PIN';
+function pinField(adminMode){ const i=$('#pinInput'); $('#pinLabel').textContent=adminMode?'Code':'PIN'; $('#pinField').classList.toggle('digits',!adminMode); i.setAttribute('aria-label',adminMode?'Organizer code':'Group PIN, 5 digits');
   if(adminMode){ i.setAttribute('inputmode','text'); i.removeAttribute('pattern'); i.maxLength=24; i.placeholder='Organizer code'; i.setAttribute('autocomplete','off'); i.setAttribute('autocapitalize','none'); i.setAttribute('autocorrect','off'); i.spellcheck=false; }
   else { i.setAttribute('inputmode','numeric'); i.setAttribute('pattern','[0-9]*'); i.maxLength=5; i.placeholder='5 digits'; i.setAttribute('autocomplete','one-time-code'); } }
 function openAdmin(msg){
@@ -2075,20 +2081,41 @@ function tryAdmin(v){
     if(me()){ claimOrg(); show(state.tab,state.sub); toast(`You're an organizer, ${me()}`); } else { show(state.tab,state.sub); setTimeout(()=>openWho(false),250); }
   }).catch(()=>{ $('#pinErr').textContent='Wrong code.'; });
 }
-function openPin(msg){
-  pinMode='group'; pinField(false); const creating = pinOnServer===null;
-  if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
-  $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
-  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; scoring needs the PIN.':'Anyone with the link can watch. Scoring needs the group PIN, once per phone. Don\'t have it? Ask the group.';
-  $('#pinGo').textContent = creating?'Set PIN & unlock':'Unlock scoring';
-  $('#pinInput').value=''; $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
+// The sheet says what the tap was for, and after the PIN goes in it finishes that tap (check-in and score buttons),
+// so nobody has to tap the name again. Anything else just unlocks.
+let pinFor=null; // {kind:'checkin'|'score'|'any', el, p}
+const SCORE_SEL='.scorebtn,#undoBtn,#courts .matchup,.changeBtn,#poSave';
+function pinContext(t){
+  if(!t) return {kind:'any'};
+  if(t.closest('#roster,#courtsSeg,#startBtn,#lateBtn,#addConfirm,#newName')){ const c=t.closest('.chip[data-p]'); return {kind:'checkin', el:c||null, p:c?c.dataset.p:null, on:c?state.tonight.present.has(c.dataset.p):false}; }
+  if(t.closest(SCORE_SEL)) return {kind:'score', el:t.closest('.scorebtn')||null};
+  return {kind:'any'};
 }
-$('#pinClose').onclick=()=>{ hideSheet('#pinSheet'); };
+const ASK=' Once per phone. Don\'t have it? Ask the group.';
+function openPin(msg, t){
+  pinMode='group'; pinField(false); const creating = pinOnServer===null; pinFor=pinContext(t);
+  if(msg) setTimeout(()=>{ $('#pinErr').textContent=msg; },60);
+  const k=pinFor.kind;
+  $('#pinTitle').textContent = creating?'Set the group PIN':'Group PIN';
+  $('#pinHint').textContent = creating?'No PIN yet. Pick 5 digits and share it with the group. Anyone with the link can watch; checking in and scoring need the PIN.'
+    : k==='checkin'?'Enter the group PIN to check players in.'+ASK
+    : k==='score'?'Enter the group PIN to score games.'+ASK
+    : 'Anyone with the link can watch. Checking in, scoring and edits need the group PIN, once per phone. Don\'t have it? Ask the group.';
+  $('#pinGo').textContent = creating?'Set PIN & unlock'
+    : k==='checkin'&&pinFor.p ? (pinFor.on?`Take ${pinFor.p} off`:`Check in ${pinFor.p}`)
+    : k==='score'?'Unlock scoring' : 'Unlock';
+  $('#pinInput').value=''; pinBoxes(); $('#pinErr').textContent=''; showSheet('#pinSheet'); setTimeout(()=>$('#pinInput').focus(),50);
+}
+function pinBoxes(){ const v=$('#pinInput').value; document.querySelectorAll('#pinBoxes span').forEach((b,i)=>{ b.textContent=i<v.length?'•':''; b.classList.toggle('cur',i===Math.min(v.length,4)); }); }
+$('#pinInput').addEventListener('input',()=>{ if(pinMode==='group'){ const i=$('#pinInput'); i.value=i.value.replace(/\D/g,'').slice(0,5); pinBoxes(); $('#pinErr').textContent=''; } });
+$('#pinClose').onclick=()=>{ pinFor=null; hideSheet('#pinSheet'); };
 function tryPin(){
   if(pinMode==='admin'){ const c=$('#pinInput').value.trim().toLowerCase(); if(c.length<3||c.includes(':')){ $('#pinErr').textContent='Enter the organizer code.'; return; } tryAdmin(c); return; }
   const v=$('#pinInput').value.trim();
   if(!/^\d{5}$/.test(v)){ $('#pinErr').textContent='Exactly 5 digits.'; return; }
-  const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); toast('Scoring unlocked on this phone'); };
+  const done=()=>{ PIN=v; unlocked=true; try{ localStorage.setItem('pickle-pin',v); localStorage.setItem('pickle-unlocked','1'); }catch(e){} hideSheet('#pinSheet'); const f=pinFor; pinFor=null;
+    if(f&&f.el&&document.contains(f.el)){ f.el.click(); if(f.kind==='checkin'&&!f.on) toast(`Unlocked. ${f.p} is in.`); else if(f.kind!=='checkin') toast('Unlocked on this phone'); }
+    else toast('Unlocked on this phone'); };
   const wrong=()=>{ $('#pinErr').textContent='Wrong PIN. Ask the group.'; };
   if(pinOnServer===null){ pinRef.set(v).then(done).catch(()=>{ $('#pinErr').textContent='Could not save the PIN.'; }); }
   else if(pinOnServer==='hidden'||pinOnServer===undefined){ $('#pinErr').textContent='Checking…'; leagueRef.child('k').set(v+':'+nonce()).then(done).catch(wrong); }
@@ -2102,7 +2129,7 @@ let toastT; function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.hidden
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='c8575ec5';
+const BUILD='9c634168';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
