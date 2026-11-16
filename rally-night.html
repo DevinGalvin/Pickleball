@@ -55,6 +55,7 @@ h2{font-family:var(--display);font-weight:800;font-size:var(--t-title);margin:0;
 
 /* check-in */
 .roster{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.roster .rsec{grid-column:1/-1;margin:6px 0 0}.roster .rsec:first-child{margin-top:0}.roster .rsec.in{color:var(--ball)}
 .chip{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--panel-2);border:1.5px solid var(--line);text-align:left;min-height:56px}
 .chip .dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--mute);flex:none}
 .chip.on{border-color:var(--ball);background:#22323c}
@@ -806,6 +807,7 @@ function show(tab, sub){
     'v-wrapped': tab==='history' && state.sub==='wrapped',
     'v-night':   tab==='history' && state.sub==='night'
   };
+  if(pages['v-checkin'] && document.getElementById('v-checkin').hidden) ciOrder=null; // opening check-in re-sorts it
   for(const id in pages) document.getElementById(id).hidden=!pages[id];
   $('#seasonBtn').hidden=!admin(); // season settings are organizer-only
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
@@ -819,15 +821,25 @@ function show(tab, sub){
   if(tab==='tonight') staleCheck();
 }
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>show(b.dataset.tab, null));
+// back in the app after a while counts as opening the screen again
+document.addEventListener('visibilitychange',()=>{ if(document.hidden){ ciOrder=null; return; } if(!$('#v-checkin').hidden) renderCheckin(); });
 
 // ---------- check-in ----------
+let ciOrder=null; // check-in order, frozen while the screen is open (see renderCheckin)
 function renderCheckin(){
   const t=tally(state.nights.flatMap(n=>n.games)); const tn=tally(state.tonight.games,true);
-  // alphabetical, and no ratings here: check-in is a headcount, the standings tab is where the numbers live
-  $('#roster').innerHTML = PLAYERS.slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const s=t[p]; const tg=tn[p]?tn[p].gp:0;
-    return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; }).join('')
-    + guests().slice().sort((x,y)=>x.localeCompare(y)).map(p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const tg=tn[p]?tn[p].gp:0;
-    return `<button class="chip guest pressable ${on?'on':''} ${late?'late':''}" data-p="${escH(p)}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${escH(p)}</span><br><span class="sub num">${late?'Guest · running late':!on&&tg?`Guest · ${tg} game${tg===1?'':'s'} kept`:'Guest tonight'}</span></span></button>`; }).join('')
+  // Who's in sits on top, alphabetical within each group; no ratings here (check-in is a headcount).
+  // The order is set when the screen opens and then frozen, so a tile never moves under a finger (yours or another phone's).
+  // A name tapped in or out keeps its spot until the next time the screen opens; a brand-new name goes at the end.
+  const isG=new Set(guests()), all=[...PLAYERS,...guests()];
+  if(!ciOrder){ const az=all.slice().sort((x,y)=>x.localeCompare(y)); ciOrder={inn:az.filter(p=>state.tonight.present.has(p)), out:az.filter(p=>!state.tonight.present.has(p))}; }
+  const known=new Set([...ciOrder.inn,...ciOrder.out]); all.forEach(p=>{ if(!known.has(p)) ciOrder.out.push(p); });
+  const live=new Set(all), inn=ciOrder.inn.filter(p=>live.has(p)), out=ciOrder.out.filter(p=>live.has(p));
+  const chip=p=>{ const on=state.tonight.present.has(p); const late=on&&lateSet().has(p); const tg=tn[p]?tn[p].gp:0;
+    if(isG.has(p)) return `<button class="chip guest pressable ${on?'on':''} ${late?'late':''}" data-p="${escH(p)}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${escH(p)}</span><br><span class="sub num">${late?'Guest · running late':!on&&tg?`Guest · ${tg} game${tg===1?'':'s'} kept`:'Guest tonight'}</span></span></button>`;
+    const s=t[p]; return `<button class="chip pressable ${on?'on':''} ${late?'late':''}" data-p="${p}" aria-pressed="${on}"><span class="dot"></span><span><span class="nm">${p}</span><br><span class="sub num">${late?'Running late':!on&&tg?`Done · ${tg} game${tg===1?'':'s'} kept`:s?s.gp+' game'+(s.gp===1?'':'s')+' this season':'New this season'}</span></span></button>`; };
+  const nIn=all.filter(p=>state.tonight.present.has(p)).length, sec=(c,l)=>`<p class="eyebrow rsec ${c}">${l}</p>`;
+  $('#roster').innerHTML = (inn.length&&out.length ? sec('in',`In · ${nIn}`)+inn.map(chip).join('')+sec('',`Not yet · ${all.length-nIn}`)+out.map(chip).join('') : [...inn,...out].map(chip).join(''))
     + (adding?'':`<button class="chip add" id="addBtn">+ Add a player or guest</button>`);
   const GH=guests().filter(p=>state.tonight.present.has(p)); $('#guestHint').hidden=!GH.length;
   if(GH.length) $('#guestHint').textContent=`${GH.join(' and ')} ${GH.length>1?'are guests':'is a guest'}: in the rotation tonight, not in the standings. Everyone else's games with ${GH.length>1?'them':'him'} still count.`;

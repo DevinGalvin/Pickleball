@@ -137,7 +137,7 @@ dataRef.on('value', snap=>{
   const d=snap.val();
   if(!loaded){
     loaded=true; $('#connecting').hidden=true;
-    if(d){ applyRemote(d); startView(); claimOrg(); return; }
+    if(d){ ciOrder=null; applyRemote(d); ciOrder=null; startView(); claimOrg(); return; } // sort check-in on the real league, not the placeholder
     // nothing at /league/data: don't guess, and never write demo data over a league we couldn't read
     blocked=true; startView(); toast('No league data found. Nothing will be saved.');
     return;
