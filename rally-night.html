@@ -1176,7 +1176,7 @@ function renderStandings(){
     rank=rk[r.p]; const cls=r.avg>0?'pos':r.avg<0?'neg':'';
     return `<button class="trow ${rank===1?'q1':''}" data-p="${r.p}"><div class="rk num">${rank}${mv(r.p,rank)}</div>
       <div class="nm">${r.p}<div class="meta num">${byPm?r.s.gp+' game'+(r.s.gp===1?'':'s')+' · '+r.s.w+'–'+r.s.l:r.s.w+'–'+r.s.l+(tonight?'':' · '+r.np+' night'+(r.np===1?'':'s'))}</div></div>${spark(r.p)}
-      ${byWin?`<div class="pm num">${Math.round(wp(r)*100)}%<small>wins</small></div>`:byPm?`<div class="pm num ${r.s.pm>0?'pos':r.s.pm<0?'neg':''}">${fmt(r.s.pm)}</div>`:`<div class="pm num ${cls}">${fmt(r1(r.rating))}<small>${tonight?'avg +/−':'rating'}</small></div>`}<span class="chev">›</span></button>`; }).join('');
+      ${byWin?`<div class="pm num">${Math.round(wp(r)*100)}%</div>`:byPm?`<div class="pm num ${r.s.pm>0?'pos':r.s.pm<0?'neg':''}">${fmt(r.s.pm)}</div>`:`<div class="pm num ${cls}">${fmt(r1(r.rating))}</div>`}<span class="chev">›</span></button>`; }).join('');
   const had=Object.keys(before).length;
   document.querySelectorAll('#standings .trow').forEach((el,i)=>{
     if(!had){ el.style.setProperty('--i',i); el.classList.add('in'); return; }
