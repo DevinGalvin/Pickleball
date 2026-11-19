@@ -35,6 +35,15 @@ The roster shows "In" on top and "Not yet" below, each alphabetical. The order i
 
 With 8 or more checked in, the check-in screen offers a second court. It is never on by default because that court isn't always free. Two courts play as rounds: both scores go in, then the next round is drawn. Flip it on or off mid-night from the Players screen; any score already saved in the round is kept.
 
+## Playoffs
+
+- An organizer starts them from the Playoffs tab; the night then runs on Game Night under the lime PICKLE PLAYOFFS header.
+- 8 or more at the court: a bracket. The top 8 by rating make four teams: #1+#3, #2+#4, #5+#7, #6+#8. Semis are 1 v 4 and 2 v 3, best of 3. The final is best of 5, winner takes all. Anyone ranked below 8 sits out; a late arrival only fills a team that lost a man.
+- One court: the semis take turns, one game each (the semi with fewer games goes next), so every team rests between games. Two courts: both semis at once.
+- The strip under the header shows each series score and opens the bracket. The Playoffs tab draws the bracket all season (as a preview), during the night and after it, with the current match game by game.
+- Fewer than 8: the older format (everyone plays everyone, then a best-of-3 final; split or snake pairing from Settings).
+- How: `tonight.po.fmt` is `'b'` for a bracket. Matches 0 and 1 are the semis, `'F'` the final. Everything else is worked out from the games.
+
 ## Late arrivals and hand-picked games
 
 - Running late: under the check-in roster, "Anyone running late?" marks a checked-in player as late. He counts as coming but is never drawn. On the court screen he shows in the Sitting panel with "Here now"; one tap puts him in the next draw, level with whoever has played least so he isn't run every game to catch up.

@@ -324,6 +324,48 @@ header.top .date{white-space:nowrap}
 .pochamp .nm{font-family:var(--body);font-weight:600;font-size:20px;line-height:1;overflow-wrap:anywhere}
 .pochamp .d{font-size:14px;color:var(--mute)}
 .ponote{display:flex;align-items:center;justify-content:center;min-height:44px;padding:8px 12px;border-radius:12px;background:var(--panel-2);font-size:14px;text-align:center}
+/* the bracket: two semis feed the final. Every card centers its content. */
+.pobr{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);grid-template-rows:auto auto;grid-template-areas:"s1 cn fn" "s2 cn fn";row-gap:12px;align-items:center}
+.pobr .s1{grid-area:s1}.pobr .s2{grid-area:s2}.pobr .fn{grid-area:fn}
+.pobr .cn{grid-area:cn;align-self:stretch;position:relative}
+.pobr .cn::before{content:"";position:absolute;left:0;right:50%;top:25%;bottom:25%;border:2px solid var(--line);border-left:0;border-radius:0 6px 6px 0}
+.pobr .cn::after{content:"";position:absolute;left:50%;right:0;top:50%;border-top:2px solid var(--line)}
+.pobr .cn.lit::before,.pobr .cn.lit::after{border-color:var(--ball)}
+.bk{background:var(--panel);border-radius:12px;padding:8px 10px;min-height:96px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:4px;border:2px solid transparent}
+.bk.live{border-color:var(--ball)}
+.bk .hd{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:22px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;color:var(--mute)}
+.bk .hd b{display:inline-flex;align-items:center;min-height:20px;padding:0 8px;border-radius:999px;background:var(--ball);color:var(--ball-ink);font-size:11px;letter-spacing:.8px}
+.bk .r{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:28px}
+.bk .r.q{grid-template-columns:1fr}
+.bk .r .sd{font-size:13px;font-weight:600;color:var(--mute);text-align:center}
+.bk .r .nm{font-weight:600;font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+.bk .r .sc{font-family:var(--display);font-weight:800;font-size:var(--t-num);min-width:14px;text-align:right}
+.bk .r.w .nm,.bk .r.w .sc{color:var(--ball)}
+.bk .r.l .nm,.bk .r.l .sc{color:var(--mute)}
+.bk .r.q .nm{font-weight:500;color:#dce8f3}
+.bk.fn{background:var(--court);min-height:132px}
+.bk.fn .hd{color:var(--ball)}
+.bk.fn .r .sd{color:#dce8f3}
+.bk.fn .r.l .nm,.bk.fn .r.l .sc{color:#b9cde4}
+.bk.fn .ft{font-size:12px;color:#dce8f3}
+.bk.fn.won{border-color:var(--ball)}
+.bk.fn.won .ft{color:var(--ball);font-weight:600;letter-spacing:1.2px;text-transform:uppercase}
+.poteams{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.poteams .pt{display:flex;align-items:center;gap:10px;min-height:56px;padding:6px 12px;border-radius:12px;background:var(--panel)}
+.poteams .sd{font-family:var(--display);font-weight:800;font-size:var(--t-num);color:var(--ball)}
+.poteams .tx{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.poteams .nm{font-weight:600;font-size:14px;line-height:1.2}
+.poteams .meta{font-size:12px;color:var(--mute)}
+.pogames{display:flex;flex-direction:column;gap:6px}
+.pogames .gl{display:grid;grid-template-columns:60px minmax(0,1fr) auto;align-items:center;gap:10px;min-height:48px;padding:0 12px;border-radius:12px;background:var(--panel);border:1.5px solid transparent;box-sizing:border-box}
+.pogames .gl .k{font-size:13px;color:var(--mute)}
+.pogames .gl .v{font-size:15px;font-weight:600}
+.pogames .gl .sc{font-family:var(--display);font-weight:800;font-size:var(--t-num)}
+.pogames .gl.now{border-color:var(--ball);background:var(--panel-2)}
+.pogames .gl.now .k{color:var(--ball);font-weight:600}
+.pogames .gl.maybe{background:none;border:1.5px dashed var(--line)}
+.pogames .gl.maybe .v{color:var(--mute);font-weight:500}
+button.postrip{width:100%;border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer}
 /* playoff night on Game Night: lime header, progress strip. Everything under the header is the regular court. */
 header.top .tro,header.top .wm.po{display:none}
 header.top .tro{width:26px;height:26px;flex:none;fill:none;stroke:currentColor;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
@@ -335,8 +377,8 @@ header.top .tro{width:26px;height:26px;flex:none;fill:none;stroke:currentColor;s
 .app.po header.top .mechip{background:var(--ball-ink);border-color:var(--ball-ink);color:var(--fg)}
 .postrip{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
 .postrip[hidden]{display:none}
-.postrip div{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--mute);text-align:center;white-space:nowrap}
-.postrip i{display:block;height:6px;border-radius:3px;background:var(--line)}
+.postrip > span{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:var(--mute);text-align:center;white-space:nowrap}
+.postrip i{display:block;width:100%;height:6px;border-radius:3px;background:var(--line)}
 .postrip .done{color:var(--fg)}.postrip .done i{background:var(--ball)}
 .postrip .now{color:var(--ball)}.postrip .now i{background:var(--ball);box-shadow:0 0 0 3px rgba(214,242,58,.22)}
 .gamebar .posub{font-size:13px;letter-spacing:1.2px;text-transform:uppercase;font-weight:600;color:var(--ball);margin:0 0 2px}
@@ -520,7 +562,7 @@ nav.tabs button.on svg{transform:translateY(-2px) scale(1.08)}
 
     <!-- TONIGHT: court -->
     <section class="view" id="v-court" hidden>
-      <div class="postrip" id="poStrip" hidden></div>
+      <button class="postrip" id="poStrip" aria-label="Open the bracket" hidden></button>
       <div class="gamebar"><div><p class="posub" id="poSub" hidden></p><div class="g" id="gameNum">Game 1</div><p class="scorerline" id="scorerLine" hidden></p></div>
         <div class="row" style="gap:8px"><button class="ghost" id="editPresent">Who's here</button><button class="ghost" id="undoBtn">Undo</button></div></div>
       <!-- one board per court in play; rendered by renderCourt -->
@@ -1109,7 +1151,7 @@ function saveNight(){
   const T=state.tonight; flushScored();
   const P=T.po; poSetup=false;
   if(!T.games.length){ T.started=false; T.current=null; delete T.scorer; delete T.po; $('#startBtn').textContent='Start the night'; show('tonight'); persist(); toast(P?'Playoffs cancelled':'Night cancelled'); return; }
-  state.nights.push({date:T.date,games:T.games,season:season().id,...(P?{po:{teams:P.teams,ms:P.ms,rounds:P.rounds,one:!!P.one}}:{})});
+  state.nights.push({date:T.date,games:T.games,season:season().id,...(P?{po:{teams:P.teams,ms:P.ms,rounds:P.rounds,one:!!P.one,...(P.fmt?{fmt:P.fmt}:{})}}:{})});
   state.tonight={date:leagueDate(T.date,true),present:new Set(),started:false,games:[],current:null,courts:1}; // fresh sign-up: nobody is in until they say so
   $('#startBtn').textContent='Start the night'; state.night=state.nights.length-1; if(P) show('bracket',null); else show('history','night'); persist(); toast(P?'Playoffs saved':'Night saved');
 }
@@ -1249,7 +1291,7 @@ $('#endSeason').onclick=()=>{
 
 // ---------- bracket ----------
 function syncPairSeg(){ document.querySelectorAll('#pairSeg button').forEach(x=>x.classList.toggle('on',x.dataset.pair===state.pairing));
-  $('#pairHint').textContent=state.pairing==='split'?'Top half paired with bottom half in order. Every seed you climb gets you a better partner.':'1 with last, 2 with second to last. Teams come out even, but finishing #1 gets you the weakest partner.'; }
+  $('#pairHint').textContent=(state.pairing==='split'?'Top half paired with bottom half in order. Every seed you climb gets you a better partner.':'1 with last, 2 with second to last. Teams come out even, but finishing #1 gets you the weakest partner.')+' With 8 or more at the playoffs this is set: #1+#3, #2+#4, #5+#7, #6+#8.'; }
 document.querySelectorAll('#pairSeg button').forEach(b=>b.onclick=()=>{ state.pairing=b.dataset.pair; syncPairSeg(); persist(); });
 // ---------- playoffs ----------
 // Playoffs are a Game Night with fixed teams. An organizer starts them from the Playoffs tab, which jumps to the usual check-in;
@@ -1258,20 +1300,33 @@ document.querySelectorAll('#pairSeg button').forEach(b=>b.onclick=()=>{ state.pa
 // its match (m: 0..n-1, 'T' for a one-game tiebreak, 'F' for the final). So Undo and an organizer's fix just work.
 // Format: everyone plays everyone, best of 3; the top two play a best-of-3 final, winner takes all. Four teams on one court
 // play one game per matchup so the night still fits. An odd player joins the lowest team: two play, one sits, rotating.
+// With 8 or more at the court it is a bracket instead (fmt 'b'): the top 8 make four teams, #1+#3, #2+#4, #5+#7, #6+#8.
+// Semis are 1 v 4 and 2 v 3, best of 3; the final is best of 5, winner takes all. On one court the semis take turns game by
+// game (the one with fewer games played goes next), so every team rests between games. On two courts both run at once.
+const PO_TOP=8;
 let poSetup=false; // this phone is on the playoff check-in; nothing is shared or locked until Start
 const PO_SIT=[2,0,1]; // who sits first on a team of three
 const poName=t=>{ const p=(t&&t.p)||[]; return escH(p.length>2? p.slice(0,-1).join(', ')+' & '+p[p.length-1] : p.length? p.join(' & ') : 'Open spot'); };
-function poNorm(P){ if(!P||!P.teams) return null; return {teams:P.teams.map((t,i)=>({s:(t&&t.s)||i+1,p:((t&&t.p)||[]).slice()})),ms:(P.ms||[]).map(m=>[m[0],m[1]]),rounds:(P.rounds||[]).map(r=>(r||[]).slice()),one:!!P.one}; }
+function poNorm(P){ if(!P||!P.teams) return null; return {teams:P.teams.map((t,i)=>({s:(t&&t.s)||i+1,p:((t&&t.p)||[]).slice()})),ms:(P.ms||[]).map(m=>[m[0],m[1]]),rounds:(P.rounds||[]).map(r=>(r||[]).slice()),one:!!P.one,...(P.fmt==='b'?{fmt:'b'}:{})}; }
+const poB=P=>!!P&&P.fmt==='b';
+// season standings rank (1-based) of everyone with games this season
+function poRanks(){ const m={}; ranking(false).filter(r=>r.s).forEach((r,i)=>m[r.p]=i+1); return m; }
 // seeds → teams. Split pairs the top half with the bottom half in order; snake is 1 with last. An odd one joins the lowest team.
 function poSeed(players){ const R=ranking(false).filter(r=>players.includes(r.p)); const rt=r=>r.rating==null?-99:r.rating;
+  if(R.length>=PO_TOP){ const rk=poRanks(); const x=R.slice(0,PO_TOP).map(r=>r.p);
+    return [[0,2],[1,3],[4,6],[5,7]].map(([a,b],i)=>({s:i+1,p:[x[a],x[b]],rk:[rk[x[a]],rk[x[b]]]})); }
   const odd=R.length%2?R[R.length-1]:null; const n=R.length-(odd?1:0); const teams=[];
   if(state.pairing==='snake'){ for(let i=0;i<n/2;i++) teams.push([R[i],R[n-1-i]]); } else { for(let i=0;i<n/2;i++) teams.push([R[i],R[i+n/2]]); }
   teams.sort((a,b)=>(rt(b[0])+rt(b[1]))-(rt(a[0])+rt(a[1])));
   if(odd&&teams.length) teams[teams.length-1].push(odd);
   return teams.map((t,i)=>({s:i+1,p:t.map(x=>x.p)})); }
+const poRk=t=>t.rk&&t.rk.every(Boolean)?`Ranked #${t.rk[0]} + #${t.rk[1]}`:'';
 const poRow=t=>`<div class="teamrow"><div class="sd num">${t.s}</div><div class="nm">${poName(t)}${t.p.length>2?'<div class="meta">Team of three. Two play, one sits, rotating.</div>':''}</div></div>`;
+// players at the court who aren't in the top 8 tonight
+const poOut=(teams,players)=>players.filter(p=>!teams.some(t=>t.p.includes(p)));
 // who plays whom, in order. The top two seeds meet last. Two courts (four teams) run two matches side by side.
-function poSchedule(T,courts){
+function poSchedule(T,courts,b){
+  if(b) return {ms:[[0,3],[1,2]],rounds:courts===2?[[0,1]]:[[0],[1]],one:false,fmt:'b'};
   if(T<3) return {ms:[],rounds:[],one:false};
   let R; if(T===3) R=[[[0,2]],[[1,2]],[[0,1]]]; else if(T===4) R=[[[0,3],[1,2]],[[0,2],[1,3]],[[2,3],[0,1]]];
   else { const ids=[...Array(T).keys()]; if(T%2) ids.push(-1); const n=ids.length; R=[]; for(let r=0;r<n-1;r++){ const row=[]; for(let i=0;i<n/2;i++){ const x=ids[i],y=ids[n-1-i]; if(x>=0&&y>=0) row.push([Math.min(x,y),Math.max(x,y)]); } R.push(row); ids.splice(1,0,ids.pop()); } R.reverse(); }
@@ -1280,7 +1335,7 @@ function poSchedule(T,courts){
   return {ms,rounds,one:T>4||(T===4&&!two)}; }
 // The whole state of the playoffs, from the teams, the schedule and the games played.
 function poState(P,games){
-  const need=P.one?1:2, T=P.teams.length;
+  const b=poB(P), need=P.one?1:2, T=P.teams.length;
   const gone=i=>!P.teams[i].p.length; // both players left: the rest of that team's matches are walkovers, so the night can go on
   const mk=(t,k,nd)=>{ const gs=games.filter(g=>g.m===k&&scored(g)); let wa=0,wb=0; gs.forEach(g=>g.sa>g.sb?wa++:wb++); const done=wa>=nd||wb>=nd;
     if(!done&&(gone(t[0])||gone(t[1]))){ const both=gone(t[0])&&gone(t[1]); return {k,t,gs,wa,wb,nd,done:true,wo:true,win:both?null:gone(t[0])?t[1]:t[0],lose:both?null:gone(t[0])?t[0]:t[1]}; }
@@ -1290,14 +1345,15 @@ function poState(P,games){
   matches.forEach(m=>{ m.gs.forEach(g=>{ tab[m.t[0]].pm+=g.sa-g.sb; tab[m.t[1]].pm+=g.sb-g.sa; }); if(m.done&&m.win!=null){ tab[m.win].w++; tab[m.lose].l++; } });
   const rrDone=matches.every(m=>m.done); const rank=tab.slice().sort((x,y)=>gone(x.i)-gone(y.i)||y.w-x.w||y.pm-x.pm||x.i-y.i);
   let fin=null, tb=null, tbm=null, why='';
-  if(rrDone&&T>=2){
+  if(rrDone&&b){ const w=matches.map(m=>m.win); if(w.every(x=>x!=null)) fin=w.slice().sort((x,y)=>x-y); }
+  else if(rrDone&&T>=2){
     if(T===2) fin=[0,1];
     else { const [a,b,c]=rank; const tie=(x,y)=>x.w===y.w&&x.pm===y.pm;
       // the last spot in the final: match record, then +/-, then one game for it
       if(tie(b,c)&&!tie(a,b)){ const m=tbm=mk([b.i,c.i],'T',1); if(m.done){ fin=[a.i,m.win]; why='A one-game tiebreak decided the last spot in the final.'; } else tb=m; }
       else { fin=[a.i,b.i]; why=tie(b,c)?'Tied all the way down, so the higher seeds play the final.':b.w===c.w?(a.w===b.w?'All tied on matches, so +/- decided who plays the final.':'Tied on matches, so +/- decided the last spot in the final.'):''; } } }
-  const final=fin?mk(fin,'F',2):null;
-  return {matches,tab,rank,rrDone,tb,tbm,fin,final,why,champ:final&&final.done?final.win:null};
+  const final=fin?mk(fin,'F',b?3:2):null;
+  return {b,matches,tab,rank,rrDone,tb,tbm,fin,final,why,champ:final&&final.done?final.win:null};
 }
 // the two who play for a team this game. A team of three sits whoever has played most; a team down to one borrows a free player.
 function poLineup(P,i,games,busy){ const T=state.tonight; const here=P.teams[i].p.filter(p=>T.present.has(p)&&!lateSet().has(p));
@@ -1308,7 +1364,8 @@ function poLineup(P,i,games,busy){ const T=state.tonight; const here=P.teams[i].
   return null; }
 // what should be on the court right now
 function poWant(){ const T=state.tonight, P=T.po; const S=poState(P,T.games); let list=[];
-  if(S.champ==null){ if(!S.rrDone){ const r=P.rounds.find(r=>r.some(k=>!S.matches[k].done)); list=r.filter(k=>!S.matches[k].done).map(k=>S.matches[k]); } else if(S.tb) list=[S.tb]; else if(S.final) list=[S.final]; }
+  if(S.champ==null&&S.b){ if(!S.rrDone){ const open=S.matches.filter(m=>!m.done); list=P.rounds[0].length>1?open:[open.slice().sort((x,y)=>x.gs.length-y.gs.length||x.k-y.k)[0]]; } else if(S.final) list=[S.final]; }
+  else if(S.champ==null){ if(!S.rrDone){ const r=P.rounds.find(r=>r.some(k=>!S.matches[k].done)); list=r.filter(k=>!S.matches[k].done).map(k=>S.matches[k]); } else if(S.tb) list=[S.tb]; else if(S.final) list=[S.final]; }
   const busy=new Set(); list.forEach(m=>m.t.forEach(i=>P.teams[i].p.forEach(p=>busy.add(p))));
   const games=list.map(m=>{ const a=poLineup(P,m.t[0],T.games,busy), b=poLineup(P,m.t[1],T.games,busy); return a&&b?{a,b,m:m.k}:null; }).filter(Boolean);
   return {S,games,stuck:list.length>0&&!games.length}; }
@@ -1320,11 +1377,13 @@ function poTeamsOf(g){ const P=state.tonight.po; if(!P||g.m==null) return null; 
 // the score sheet says so before a save that ends a match or the playoffs
 function poEnds(g,sc){ const T=state.tonight, P=T.po; if(!P||g.m==null) return ''; const m=poMatch(poState(P,T.games),g.m); if(!m||!m.t.length) return '';
   const aw=sc.sa>sc.sb; const w=(aw?m.wa:m.wb)+1, l=aw?m.wb:m.wa; if(w<m.nd) return ''; const nm=poName(P.teams[m.t[aw?0:1]]).replace(/&amp;/g,'&');
-  return g.m==='F'?`This wins the playoffs for ${nm}.`:g.m==='T'?`This puts ${nm} in the final.`:m.nd>1?`This ends the match. ${nm} win it ${w}–${l}.`:''; }
-function poLabel(S,k,n){ return k==='F'?'The final':k==='T'?'Tiebreak':`Match ${k+1}`; }
+  return g.m==='F'?`This wins the playoffs for ${nm}.`:g.m==='T'?`This puts ${nm} in the final.`:poB(P)?`This wins Semi ${g.m+1}. ${nm} are in the final, ${w}–${l}.`:m.nd>1?`This ends the match. ${nm} win it ${w}–${l}.`:''; }
+function poLabel(S,k,n){ return k==='F'?'The final':k==='T'?'Tiebreak':S&&S.b?`Semi ${k+1}`:`Match ${k+1}`; }
 function poStripHtml(S,P,live){ const segs=P.ms.map((t,k)=>({k,done:S.matches[k].done})); if(S.tbm) segs.push({k:'T',done:S.tbm.done}); segs.push({k:'F',done:S.champ!=null});
   if(segs.length<2) return ''; const short=segs.length>4;
-  return segs.map(x=>`<div class="${x.done?'done':live.includes(x.k)?'now':''}"><i></i>${x.k==='F'?'Final':x.k==='T'?(short?'Tie':'Tiebreak'):short?x.k+1:'Match '+(x.k+1)}</div>`).join(''); }
+  if(S.b){ const sc=m=>m&&(m.gs.length||m.done)?` · ${m.wa}–${m.wb}`:''; // the bracket strip carries each series score
+    return segs.map(x=>`<span class="${x.done?'done':live.includes(x.k)?'now':''}"><i></i>${x.k==='F'?'Final'+sc(S.final):`Semi ${x.k+1}`+sc(S.matches[x.k])}</span>`).join(''); }
+  return segs.map(x=>`<span class="${x.done?'done':live.includes(x.k)?'now':''}"><i></i>${x.k==='F'?'Final':x.k==='T'?(short?'Tie':'Tiebreak'):short?x.k+1:'Match '+(x.k+1)}</span>`).join(''); }
 const TROPHY_SVG='<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 8h20v10a10 10 0 0 1-20 0zM14 12H8c0 6 2 9 6 9M34 12h6c0 6-2 9-6 9M24 28v8M16 40h16"/></svg>';
 function poChampHtml(P,S,sn){ const f=S.final; return `<div class="pochamp">${TROPHY_SVG}<p class="eyebrow">${escH(sn)} champions</p><div class="nm">${poName(P.teams[S.champ])}</div><div class="d num">Won the final ${Math.max(f.wa,f.wb)}–${Math.min(f.wa,f.wb)}</div></div>`; }
 function renderCourtPO(){
@@ -1336,9 +1395,9 @@ function renderCourtPO(){
   const multi=next.length>1, live=next.map(g=>g.m);
   const strip=poStripHtml(S,P,live); $('#poStrip').hidden=!strip; $('#poStrip').innerHTML=strip;
   const one=next[0]&&poMatch(S,next[0].m);
-  const gl=S.champ!=null?'Champions':!next.length?'Playoffs':multi?`Matches ${next.map(g=>g.m+1).join(' & ')}`:one.k==='F'?`The final · Game ${one.wa+one.wb+1}`:one.k==='T'?'Tiebreak · one game':one.nd>1?`Match ${one.k+1} · Game ${one.wa+one.wb+1}`:`Match ${one.k+1} of ${P.ms.length}`;
+  const gl=S.champ!=null?'Champions':!next.length?'Playoffs':multi?(S.b?'Both semis':`Matches ${next.map(g=>g.m+1).join(' & ')}`):S.b&&one.k!=='F'?`Semi ${one.k+1} · Game ${one.wa+one.wb+1}`:one.k==='F'?`The final · Game ${one.wa+one.wb+1}`:one.k==='T'?'Tiebreak · one game':one.nd>1?`Match ${one.k+1} · Game ${one.wa+one.wb+1}`:`Match ${one.k+1} of ${P.ms.length}`;
   const gn=$('#gameNum'); if(gn.textContent!==gl){ gn.textContent=gl; gn.classList.remove('flip'); void gn.offsetWidth; gn.classList.add('flip'); }
-  const sub=S.champ!=null||!next.length||multi?'':one.k==='F'?'Winner takes all':one.k==='T'?'For the last spot in the final':''; $('#poSub').hidden=!sub; $('#poSub').textContent=sub;
+  const sub=S.champ!=null||!next.length?'':S.b?(multi||one.k!=='F'?'Semis · best of 3':'Best of 5 · winner takes all'):multi?'':one.k==='F'?'Winner takes all':one.k==='T'?'For the last spot in the final':''; $('#poSub').hidden=!sub; $('#poSub').textContent=sub;
   stopSims(); $('#courts').classList.toggle('serve',fresh&&next.length>0); $('#courts').classList.toggle('multi',multi);
   $('#courts').innerHTML = next.length? next.map((g,i)=>boardHtml(g,i,multi)).join('')
     : S.champ!=null? poChampHtml(P,S,season().name)+`<button class="cta" id="poSave">Save the playoffs</button>`
@@ -1350,7 +1409,10 @@ function renderCourtPO(){
   $('#sitting').innerHTML=sitting.map(p=>`<button class="sitnm" data-p="${encodeURIComponent(p)}">${escH(p)}</button>`).join(', ')+LATE.map(p=>`<button class="latehere" data-p="${encodeURIComponent(p)}"><span>${escH(p)} · late</span><b>Here now</b></button>`).join('');
   const side=sitting.length||LATE.length; $('#sitPanel').hidden=!side; $('#nextPanel').style.gridColumn=side?'':'1 / -1';
   // up next: the next round of matches, or the final
-  let nx=''; if(next.length){ if(one&&one.k==='F'&&!multi) nx='Winner takes all'; else if(!S.rrDone){ const ri=P.rounds.findIndex(r=>r.some(k=>!S.matches[k].done)); const r=P.rounds[ri+1];
+  let nx=''; if(next.length&&S.b){ if(one.k==='F') nx='Winner takes all';
+      else { const other=!multi&&S.matches.find(m=>!m.done&&m.k!==one.k);
+        nx=other?`<span class="vs">Semi ${other.k+1} · Game ${other.wa+other.wb+1}</span><br>${poName(P.teams[other.t[0]])}<span class="vs">vs</span>${poName(P.teams[other.t[1]])}`:'The final<br><span class="vs">Best of 5, winner takes all</span>'; } }
+  else if(next.length){ if(one&&one.k==='F'&&!multi) nx='Winner takes all'; else if(!S.rrDone){ const ri=P.rounds.findIndex(r=>r.some(k=>!S.matches[k].done)); const r=P.rounds[ri+1];
       nx=r? r.map((k,i)=>`${r.length>1?`<span class="vs">C${i+1}</span>`:''}${poName(P.teams[P.ms[k][0]])}<span class="vs">vs</span>${poName(P.teams[P.ms[k][1]])}`).join('<br>') : 'The final<br><span class="vs">Top two, winner takes all</span>'; } else nx='The final'; }
   $('#nextNames').innerHTML=nx;
   $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then enter the final score.</p>';
@@ -1361,11 +1423,14 @@ function renderCourtPO(){
 function poInit(){ const T=state.tonight; if(T.started||T.games.length){ toast("End tonight's night first."); return false; }
   if(guests().some(p=>T.present.has(p))){ toast('Playoffs are for league players. Take the guest off first.'); return false; } T.guests=[];
   const A=active(); if(A.length<4){ toast('Need 4 to play.'); return false; }
-  const teams=poSeed(A); T.po={teams,...poSchedule(teams.length,T.courts||1)}; T.current=null; poSetup=false; return true; }
+  const b=A.length>=PO_TOP; const teams=poSeed(A).map(t=>({s:t.s,p:t.p})); T.po={teams,...poSchedule(teams.length,T.courts||1,b)}; T.current=null; poSetup=false; return true; }
 function poHint(n,two,LATE){ if(n<4) return `Need 4 to play (${n} ${LATE.length?'here now':'checked in'}).`; const t=Math.floor(n/2);
+  if(n>=PO_TOP){ const out=poOut(poSeed(active()),active());
+    return `${n} here: the top 8 make 4 teams. Semis are best of 3, then a best-of-5 final.`+(two?' Both semis at once on two courts.':' The semis take turns, one game each.')+(out.length?` ${out.join(', ')} ${out.length>1?'are':'is'} outside the top 8 tonight.`:''); }
   return `${n} here: ${t} teams${n%2?', one team of three':''}. `+(t===2?'One match for the title, best of 3.':t===3||(t===4&&two)?`${t===4?'Two courts. ':''}Everyone plays everyone, best of 3. Then the top two play the final.`:'One court: each matchup is one game, then a best-of-3 final.')+(LATE.length?` ${LATE.join(', ')} ${LATE.length>1?'join':'joins'} a team on arrival.`:''); }
 // someone arrives after the start: onto a short team first, else the lowest team of two as a third
 function poAdd(p){ const P=state.tonight.po; if(P.teams.some(t=>t.p.includes(p))) return; let i=P.teams.findIndex(t=>t.p.length<2);
+  if(poB(P)&&i<0) return; // the bracket's teams are set; a late arrival only fills a team that lost a man
   if(i<0) for(let k=P.teams.length-1;k>=0&&i<0;k--) if(P.teams[k].p.length===2) i=k; if(i<0) i=P.teams.length-1;
   const short=P.teams[i].p.length<2; P.teams[i].p.push(p); if(short) state.tonight.current=null; }
 // someone leaves: his games stay. A team of three becomes a pair; a pair that loses a man gets the spare from a team of three, else a fill-in each game.
@@ -1414,29 +1479,51 @@ function renderRafters(){ const el=$('#rafters'); const L=state.tonight.po?[]:st
   el.hidden=!L.length; el.classList.toggle('many',L.length>1); const w=L.length>1?150:200;
   el.innerHTML=L.map(F=>`<button data-s="${F.S.id}" aria-label="Open ${escH(F.S.name)} Wrapped">${bannerSvg(F,w)}</button>`).join(''); el.scrollLeft=0; }
 $('#rafters').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; haptic(); state.wrapped=+b.dataset.s; wrapFor=null; show('history','wrapped'); });
+// the bracket graphic: two semis feeding the final. S is null for the preview.
+function poBracketHtml(teams,S,live){ const nm=i=>poName(teams[i]);
+  const semi=k=>{ const m=S&&S.matches[k], ids=m?m.t:[[0,3],[1,2]][k], on=live.includes(k), has=m&&(m.gs.length||m.done);
+    const row=i=>{ const w=m&&m.done&&m.win===i, l=m&&m.done&&m.lose===i; return `<div class="r${w?' w':''}${l?' l':''}"><span class="sd num">${i+1}</span><span class="nm">${nm(i)}</span>${has?`<span class="sc num">${i===m.t[0]?m.wa:m.wb}</span>`:''}</div>`; };
+    return `<div class="bk s${k+1}${on?' live':''}"><div class="hd"><span>Semi ${k+1}</span>${on?'<b>Live</b>':''}</div>${row(ids[0])}${row(ids[1])}</div>`; };
+  const f=S&&S.final, on=live.includes('F'), done=S&&S.champ!=null;
+  const frow=(j)=>{ if(!f) return `<div class="r q"><span class="nm">Semi ${j+1} winner</span></div>`; const i=f.t[j], w=done&&S.champ===i, l=done&&S.champ!==i;
+    return `<div class="r${w?' w':''}${l?' l':''}"><span class="sd num">${i+1}</span><span class="nm">${nm(i)}</span>${f.gs.length||done?`<span class="sc num">${j?f.wb:f.wa}</span>`:''}</div>`; };
+  return `<div class="pobr"><div class="cn${f?' lit':''}" aria-hidden="true"></div>${semi(0)}${semi(1)}<div class="bk fn${on?' live':''}${done?' won':''}"><div class="hd"><span>The final</span>${on?'<b>Live</b>':''}</div>${frow(0)}${frow(1)}<div class="ft">${done?'Champions':'Best of 5 · winner takes all'}</div></div></div>`; }
+// one match, game by game, with the games still to come
+function poGamesHtml(P,m,onCourt){ const nm=i=>poName(P.teams[i]); const played=m.gs.length, max=2*m.nd-1, lead=Math.max(m.wa,m.wb);
+  let h=m.gs.map((g,j)=>`<div class="gl"><span class="k">Game ${j+1}</span><span class="v">${nm(g.sa>g.sb?m.t[0]:m.t[1])}</span><span class="sc num">${Math.max(g.sa,g.sb)}–${Math.min(g.sa,g.sb)}</span></div>`).join('');
+  if(!m.done) for(let j=played+1;j<=max;j++){ const sure=lead+(j-1-played)<m.nd, now=onCourt&&j===played+1;
+    h+=`<div class="gl${now?' now':sure?'':' maybe'}"><span class="k">Game ${j}</span><span class="v">${now?'On court now':sure?'Up next':'Only if needed'}</span></div>`; }
+  return `<p class="posec">${poLabel({b:true},m.k)}, game by game</p><div class="pogames">${h}</div>`; }
 function renderPlayoffs(){ renderRafters();
   const T=state.tonight, E=$('#poEyebrow'), H=$('#poTitle'), B=$('#poBody');
   // 1. playoff night in progress: the night as a list. Scores are entered on Game Night.
   if(T.po){ const P=T.po, S=poState(P,T.games); const live=S.champ!=null?[]:(normCur(T.current)||poWant().games).map(g=>g.m);
-    E.textContent='Playoffs · Tonight'; H.textContent=S.champ!=null?'We have a champion':live.includes('F')?'The final is on':live.includes('T')?'Tiebreak for the final':live.length>1?`Matches ${live.map(k=>k+1).join(' & ')} are on`:live.length?`Match ${live[0]+1} is on`:'Playoffs';
-    B.innerHTML=(S.champ!=null?poChampHtml(P,S,season().name):'')+poCards(P,S,live,S.champ!=null)+(S.why&&S.fin?`<div class="ponote">${S.why}</div>`:'')+`<button class="ghost" id="poGo">${S.champ!=null?'Save the playoffs on Game Night':'Go to the court'}</button><p class="hint" style="text-align:center">Scores are entered on Game Night, same as every Tuesday.</p>`;
+    E.textContent='Playoffs · Tonight'; H.textContent=S.champ!=null?'We have a champion':live.includes('F')?'The final is on':live.includes('T')?'Tiebreak for the final':S.b&&live.length>1?'Both semis are on':S.b&&live.length?`Semi ${live[0]+1} is on`:live.length>1?`Matches ${live.map(k=>k+1).join(' & ')} are on`:live.length?`Match ${live[0]+1} is on`:'Playoffs';
+    const fm=S.b&&(S.final||(live.length===1?S.matches[live[0]]:null));
+    B.innerHTML=(S.champ!=null?poChampHtml(P,S,season().name):'')+(S.b?poBracketHtml(P.teams,S,live)+(fm?poGamesHtml(P,fm,live.includes(fm.k)):''):poCards(P,S,live,S.champ!=null))+(S.why&&S.fin?`<div class="ponote">${S.why}</div>`:'')+`<button class="ghost" id="poGo">${S.champ!=null?'Save the playoffs on Game Night':'Go to the court'}</button><p class="hint" style="text-align:center">Scores are entered on Game Night, same as every Tuesday.</p>`;
     return; }
   // 2. this season's playoffs are done: the champion and how the night went
   const N=allNightsEver().filter(n=>n.season===season().id&&n.po&&!n.live).map(n=>({n,P:poNorm(n.po)})).filter(x=>x.P).map(x=>({...x,S:poState(x.P,x.n.games)})).filter(x=>x.S.champ!=null).pop();
   if(N){ const {P,S,n}=N; const f=S.final; E.textContent=`Playoffs · ${dateShort(n.date)}`; H.textContent=`${season().name} is decided`;
-    B.innerHTML=poChampHtml(P,S,season().name)+poCards(P,S,[],true)+(S.why?`<div class="ponote">${S.why}</div>`:'')+`<button class="cta" id="poShare">Share the result</button>`;
+    B.innerHTML=poChampHtml(P,S,season().name)+(S.b?poBracketHtml(P.teams,S,[])+poGamesHtml(P,S.final,false):poCards(P,S,[],true))+(S.why?`<div class="ponote">${S.why}</div>`:'')+`<button class="cta" id="poShare">Share the result</button>`;
     const un=x=>x.replace(/&amp;/g,'&'); B.querySelector('#poShare').onclick=()=>{ haptic(); poShare(`Pickle playoffs: ${un(poName(P.teams[S.champ]))} are the ${season().name} champions. They beat ${un(poName(P.teams[f.lose]))} ${Math.max(f.wa,f.wb)}–${Math.min(f.wa,f.wb)} in the final (${f.gs.map(g=>`${g.sa}–${g.sb}`).join(', ')}).`); };
     return; }
   // 3. all season: what the playoffs would be if they started today
   E.textContent='Playoffs preview'; H.textContent='If the playoffs started today';
   const seeds=ranking(false).filter(r=>r.s).map(r=>r.p);
   if(seeds.length<4){ B.innerHTML='<p class="hint">Need at least 4 players with games this season to set the teams.</p>'; return; }
-  const teams=poSeed(seeds); const sch=poSchedule(teams.length,1); const nm=i=>poName(teams[i]);
+  const teams=poSeed(seeds); const start=admin()?`<button class="ghost" id="poStart">Start playoffs</button><p class="hint" style="text-align:center">Only organizers see this. Nothing locks until check-in is done.</p>`:`<div class="ponote">${orgs().length?escH(orgNames())+' can start the playoffs.':'An organizer starts the playoffs.'}</div>`;
+  if(seeds.length>=PO_TOP){ const out=seeds.slice(PO_TOP);
+    B.innerHTML=`<p class="hint">The top 8 make it. Semis are best of 3, the final is best of 5.</p>`+poBracketHtml(teams,null,[])
+      +`<p class="posec">How teams are made</p><div class="poteams">${teams.map(t=>`<div class="pt"><span class="sd num">${t.s}</span><span class="tx"><span class="nm">${poName(t)}</span><span class="meta">${poRk(t)}</span></span></div>`).join('')}</div>`
+      +`<p class="hint" style="text-align:center">Teams are set from who shows up that night: if someone in the top 8 can't make it, the next one in line plays.${out.length?` Next in line: ${escH(out.join(', '))}.`:''}</p>`+start; return; }
+  const sch=poSchedule(teams.length,1); const nm=i=>poName(teams[i]);
   const lines=sch.ms.map((m,k)=>`<div class="ln"><span class="k">Match ${k+1}</span><span class="v">${nm(m[0])} vs ${nm(m[1])}</span></div>`).join('')+`<div class="ln"><span class="k fin">The final</span><span class="v">${sch.ms.length?'Top two · winner takes all':nm(0)+' vs '+nm(1)}</span></div>`;
   const how=teams.length===2?'One match for the title, best of 3.':teams.length===3?'Everyone plays everyone, best of 3. Then the top two play the final.':teams.length===4?'Everyone plays everyone, then the top two play a best-of-3 final. With two courts every match is best of 3; on one court each matchup is one game.':'Everyone plays everyone, one game each. Then the top two play a best-of-3 final.';
   B.innerHTML=teams.map(poRow).join('')+`<p class="posec">How the night goes</p><div class="poplan">${lines}</div><p class="hint" style="text-align:center">${how} Teams are set from who shows up that night.</p>`
-    +(admin()?`<button class="ghost" id="poStart">Start playoffs</button><p class="hint" style="text-align:center">Only organizers see this. Nothing locks until check-in is done.</p>`:`<div class="ponote">${orgs().length?escH(orgNames())+' can start the playoffs.':'An organizer starts the playoffs.'}</div>`);
+    +start;
 }
+$('#poStrip').onclick=()=>{ haptic(); show('bracket',null); };
 $('#poBody').addEventListener('click',e=>{
   if(e.target.closest('#poGo')){ show('tonight'); return; }
   if(e.target.closest('#poStart')){ const T=state.tonight; if(T.started||T.games.length){ toast("End tonight's night first."); return; } haptic(); poSetup=true; show('tonight'); } });
@@ -2156,7 +2243,7 @@ let toastT; function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.hidden
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='6a3e0c57';
+const BUILD='7cab0806';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }
