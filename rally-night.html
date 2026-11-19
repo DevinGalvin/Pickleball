@@ -1184,7 +1184,7 @@ function renderStandings(){
     el.style.transition='none'; el.style.transform=`translateY(${dy}px)`; el.getBoundingClientRect(); el.style.transition=''; el.style.transform=''; });
   if(byPm){ $('#qualHint').textContent=`Points ${tonight?'tonight':'this season'}: every point won minus every point lost, across all his games. The number on the left is still the ${tonight?"night's":'rating'} rank${tonight?'':', which is what seeds the playoffs'}.`; return; }
   if(byWin){ $('#qualHint').textContent=`Sorted by win %. The number on the left is still the ${tonight?"night's":'rating'} rank${tonight?'':', which is what seeds the playoffs'}.`; return; }
-  $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating is your +/− per game, weighted toward players with more games.${Object.keys(was).length?' ▲▼ is the move since the last night. The line is your last '+SPARK_GAMES+' games.':''} Tap a name for details.`;
+  const ex=rated.find(r=>r.s); $('#qualHint').textContent=tonight?'Average +/− per game tonight.':`Rating = total +/− ÷ (games + ${SHRINK}).${ex?` ${ex.p}: ${fmt(ex.s.pm)} ÷ (${ex.s.gp} + ${SHRINK}) = ${fmt(r1(ex.rating))}.`:''} The +${SHRINK} keeps a hot first few games from jumping someone to the top.${Object.keys(was).length?' ▲▼ is the move since the last night. The line is your last '+SPARK_GAMES+' games.':''} Tap a name for details.`;
 }
 document.querySelectorAll('#scopeSeg button').forEach(b=>b.onclick=()=>{ state.scope=b.dataset.scope; renderStandings(); });
 document.querySelectorAll('#sortSeg button').forEach(b=>b.onclick=()=>{ if(state.sort===b.dataset.sort) return; haptic(); state.sort=b.dataset.sort; renderStandings(); });
