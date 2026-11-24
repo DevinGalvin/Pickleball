@@ -27,14 +27,14 @@ head = f'''<!doctype html>
 <meta name="apple-mobile-web-app-title" content="Pickle">
 <meta property="og:title" content="Pickle · Tuesday night sign-up">
 <meta property="og:description" content="Tap your name if you're in.">
-<meta property="og:image" content="https://devingalvin.github.io/Pickleball/og.png">
+<meta property="og:image" content="https://devingalvin.github.io/Pickleball/og-v2.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:url" content="https://devingalvin.github.io/Pickleball/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
-<link rel="icon" href="icon-192-v2.png">
+<link rel="apple-touch-icon" href="apple-touch-icon-v3.png">
+<link rel="icon" href="icon-192-v3.png">
 <style>[hidden]{{display:none!important}}img{{max-width:100%}}</style>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
