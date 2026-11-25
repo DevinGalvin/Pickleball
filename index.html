@@ -849,6 +849,19 @@ function nextRound(present, played, courts){
   out.forEach(g=>{ const L=lineFor(g); if(L!==null) g.line=L; }); // set when drawn, frozen from then on
   return out;
 }
+// "Up next" is drawn once and kept, so the round that starts is the round the screen promised, on every phone.
+// It is redrawn only when what it was drawn from changes: who's playing, the courts, or the matchups on court now.
+function roundKey(games){ return games.map(g=>[g.a.slice().sort().join('&'),g.b.slice().sort().join('&')].sort().join(' v ')).sort().join(' / '); }
+function nextKey(base,round){ return [active().sort().join(','),state.tonight.courts||1,base,roundKey(round)].join('#'); }
+function upNext(){ const T=state.tonight, cur=T.current, k=nextKey(T.games.length,cur);
+  if(T.next&&T.next.key===k) return T.next.round;
+  const r=nextR(T.games); const nx=nextRound(active(),T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
+  T.next=nx?{key:k,round:nx.map(g=>({a:g.a,b:g.b}))}:null; persist(); return T.next&&T.next.round; }
+// the round just finished: start the promised one if it still fits
+function takeNext(){ const T=state.tonight, N=T.next, LR=lastRound(T.games); if(!N||!LR.length) return null;
+  if(N.key!==nextKey(T.games.length-LR.length,LR)) return null;
+  const A=active(); if(N.round.some(g=>[...g.a,...g.b].some(p=>!A.includes(p)))) return null;
+  return N.round.map(g=>{ const L=lineFor(g); return {a:g.a.slice(),b:g.b.slice(),...(L!==null?{line:L}:{})}; }); }
 // ---------- the line ----------
 // Team strength = average of the two players' season ratings; the spread is the gap, to the half point. Positive = Side A favored.
 // No line until every player in the game has MIN_LINE_GAMES season games, so one hot night can't set a number.
@@ -1101,7 +1114,7 @@ function renderCourt(){
   if(state.tonight.po){ renderCourtPO(); return; }
   $('#poStrip').hidden=true; $('#poSub').hidden=true; $('#queue').hidden=false;
   const T=state.tonight; T.current=normCur(T.current); let fresh=false;
-  if(!T.current){ T.current=nextRound(active(),T.games,T.courts||1); fresh=true; }
+  if(!T.current){ T.current=takeNext()||nextRound(active(),T.games,T.courts||1); fresh=true; }
   const cur=T.current; if(!cur){ T.started=false; show('tonight'); return; }
   if(fresh) persist();
   const multi=cur.length>1;
@@ -1112,7 +1125,7 @@ function renderCourt(){
   $('#sitEyebrow').textContent=sitting.length||!LATE.length?'Sitting':'Running late';
   $('#sitting').innerHTML=sitting.map(p=>`<button class="sitnm" data-p="${encodeURIComponent(p)}">${escH(p)}</button>`).join(', ')+LATE.map(p=>`<button class="latehere" data-p="${encodeURIComponent(p)}"><span>${escH(p)} · late</span><b>Here now</b></button>`).join('');
   const side=sitting.length||LATE.length; $('#sitPanel').hidden=!side; $('#nextPanel').style.gridColumn=side?'':'1 / -1';
-  const r=nextR(T.games); const nxt=nextRound(active(),T.games.concat(cur.map(g=>({a:g.a,b:g.b,sa:11,sb:0,r}))),T.courts||1);
+  const nxt=upNext();
   $('#nextNames').innerHTML=nxt?nxt.map((g,i)=>`${nxt.length>1?`<span class="vs">C${i+1}</span>`:''}${g.a.join(' & ')}<span class="vs">vs</span>${g.b.join(' & ')}`).join('<br>'):'';
   $('#log').innerHTML = logHtml(T.games,true) || '<p class="hint">No games yet. Play, then enter the final score.</p>';
   if(T.games.length>logCount){ const f=$('#log .item'); if(f) f.classList.add('new'); } logCount=T.games.length;
@@ -2101,7 +2114,7 @@ function parts(){ const s=snapshotState(); return { snap:s, players:J(s.players)
 function resync(){ dataRef.once('value').then(s=>{ if(s.val()) applyRemote(s.val()); }).catch(()=>{}); }
 function snapshotState(){
   return { v:1, players:PLAYERS, seasons:state.seasons, pairing:state.pairing, organizers:orgs(), nights:state.nights,
-    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null, late:[...lateSet()].filter(p=>state.tonight.present.has(p)), credit:credits(), po:state.tonight.po||null, guests:guests().slice() },
+    tonight:{ date:state.tonight.date, present:[...state.tonight.present], started:state.tonight.started, games:state.tonight.games, current:state.tonight.current||null, courts:state.tonight.courts||1, scorer:state.tonight.scorer||null, late:[...lateSet()].filter(p=>state.tonight.present.has(p)), credit:credits(), po:state.tonight.po||null, guests:guests().slice(), next:state.tonight.next||null },
     updatedAt: Date.now() };
 }
 function persist(){
@@ -2133,7 +2146,7 @@ function applyRemote(d){
     PLAYERS = d.players||[]; state.seasons = d.seasons||[]; state.pairing = d.pairing||'split'; state.organizers = d.organizers||[];
     state.nights = (d.nights||[]).map(n=>{ const po=poNorm(n.po); return {date:n.date, season:n.season, games:n.games||[], ...(po?{po}:{})}; }); // po: a playoff night keeps its teams and schedule
     state.nights.forEach(n=>n.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; }));
-    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null, late:new Set(t.late||[]), credit:(t.credit||[]).filter(c=>c&&c.p), guests:(t.guests||[]).filter(x=>typeof x==='string') };
+    const t=d.tonight||{}; state.tonight = { date:t.date, present:new Set(t.present||[]), started:!!t.started, games:t.games||[], current:normCur(t.current), courts:t.courts===2?2:1, scorer:(t.scorer&&t.scorer.id)?t.scorer:null, late:new Set(t.late||[]), credit:(t.credit||[]).filter(c=>c&&c.p), guests:(t.guests||[]).filter(x=>typeof x==='string'), ...(t.next&&t.next.key&&Array.isArray(t.next.round)&&t.next.round.every(g=>g&&g.a&&g.b)?{next:t.next}:{}) };
     const tpo=poNorm(t.po); if(tpo) state.tonight.po=tpo;
     if(state.tonight.current) state.tonight.current.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
     state.tonight.games.forEach(g=>{ g.a=g.a||[]; g.b=g.b||[]; });
@@ -2243,7 +2256,7 @@ let toastT; function toast(m,ms){ const t=$('#toast'); t.textContent=m; t.hidden
 // startup happens once the league loads (see live sync above)
 window.addEventListener('hashchange',()=>{ const h=location.hash.slice(1); if(['tonight','season','bracket','history'].includes(h)&&h!==state.tab) show(h,null); });
 
-const BUILD='62814ae8';
+const BUILD='6d36d163';
 let dismissedBuild=null;
 function showUpdate(on){ $('#updateBar').hidden=!on; $('#updateScrim').hidden=!on; }
 async function checkBuild(){ try{ const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'}); const j=await r.json(); if(j.build&&j.build!==BUILD&&j.build!==dismissedBuild){ latestBuild=j.build; showUpdate(true); } }catch(_){} }

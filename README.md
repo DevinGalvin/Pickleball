@@ -31,6 +31,10 @@ The heavy display face (Barlow Condensed 800) comes in four sizes, set as variab
 
 The roster shows "In" on top and "Not yet" below, each alphabetical. The order is set when the screen opens and stays put while it's open, so a tile never moves under someone's finger, even when another phone checks people in. A name tapped in or out keeps its spot until the screen is opened again (switching tabs or coming back to the app). A brand-new name goes at the end.
 
+## Up next
+
+"Up next" is drawn once and saved, so every phone shows the same matchups and the next game starts with exactly those. It's redrawn only when what it came from changes: someone leaves or arrives, the court count changes, or the game on court is swapped or redrawn.
+
 ## Courts
 
 With 8 or more checked in, the check-in screen offers a second court. It is never on by default because that court isn't always free. Two courts play as rounds: both scores go in, then the next round is drawn. Flip it on or off mid-night from the Players screen; any score already saved in the round is kept.
